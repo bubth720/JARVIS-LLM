@@ -1,0 +1,12 @@
+.gradle/
+.kotlin/
+.tools/
+.deps/
+**/build/
+**/.cxx/
+local.properties
+*.gguf
+*.part
+*.jks
+*.keystore
+.idea/

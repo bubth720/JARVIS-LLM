@@ -1,0 +1,76 @@
+#include "../cancellation.h"
+#include "../model_check.h"
+#include "ggml.h"
+#include "ggml-cpu.h"
+#include <cstdio>
+#include <stdexcept>
+#include <thread>
+#include <vector>
+
+static void require(bool value, const char * message) { if (!value) throw std::runtime_error(message); }
+struct AbortAfterFirstNode { Cancellation flag; int calls = 0; };
+static bool abortGraph(void * data) {
+    auto & state = *static_cast<AbortAfterFirstNode *>(data);
+    if (++state.calls >= 2) state.flag.request();
+    return Cancellation::abort(&state.flag);
+}
+int main() {
+    try {
+        Cancellation flag;
+        flag.begin(60'000); require(!flag.stopped(), "fresh operation cancelled");
+        std::thread other([&] { flag.request(); }); other.join();
+        require(Cancellation::abort(&flag), "concurrent stop not observed");
+        require(!Cancellation::progress(0.5f, &flag), "model load did not stop");
+        flag.begin(0); require(flag.stopped(), "deadline ignored");
+        flag.begin(60'000); require(!flag.stopped(), "reset failed");
+
+        auto * meta = gguf_init_empty();
+        gguf_set_val_str(meta, "general.architecture", "other");
+        gguf_set_val_u32(meta, "general.file_type", 15);
+        bool rejected = false;
+        try { validate_metadata(meta, true, 15); } catch (const std::runtime_error &) { rejected = true; }
+        require(rejected, "unknown architecture accepted");
+        gguf_set_val_str(meta, "general.architecture", "qwen3");
+        rejected = false;
+        try { validate_metadata(meta, true, 15); } catch (const std::runtime_error &) { rejected = true; }
+        require(rejected, "missing weights accepted");
+        auto * shapes = ggml_init({16 * 1024, nullptr, true});
+        auto * weight = ggml_new_tensor_2d(shapes, GGML_TYPE_Q4_K, 1024 * 1024, 512);
+        ggml_set_name(weight, "weight"); gguf_add_tensor(meta, weight);
+        validate_metadata(meta, true, 15);
+        rejected = false;
+        try { validate_metadata(meta, false, 15); } catch (const std::runtime_error &) { rejected = true; }
+        require(rejected, "wrong model slot accepted");
+        gguf_free(meta);
+        meta = gguf_init_empty();
+        gguf_set_val_str(meta, "general.architecture", "qwen3"); gguf_set_val_u32(meta, "general.file_type", 15);
+        auto * huge = ggml_new_tensor_2d(shapes, GGML_TYPE_Q4_K, 3 * 1024 * 1024, 1024);
+        ggml_set_name(huge, "huge"); gguf_add_tensor(meta, huge);
+        rejected = false;
+        try { validate_metadata(meta, false, 15); } catch (const std::runtime_error &) { rejected = true; }
+        require(rejected, "oversized model accepted before allocation");
+        gguf_free(meta); ggml_free(shapes);
+
+        ggml_init_params params{16 * 1024 * 1024, nullptr, false};
+        auto * ctx = ggml_init(params);
+        require(ctx != nullptr, "context allocation");
+        auto * a = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, 128, 128);
+        auto * b = ggml_new_tensor_2d(ctx, GGML_TYPE_F32, 128, 128);
+        ggml_set_f32(a, 0.1f); ggml_set_f32(b, 0.2f);
+        auto * c = ggml_mul_mat(ctx, a, b);
+        auto * d = ggml_mul_mat(ctx, a, c);
+        auto * graph = ggml_new_graph(ctx);
+        ggml_build_forward_expand(graph, d);
+        auto plan = ggml_graph_plan(graph, 2, nullptr);
+        std::vector<uint8_t> work(plan.work_size); plan.work_data = work.data();
+        AbortAfterFirstNode state; state.flag.begin(60'000);
+        plan.abort_callback = abortGraph; plan.abort_callback_data = &state;
+        require(ggml_graph_compute(graph, &plan) == GGML_STATUS_ABORTED, "CPU graph did not abort");
+        require(state.calls >= 2, "CPU abort callback not exercised");
+        plan.abort_callback = nullptr; plan.abort_callback_data = nullptr;
+        require(ggml_graph_compute(graph, &plan) == GGML_STATUS_SUCCESS, "CPU graph did not recover after abort");
+        ggml_free(ctx);
+        std::puts("PASS: cross-thread cancellation, load callback, deadline, real CPU graph abort and recovery");
+        return 0;
+    } catch (const std::exception & ex) { std::fprintf(stderr, "FAIL: %s\n", ex.what()); return 1; }
+}

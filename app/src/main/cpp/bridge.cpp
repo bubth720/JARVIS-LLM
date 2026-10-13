@@ -1,0 +1,172 @@
+#include <jni.h>
+#include "llama.h"
+#include "cancellation.h"
+#include "model_check.h"
+#include <algorithm>
+#include <memory>
+#include <mutex>
+#include <stdexcept>
+#include <string>
+#include <vector>
+
+struct Engine {
+    Cancellation cancel;
+    llama_model * model = nullptr;
+    llama_context * ctx = nullptr;
+    int context = 0;
+    void unload() {
+        if (ctx) llama_free(ctx);
+        if (model) llama_model_free(model);
+        ctx = nullptr; model = nullptr; context = 0;
+    }
+    ~Engine() { unload(); }
+};
+static Engine & engine(jlong handle) {
+    if (!handle) throw std::runtime_error("Moteur fermé");
+    return *reinterpret_cast<Engine *>(handle);
+}
+static void check(Engine & e) { if(e.cancel.stopped()) throw std::runtime_error("Calcul natif arrêté"); }
+static void error(JNIEnv * env, const std::exception & ex) {
+    env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), ex.what());
+}
+static std::string bytes(JNIEnv * env, jbyteArray array) {
+    const auto size = env->GetArrayLength(array);
+    if(size > 128 * 1024) throw std::runtime_error("Entrée trop longue");
+    std::string s(size, '\0');
+    env->GetByteArrayRegion(array, 0, size, reinterpret_cast<jbyte *>(s.data()));
+    return s;
+}
+extern "C" JNIEXPORT jlong JNICALL Java_fr_jarvis_llm_engine_NativeBridge_create(JNIEnv * env, jobject) {
+    try {
+        static std::once_flag init;
+        std::call_once(init, [] { llama_log_set([](ggml_log_level, const char *, void *) {}, nullptr); llama_backend_init(); });
+        return reinterpret_cast<jlong>(new Engine());
+    } catch (const std::exception & ex) { error(env, ex); return 0; }
+}
+extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_begin(JNIEnv * env, jobject, jlong h) {
+    try { engine(h).cancel.begin(90'000); } catch (const std::exception & ex) { error(env, ex); }
+}
+extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_cancel(JNIEnv * env, jobject, jlong h) {
+    try { engine(h).cancel.request(); } catch (const std::exception & ex) { error(env, ex); }
+}
+extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
+    JNIEnv * env, jobject, jlong h, jbyteArray path, jint context, jint threads, jboolean small) {
+    try {
+        auto & e = engine(h);
+        if (context < 1024 || context > 2048 || threads < 1 || threads > 4) throw std::runtime_error("Configuration refusée");
+        check(e); e.unload();
+        const auto filename = bytes(env, path);
+        // Inspect shape/type without allocating weights or a KV cache.
+        std::unique_ptr<gguf_context, decltype(&gguf_free)> meta(
+            gguf_init_from_file(filename.c_str(), {true, nullptr}), gguf_free);
+        validate_metadata(meta.get(), small, LLAMA_FTYPE_MOSTLY_Q4_K_M);
+        meta.reset(); check(e);
+        auto params = llama_model_default_params();
+        params.n_gpu_layers = 0;
+        params.load_mode = LLAMA_LOAD_MODE_MMAP;
+        params.progress_callback = Cancellation::progress;
+        params.progress_callback_user_data = &e.cancel;
+        e.model = llama_model_load_from_file(filename.c_str(), params);
+        if (!e.model) throw std::runtime_error("Chargement refusé, interrompu ou GGUF incompatible");
+        check(e);
+        char arch[32] = {};
+        llama_model_meta_val_str(e.model, "general.architecture", arch, sizeof(arch));
+        const auto count = llama_model_n_params(e.model);
+        if (std::string(arch) != "qwen3" || (small ? (count < 400'000'000 || count > 850'000'000) : (count < 1'300'000'000 || count > 2'100'000'000)))
+            throw std::runtime_error("Seuls Qwen3 0.6B et 1.7B sont admis dans ce prototype");
+        auto cp = llama_context_default_params();
+        cp.n_ctx = context; cp.n_batch = 64; cp.n_ubatch = 32;
+        cp.n_threads = threads; cp.n_threads_batch = threads;
+        cp.abort_callback = Cancellation::abort; cp.abort_callback_data = &e.cancel;
+        cp.no_perf = true;
+        e.ctx = llama_init_from_model(e.model, cp);
+        if (!e.ctx) throw std::runtime_error("Création du contexte impossible");
+        e.context = context; check(e);
+    } catch (const std::exception & ex) { if (h) engine(h).unload(); error(env, ex); }
+}
+static std::string format(Engine & e, const std::vector<std::string> & roles, const std::vector<std::string> & texts, size_t start) {
+    const std::string system = "Tu es JARVIS, un assistant local. Réponds en français, brièvement. Admets tes incertitudes. Tu ne peux exécuter aucune action. /no_think";
+    std::vector<llama_chat_message> msgs{{"system", system.c_str()}};
+    for (size_t i = start; i < roles.size(); ++i) msgs.push_back({roles[i].c_str(), texts[i].c_str()});
+    const char * tmpl = llama_model_chat_template(e.model, nullptr);
+    if (!tmpl) throw std::runtime_error("Template officiel absent du GGUF");
+    std::vector<char> buffer(16 * 1024);
+    int size = llama_chat_apply_template(tmpl, msgs.data(), msgs.size(), true, buffer.data(), buffer.size());
+    if (size < 0) throw std::runtime_error("Template non pris en charge");
+    if (size > static_cast<int>(buffer.size())) {
+        buffer.resize(size + 1);
+        size = llama_chat_apply_template(tmpl, msgs.data(), msgs.size(), true, buffer.data(), buffer.size());
+    }
+    if (size < 0 || size > static_cast<int>(buffer.size())) throw std::runtime_error("Template invalide");
+    std::string result(buffer.data(), size);
+    // Qwen3 hybrid template: prefill an empty reasoning block rather than allow a long thinking stream.
+    result += "<think>\n\n</think>\n\n";
+    return result;
+}
+extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generate(
+    JNIEnv * env, jobject, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens) {
+    try {
+        auto & e = engine(h); check(e);
+        if (!e.ctx || maxTokens < 1 || maxTokens > 256) throw std::runtime_error("Moteur non prêt");
+        const int size = env->GetArrayLength(roleArray);
+        if (size < 1 || size > 8 || size != env->GetArrayLength(textArray)) throw std::runtime_error("Historique invalide");
+        std::vector<std::string> roles, texts;
+        for (int i = 0; i < size; ++i) {
+            auto role = static_cast<jbyteArray>(env->GetObjectArrayElement(roleArray, i));
+            auto text = static_cast<jbyteArray>(env->GetObjectArrayElement(textArray, i));
+            roles.push_back(bytes(env, role)); texts.push_back(bytes(env, text));
+            // A user message must not inject ChatML role delimiters into the formatted prompt.
+            size_t position = 0;
+            while ((position = texts.back().find("<|", position)) != std::string::npos) {
+                texts.back().replace(position, 2, "< |"); position += 3;
+            }
+            env->DeleteLocalRef(role); env->DeleteLocalRef(text);
+            if (roles.back() != "user" && roles.back() != "assistant") throw std::runtime_error("Rôle invalide");
+        }
+        if (roles.back() != "user") throw std::runtime_error("Question utilisateur requise");
+        const auto * vocab = llama_model_get_vocab(e.model);
+        std::vector<llama_token> tokens(e.context);
+        int n = -1;
+        size_t start = 0;
+        while (true) {
+            check(e);
+            const auto prompt = format(e, roles, texts, start);
+            n = llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), tokens.size(), true, true);
+            if (n > 0 && n + maxTokens + 8 <= e.context) break;
+            if (start + 2 < roles.size()) start += 2;
+            else throw std::runtime_error("Question trop longue pour le contexte : raccourcis-la");
+        }
+        llama_memory_clear(llama_get_memory(e.ctx), true);
+        for (int offset = 0; offset < n; offset += 64) {
+            check(e);
+            auto batch = llama_batch_get_one(tokens.data() + offset, std::min(64, n - offset));
+            if (llama_decode(e.ctx, batch) != 0) throw std::runtime_error("Préparation interrompue ou impossible");
+        }
+        std::unique_ptr<llama_sampler, decltype(&llama_sampler_free)> sampler(llama_sampler_init_greedy(), llama_sampler_free);
+        std::string output;
+        for (int i = 0; i < maxTokens; ++i) {
+            check(e);
+            llama_token token = llama_sampler_sample(sampler.get(), e.ctx, -1);
+            if (llama_vocab_is_eog(vocab, token)) break;
+            std::vector<char> piece(256);
+            int length = llama_token_to_piece(vocab, token, piece.data(), piece.size(), 0, false);
+            if (length < 0) { piece.resize(-length); length = llama_token_to_piece(vocab, token, piece.data(), piece.size(), 0, false); }
+            if (length < 0) throw std::runtime_error("Token invalide");
+            output.append(piece.data(), length);
+            if (i + 1 < maxTokens) {
+                auto batch = llama_batch_get_one(&token, 1);
+                if (llama_decode(e.ctx, batch) != 0) throw std::runtime_error("Génération interrompue ou impossible");
+            }
+        }
+        check(e);
+        auto result = env->NewByteArray(output.size());
+        if (result) env->SetByteArrayRegion(result, 0, output.size(), reinterpret_cast<const jbyte *>(output.data()));
+        return result;
+    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
+}
+extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_unload(JNIEnv * env, jobject, jlong h) {
+    try { engine(h).unload(); } catch (const std::exception & ex) { error(env, ex); }
+}
+extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_destroy(JNIEnv *, jobject, jlong h) {
+    delete reinterpret_cast<Engine *>(h);
+}
