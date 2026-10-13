@@ -23,6 +23,7 @@ if [[ ! -x .tools/android-sdk/cmdline-tools/19.0/bin/sdkmanager ]]; then
 fi
 export JAVA_HOME="$root/.tools/jdk-21.0.12.1+1"
 export ANDROID_HOME="$root/.tools/android-sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export ANDROID_USER_HOME="$root/.tools/android-user-home"
 # Java does not automatically consume HTTPS_PROXY. Store machine-specific settings only in ignored files.
 python3 - <<'PY'

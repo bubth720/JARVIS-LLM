@@ -20,7 +20,7 @@ La phase 1 matérielle réelle et la phase 3 sur POCO/Redmi restent **non termin
 | Qualification POCO / Redmi | Non exécutée |
 | Génération avec un vrai Qwen GGUF | Non exécutée : destination Hugging Face refusée par le proxy cloud |
 | GPU / NPU, consommation, chauffe, p50/p95 | Non mesurés |
-| CI GitHub | Workflow fourni ; résultat distant non observé |
+| CI GitHub historique | Runs 38462140007 et 38462348185 : échec setup-android v3, avant les tests ; correctif en cours de validation distante |
 
 Le test natif n'est pas un benchmark ni une preuve de délai d'arrêt d'un vrai Qwen sur Android.
 SHA-256 de l'APK inspecté : `6e0c86a672a22b282dce825d35c088dcd15b4fbdc192801a16f4ae3a60e165f1`.
@@ -54,3 +54,19 @@ Les caches sont conservés ; aucun processus applicatif serveur n'est nécessair
 Critères provisoires : arrêt <=2 s, premier token p95 <=10 s téléphone /20 s tablette, réponse courte p95 <=60 s.
 Ces objectifs ne sont pas atteints par les tests cloud présentés. Ne pas forcer une configuration qui les manque ou dépasse les protections.
 RAG, catalogue massif, voix, actions, IPC et PLEINE PUISSANCE sur station restent hors de cette mission limitée.
+
+## Finalisation CI et préparation du diagnostic
+
+Les deux échecs distants ont lieu dans `android-actions/setup-android@v3` ; les pages publiques confirment cette étape.
+L'API GitHub et les logs détaillés sont inaccessibles depuis ce cloud : aucune cause interne plus précise n'est affirmée.
+Cette action est remplacée par `tools/setup-cloud.sh`, épinglé, déjà testé et vérifiant les archives.
+Runner Ubuntu 24.04 explicite, JDK/SDK/NDK isolés et variables ANDROID_HOME/ANDROID_SDK_ROOT cohérentes.
+Chaque vérification est obligatoire ; publication du paquet seulement après tests, Lint, build et inspection APK réussis.
+Le paquet contient APK, SHA256SUMS, commit et guide passif ; rapports de validation séparés.
+Un test simulé supplémentaire vérifie accueil/réouverture sans fichier modèle ni travail natif.
+Le test CPU livre désormais le signal d'arrêt depuis un autre thread après démarrage du graphe.
+
+Pour ce premier diagnostic, suivre [FIRST_DIAGNOSTIC.md](FIRST_DIAGNOSTIC.md) : **ni import ni génération**.
+Les capteurs réels, la compatibilité du firmware, l'inférence Qwen et le délai d'arrêt Android restent non vérifiés.
+L'empreinte locale ci-dessus ne désigne pas l'APK CI : sa clé debug et son empreinte peuvent différer.
+La référence de téléchargement et l'état distant final seront consignés après observation de l'exécution.

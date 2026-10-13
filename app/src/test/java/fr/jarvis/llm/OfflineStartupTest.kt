@@ -49,4 +49,17 @@ class OfflineStartupTest {
             assertTrue(all.filterIsInstance<TextView>().any { "Modèles importés : aucun" in it.text.toString() })
         } finally { controller.pause().stop().destroy() }
     }
+    @Test fun passiveDiagnosticSurvivesBackgroundWithoutImportOrNativeWork() {
+        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
+        try {
+            shadowOf(Looper.getMainLooper()).idle()
+            controller.pause().stop().start().resume().visible()
+            shadowOf(Looper.getMainLooper()).idle()
+            val all = views(controller.get().window.decorView)
+            assertTrue(all.filterIsInstance<TextView>().any { "Modèles importés : aucun" in it.text.toString() })
+            assertFalse(all.filterIsInstance<Button>().single { it.text == "Arrêter" }.isEnabled)
+            val app = controller.get().application
+            assertFalse(java.io.File(app.filesDir, "models").listFiles().orEmpty().any { it.extension == "gguf" })
+        } finally { controller.pause().stop().destroy() }
+    }
 }

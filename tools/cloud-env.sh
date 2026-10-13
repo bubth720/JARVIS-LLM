@@ -3,6 +3,7 @@
 jarvis_root="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 export JAVA_HOME="$jarvis_root/.tools/jdk-21.0.12.1+1"
 export ANDROID_HOME="$jarvis_root/.tools/android-sdk"
+export ANDROID_SDK_ROOT="$ANDROID_HOME"
 export ANDROID_USER_HOME="$jarvis_root/.tools/android-user-home"
 export GRADLE_USER_HOME="$jarvis_root/.tools/gradle-home"
 export PATH="$JAVA_HOME/bin:$ANDROID_HOME/cmake/3.22.1/bin:$ANDROID_HOME/platform-tools:$PATH"

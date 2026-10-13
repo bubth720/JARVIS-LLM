@@ -11,7 +11,11 @@ static void require(bool value, const char * message) { if (!value) throw std::r
 struct AbortAfterFirstNode { Cancellation flag; int calls = 0; };
 static bool abortGraph(void * data) {
     auto & state = *static_cast<AbortAfterFirstNode *>(data);
-    if (++state.calls >= 2) state.flag.request();
+    if (++state.calls >= 2) {
+        // Deliver a concurrent stop after the graph has started, before its next CPU node.
+        std::thread stopper([&state] { state.flag.request(); });
+        stopper.join();
+    }
     return Cancellation::abort(&state.flag);
 }
 int main() {
