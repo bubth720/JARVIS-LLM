@@ -42,6 +42,10 @@ La compilation requiert GitHub/Google/Maven ; l'APK fonctionne indépendamment d
 
 ## Installation
 
+Le [workflow de finalisation est réussi](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554).
+[Télécharger le paquet APK debug et son SHA-256](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554/artifacts/11847564585).
+Premier essai : [diagnostic passif uniquement](docs/FIRST_DIAGNOSTIC.md), sans importer ni exécuter de modèle.
+
 APK debug : `app/build/outputs/apk/debug/app-debug.apk`, destiné aux essais contrôlés, pas à la distribution publique.
 Au démarrage : diagnostic passif uniquement, aucun modèle chargé.
 Ni le POCO ni la Redmi ne sont qualifiés par une compilation cloud.

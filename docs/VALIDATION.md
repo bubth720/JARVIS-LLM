@@ -13,14 +13,15 @@ La phase 1 matérielle réelle et la phase 3 sur POCO/Redmi restent **non termin
 |---|---|
 | Tests JVM métier/sécurité/import | 22 exécutés, réussis |
 | Test natif CTest | 1 exécuté, réussi : arrêt inter-thread, deadline, callback de chargement, abandon/reprise d'un graphe CPU réel, métadonnées modèles |
-| Tests Android simulés Robolectric API 35 | 2 exécutés, réussis : démarrage sans activation JNI, refus sans modèle |
+| Tests Android simulés Robolectric API 35 | 3 exécutés, réussis : démarrage sans activation JNI, refus sans modèle et accueil/réouverture passive |
 | Compilation ARM64 / APK debug | Réussie sur les sources finales |
 | Lint debug | Dernière exécution réussie : 0 erreur, 11 avertissements |
 | Permissions, signature, ELF/ZIP 16 Kio | Inspection réussie sur l'APK final |
 | Qualification POCO / Redmi | Non exécutée |
 | Génération avec un vrai Qwen GGUF | Non exécutée : destination Hugging Face refusée par le proxy cloud |
 | GPU / NPU, consommation, chauffe, p50/p95 | Non mesurés |
-| CI GitHub historique | Runs 38462140007 et 38462348185 : échec setup-android v3, avant les tests ; correctif en cours de validation distante |
+| CI GitHub actuelle | [Run 38465105554](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554), commit `01afcdc98a7ea8f76259d6ef9bf3874038d9b275` : exécution complète réussie, job verify réussi, deux artefacts présents |
+| CI GitHub historique | Runs 38462140007 et 38462348185 : échec setup-android v3, avant les tests |
 
 Le test natif n'est pas un benchmark ni une preuve de délai d'arrêt d'un vrai Qwen sur Android.
 SHA-256 de l'APK inspecté : `6e0c86a672a22b282dce825d35c088dcd15b4fbdc192801a16f4ae3a60e165f1`.
@@ -69,4 +70,22 @@ Le test CPU livre désormais le signal d'arrêt depuis un autre thread après d�
 Pour ce premier diagnostic, suivre [FIRST_DIAGNOSTIC.md](FIRST_DIAGNOSTIC.md) : **ni import ni génération**.
 Les capteurs réels, la compatibilité du firmware, l'inférence Qwen et le délai d'arrêt Android restent non vérifiés.
 L'empreinte locale ci-dessus ne désigne pas l'APK CI : sa clé debug et son empreinte peuvent différer.
-La référence de téléchargement et l'état distant final seront consignés après observation de l'exécution.
+### Référence distante vérifiée
+
+- [Exécution réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554) ; [job verify réussi](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554/job/115529739945).
+- [Paquet APK jarvis-llm-debug](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554/artifacts/11847564585), ID `11847564585`, affiché à 4,25 MB compressés ; rétention configurée à 30 jours.
+- [Rapports jarvis-llm-validation](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554/artifacts/11847489631).
+- Empreinte du **ZIP d'artefact GitHub**, pas de l'APK : `64a8d82960fcb7c30522ce883f80b6daf0996f476a6c37bab547c13574d0f8e3`.
+- L'empreinte de **JARVIS-LLM-debug.apk** est publiée dans `SHA256SUMS`, au sein du paquet, et dans le résumé du job par le script de packaging.
+
+Le workflow à cette révision impose bootstrap, test natif, tests JVM/Android simulés, Lint, compilation et inspection APK, sans continue-on-error.
+La réussite globale et celle du job, ainsi que présence/noms/IDs des artefacts, ont été observées dans les pages publiques GitHub.
+Les logs détaillés et le contenu du ZIP distant n'ont pas été téléchargés dans ce cloud faute d'accès web/API correspondant : les comptes de tests ci-dessus proviennent des rapports **locaux**, pas d'une lecture des XML distants.
+La copie locale et son packaging SHA-256 ont aussi été contrôlés. Ne pas utiliser son empreinte pour vérifier l'APK GitHub, signé par une autre clé debug.
+
+### Protections restant à qualifier
+
+La politique thermique/batterie/mémoire et les seuils sont testés sur snapshots simulés ; les valeurs des capteurs OEM, le PSS réel et leurs réactions sur POCO/Redmi ne sont pas validés.
+Le signal atomique et l'abandon/reprise de calcul CPU sont testés ; le cycle de vie JNI complet avec un Qwen chargé, les phases non immédiatement interruptibles et le délai d'arrêt sur Android restent à tester.
+L'alignement ARM64/16 Kio et la signature sont inspectés ; installation, affichage Android 15/16 et compatibilité du firmware restent non vérifiés sur appareil.
+Aucun benchmark intensif, import de modèle ni inférence sur appareil n'a été lancé.

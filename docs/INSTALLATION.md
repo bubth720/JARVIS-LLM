@@ -1,5 +1,9 @@
 # Installation et démarrage
 
+Pour les essais demandés actuellement, suivre [FIRST_DIAGNOSTIC.md](FIRST_DIAGNOSTIC.md) : télécharger l'artefact validé puis **diagnostic passif uniquement, sans import ni génération**.
+Paquet CI : [jarvis-llm-debug](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554/artifacts/11847564585), APK et SHA256SUMS inclus.
+Les étapes d'import ci-dessous décrivent une phase ultérieure ; elles ne doivent pas être exécutées lors de ce premier diagnostic.
+
 APK debug : `app/build/outputs/apk/debug/app-debug.apk`. Copier localement et ouvrir sur Android, ou depuis un poste USB autorisé :
 
 ```sh
