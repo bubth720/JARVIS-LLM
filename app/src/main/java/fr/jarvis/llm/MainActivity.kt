@@ -53,7 +53,8 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(profiles)
         status = TextView(this).apply { textSize = 14f }; root.addView(status)
-        diagnostic = TextView(this).apply { textSize = 11f; setTextIsSelectable(true) }; root.addView(diagnostic)
+        diagnostic = TextView(this).apply { textSize = 11f; setTextIsSelectable(true) }
+        root.addView(ScrollView(this).apply { addView(diagnostic) }, LinearLayout.LayoutParams(-1, (180 * resources.displayMetrics.density).toInt()))
         val buttons = LinearLayout(this)
         import = Button(this).apply { text = "Importer"; setOnClickListener { importDialog() } }
         clear = Button(this).apply { text = "Effacer"; setOnClickListener { vm.clearConversation() } }

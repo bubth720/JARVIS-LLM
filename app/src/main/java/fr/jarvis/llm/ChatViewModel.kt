@@ -2,7 +2,6 @@ package fr.jarvis.llm
 
 import android.app.Application
 import android.net.Uri
-import android.os.Debug
 import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -26,6 +25,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val stopped = AtomicBoolean(false)
     private var resident: RuntimeConfig? = null
     private var active: RuntimeConfig? = null
+    private var baselineModel: ModelKind? = null
+    private var residentBaselinePss: Long? = null
     private var lastUse = 0L
     private var lastDiagnostic = 0L
     private var stoppingReason: String? = null
@@ -37,18 +38,30 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 enforceSafety()
                 if (!state.value.busy && resident != null && SystemClock.elapsedRealtime() - lastUse > resident!!.idleMillis) unload()
                 if (SystemClock.elapsedRealtime() - lastDiagnostic > 15_000) {
-                    update { it.copy(diagnostic = monitor.diagnostic()) }; lastDiagnostic = SystemClock.elapsedRealtime()
+                    update { it.copy(diagnostic = diagnostic()) }; lastDiagnostic = SystemClock.elapsedRealtime()
                 }
-                delay(2_000)
+                delay(if (active != null) 1_000 else 2_000)
             }
         }
     }
     private fun update(block: (ChatState) -> ChatState) { state.value = block(state.value) }
     private fun engine(): LanguageModel = backend ?: LlamaBackend().also { backend = it }
+    private fun residency(snapshot: DeviceSnapshot, config: RuntimeConfig?): Residency? {
+        val baseline = residentBaselinePss ?: return null
+        if (baseline <= 0 || snapshot.pssBytes <= 0) return null
+        if (config == null || baselineModel != config.model) return null
+        return Residency(config.model, (snapshot.pssBytes - baseline).coerceAtLeast(0))
+    }
+    private fun diagnostic(): String {
+        val s = monitor.snapshot()
+        val file = store.file(ModelKind.SMALL)
+        val size = if (file.isFile) "%.1f Mio".format(java.util.Locale.FRANCE, file.length() / 1048576.0) else "absent"
+        return monitor.diagnostic(residency(s, active ?: resident), s) + "\nFichier GGUF 0.6B : $size (taille disque, pas PSS)."
+    }
     fun foreground(value: Boolean) {
         monitor.foreground = value
         if (!value) { stop("Arrière-plan : arrêt et déchargement"); viewModelScope.launch { unload() } }
-        else update { it.copy(diagnostic = monitor.diagnostic()) }
+        else update { it.copy(diagnostic = diagnostic()) }
     }
     fun profile(value: Profile) {
         if (state.value.busy) stop("Changement de profil : arrêt demandé")
@@ -58,8 +71,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private fun enforceSafety() {
         val config = active ?: resident ?: return
         val snapshot = monitor.snapshot()
-        val decision = policy.decide(state.value.profile, snapshot, setOf(config.model), config.memoryBudget)
-        val pss = Debug.getPss() * 1024L
+        val decision = policy.decide(state.value.profile, snapshot, setOf(config.model), residency(snapshot, config))
+        val pss = snapshot.pssBytes
         if (decision.config != config || pss > config.memoryBudget) {
             stop(if (pss > config.memoryBudget) "Budget mémoire application dépassé" else decision.reason)
             if (!state.value.busy) viewModelScope.launch { unload() }
@@ -72,15 +85,21 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         if (state.value.busy) update { it.copy(status = "$reason — attente de fin effective du calcul") }
     }
     private suspend fun unload() {
+        monitor.telemetry.phase(MemoryPhase.UNLOADING)
         backend?.unload(); resident = null
+        baselineModel = null; residentBaselinePss = null
+        monitor.snapshot()
+        monitor.telemetry.phase(MemoryPhase.PASSIVE)
     }
     fun clearConversation() { if (!state.value.busy) update { it.copy(messages = emptyList(), status = "Conversation effacée (mémoire vive uniquement).") } }
     fun send(text: String) {
         if (state.value.busy) return
         val question = text.trim()
         if (question.isEmpty() || question.length > 4_000) { update { it.copy(status = "Question vide ou trop longue (4 000 caractères maximum).") }; return }
-        val decision = policy.decide(state.value.profile, monitor.snapshot(), store.available(), resident?.memoryBudget ?: 0)
-        val config = decision.config ?: run { update { it.copy(status = decision.reason) }; return }
+        val snapshot = monitor.snapshot()
+        val decision = policy.decide(state.value.profile, snapshot, store.available(), residency(snapshot, resident))
+        val config = decision.config ?: run { update { it.copy(status = decision.reason, diagnostic = diagnostic()) }; return }
+        monitor.telemetry.begin()
         stopped.set(false); stoppingReason = null
         // No suspension between arming the flag and marking the request active.
         val model = try { engine().also { it.prepareOperation() } } catch (e: Exception) {
@@ -95,16 +114,22 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                     unload()
                     val admitted = policy.decide(state.value.profile, monitor.snapshot(), setOf(config.model))
                     check(admitted.config == config) { admitted.reason }
+                    residentBaselinePss = monitor.snapshot().pssBytes.takeIf { it > 0 }; baselineModel = config.model
+                    monitor.telemetry.phase(MemoryPhase.VERIFYING)
                     val path = withContext(Dispatchers.IO) { store.verify(config.model) { stopped.get() } }
                     check(!stopped.get()) { "Opération arrêtée" }
+                    monitor.telemetry.phase(MemoryPhase.LOADING)
                     model.load(path, config); resident = config
+                    monitor.snapshot()
                 }
                 // An idle/background unload can have been queued before this request.
                 // The backend rechecks its actual state on the same native worker.
                 model.load(store.file(config.model).absolutePath, config); resident = config
                 check(!stopped.get()) { "Opération arrêtée" }
+                monitor.telemetry.phase(MemoryPhase.GENERATING)
                 update { it.copy(status = "Génération locale — ${config.model.name}") }
                 val answer = model.generate(GenerationRequest(messages, config)).trim()
+                monitor.snapshot()
                 check(!stopped.get()) { "Opération arrêtée" }
                 check(answer.isNotEmpty()) { "Le modèle n'a produit aucune réponse" }
                 update { it.copy(messages = (messages + Message("assistant", answer)).takeLast(40), status = "Réponse locale. Vérifie les informations importantes.") }
@@ -115,7 +140,8 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
             } finally {
                 active = null; lastUse = SystemClock.elapsedRealtime()
                 withContext(NonCancellable) { if (stopped.get() || !monitor.foreground) unload() }
-                update { it.copy(busy = false, diagnostic = monitor.diagnostic()) }
+                monitor.telemetry.phase(MemoryPhase.PASSIVE)
+                update { it.copy(busy = false, diagnostic = diagnostic()) }
             }
         }
     }
@@ -135,7 +161,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
                 unload()
                 withContext(Dispatchers.IO) {
                     store.import(uri, kind, digest) {
-                        val current = monitor.snapshot()
+                        val current = monitor.snapshot(samplePss = false)
                         val t = current.thermalStatus
                         val b = current.batteryPercent
                         stopped.get() || !current.foreground || t == null || t !in 0..2 ||

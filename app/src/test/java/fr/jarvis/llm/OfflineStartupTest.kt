@@ -31,6 +31,7 @@ class OfflineStartupTest {
             assertTrue(texts.any { "JARVIS LLM" in it })
             assertTrue(texts.any { "aucun" in it && "Modèles importés" in it })
             assertTrue(texts.any { "GPU/NPU non qualifiés" in it })
+            assertTrue(texts.any { "pic échantillonné" in it && "Budget estimé" in it && "Marge admission" in it })
             assertFalse(views(controller.get().window.decorView).filterIsInstance<Button>().single { it.text == "Arrêter" }.isEnabled)
             // No native library is available on this x86 JVM: startup passing also proves no eager JNI load.
         } finally { controller.pause().stop().destroy() }

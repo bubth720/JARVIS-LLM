@@ -2,6 +2,7 @@
 #include "llama.h"
 #include "cancellation.h"
 #include "model_check.h"
+#include "native_configuration.h"
 #include <algorithm>
 #include <memory>
 #include <mutex>
@@ -14,6 +15,8 @@ struct Engine {
     llama_model * model = nullptr;
     llama_context * ctx = nullptr;
     int context = 0;
+    int batch = 64;
+    int max_output = 256;
     void unload() {
         if (ctx) llama_free(ctx);
         if (model) llama_model_free(model);
@@ -53,7 +56,7 @@ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
     JNIEnv * env, jobject, jlong h, jbyteArray path, jint context, jint threads, jboolean small) {
     try {
         auto & e = engine(h);
-        if (context < 1024 || context > 2048 || threads < 1 || threads > 4) throw std::runtime_error("Configuration refusée");
+        auto cp = context_params(context, threads, small, &e.cancel);
         check(e); e.unload();
         const auto filename = bytes(env, path);
         // Inspect shape/type without allocating weights or a KV cache.
@@ -64,6 +67,7 @@ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
         auto params = llama_model_default_params();
         params.n_gpu_layers = 0;
         params.load_mode = LLAMA_LOAD_MODE_MMAP;
+        if (small) params.use_extra_bufts = false; // avoid optional persistent repacked weight buffers
         params.progress_callback = Cancellation::progress;
         params.progress_callback_user_data = &e.cancel;
         e.model = llama_model_load_from_file(filename.c_str(), params);
@@ -74,14 +78,10 @@ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
         const auto count = llama_model_n_params(e.model);
         if (std::string(arch) != "qwen3" || (small ? (count < 400'000'000 || count > 850'000'000) : (count < 1'300'000'000 || count > 2'100'000'000)))
             throw std::runtime_error("Seuls Qwen3 0.6B et 1.7B sont admis dans ce prototype");
-        auto cp = llama_context_default_params();
-        cp.n_ctx = context; cp.n_batch = 64; cp.n_ubatch = 32;
-        cp.n_threads = threads; cp.n_threads_batch = threads;
-        cp.abort_callback = Cancellation::abort; cp.abort_callback_data = &e.cancel;
-        cp.no_perf = true;
         e.ctx = llama_init_from_model(e.model, cp);
         if (!e.ctx) throw std::runtime_error("Création du contexte impossible");
-        e.context = context; check(e);
+        e.context = llama_n_ctx(e.ctx); e.batch = llama_n_batch(e.ctx);
+        e.max_output = maximum_output_tokens(small); check(e);
     } catch (const std::exception & ex) { if (h) engine(h).unload(); error(env, ex); }
 }
 static std::string format(Engine & e, const std::vector<std::string> & roles, const std::vector<std::string> & texts, size_t start) {
@@ -107,7 +107,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_g
     JNIEnv * env, jobject, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens) {
     try {
         auto & e = engine(h); check(e);
-        if (!e.ctx || maxTokens < 1 || maxTokens > 256) throw std::runtime_error("Moteur non prêt");
+        if (!e.ctx || maxTokens < 1 || maxTokens > e.max_output) throw std::runtime_error("Moteur non prêt ou sortie hors budget");
         const int size = env->GetArrayLength(roleArray);
         if (size < 1 || size > 8 || size != env->GetArrayLength(textArray)) throw std::runtime_error("Historique invalide");
         std::vector<std::string> roles, texts;
@@ -137,9 +137,9 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_g
             else throw std::runtime_error("Question trop longue pour le contexte : raccourcis-la");
         }
         llama_memory_clear(llama_get_memory(e.ctx), true);
-        for (int offset = 0; offset < n; offset += 64) {
+        for (int offset = 0; offset < n; offset += e.batch) {
             check(e);
-            auto batch = llama_batch_get_one(tokens.data() + offset, std::min(64, n - offset));
+            auto batch = llama_batch_get_one(tokens.data() + offset, std::min(e.batch, n - offset));
             if (llama_decode(e.ctx, batch) != 0) throw std::runtime_error("Préparation interrompue ou impossible");
         }
         std::unique_ptr<llama_sampler, decltype(&llama_sampler_free)> sampler(llama_sampler_init_greedy(), llama_sampler_free);

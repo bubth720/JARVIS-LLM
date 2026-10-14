@@ -2,6 +2,10 @@
 set -euo pipefail
 root="$(cd -- "$(dirname -- "$0")/.." && pwd)"
 cd "$root"
+if [[ -n "$(git status --porcelain --untracked-files=normal)" ]]; then
+    echo 'Refusing to label a diagnostic APK with a commit from a dirty source checkout.' >&2
+    exit 1
+fi
 package_dir=build/diagnostic-package
 mkdir -p "$package_dir"
 cp app/build/outputs/apk/debug/app-debug.apk "$package_dir/JARVIS-LLM-debug.apk"

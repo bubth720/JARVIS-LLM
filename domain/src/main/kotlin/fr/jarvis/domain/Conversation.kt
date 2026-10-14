@@ -7,7 +7,8 @@ data class GenerationRequest(val messages: List<Message>, val config: RuntimeCon
     init {
         require(messages.isNotEmpty() && messages.last().role == "user")
         require(messages.size <= 8)
-        require(config.context in 1024..2048 && config.maxTokens in 1..256 && config.threads in 1..4)
+        require(config.context in 768..2048 && config.context % 256 == 0 && config.maxTokens in 1..256 && config.threads in 1..4)
+        if (config.model == ModelKind.SMALL) require(config.context == 768 && config.maxTokens <= 96 && config.threads == 1)
     }
 }
 

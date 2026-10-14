@@ -1,7 +1,9 @@
-# JARVIS LLM — Mission 002
+# JARVIS LLM — Mission 002B
 
-Prototype Android textuel, autonome et hors ligne, branche `mission-002-prototype`.
+Prototype Android textuel, autonome et hors ligne, branche `mission-002b-memory`.
 Phases 1–3 autorisées dans la conversation ; aucune fusion dans main. CORE et VOICE restent inchangés.
+Optimisation mémoire autorisée : ÉCO 768/96, batch 32/8, un thread, diagnostics PSS. Budgets d'admission non abaissés sans preuves.
+Lire [MEMORY_002B.md](docs/MEMORY_002B.md) : à 3,68 Gio disponibles sur 11,06 Gio accessibles, le premier chargement reste refusé.
 
 ## Périmètre
 
@@ -42,8 +44,8 @@ La compilation requiert GitHub/Google/Maven ; l'APK fonctionne indépendamment d
 
 ## Installation
 
-Le [workflow de finalisation est réussi](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554).
-[Télécharger le paquet APK debug et son SHA-256](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554/artifacts/11847564585).
+La nouvelle version Mission 002B (0.2.0) sera publiée par le [workflow de cette branche](https://github.com/bubth720/JARVIS-LLM/actions?query=branch%3Amission-002b-memory).
+L'[ancien workflow Mission 002](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554) reste une preuve historique, pas l'APK d'optimisation 002B.
 Premier essai : [diagnostic passif uniquement](docs/FIRST_DIAGNOSTIC.md), sans importer ni exécuter de modèle.
 
 APK debug : `app/build/outputs/apk/debug/app-debug.apk`, destiné aux essais contrôlés, pas à la distribution publique.

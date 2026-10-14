@@ -7,7 +7,7 @@ Diagnostic passif, import offline, conversation textuelle, adaptateur JNI CPU et
 Aucune modification de CORE/VOICE, aucun modèle inclus, aucun test intensif sur appareil.
 La phase 1 matérielle réelle et la phase 3 sur POCO/Redmi restent **non terminées** faute d'appareils accessibles.
 
-## Résultats
+## Résultats Mission 002 (historique)
 
 | Vérification | Résultat |
 |---|---|
@@ -89,3 +89,16 @@ La politique thermique/batterie/mémoire et les seuils sont testés sur snapshot
 Le signal atomique et l'abandon/reprise de calcul CPU sont testés ; le cycle de vie JNI complet avec un Qwen chargé, les phases non immédiatement interruptibles et le délai d'arrêt sur Android restent à tester.
 L'alignement ARM64/16 Kio et la signature sont inspectés ; installation, affichage Android 15/16 et compatibilité du firmware restent non vérifiés sur appareil.
 Aucun benchmark intensif, import de modèle ni inférence sur appareil n'a été lancé.
+
+## Mission 002B — 14 octobre 2026
+
+Branche dédiée `mission-002b-memory`, version APK 0.2.0. Voir [MEMORY_002B.md](MEMORY_002B.md) pour la décomposition mémoire et les limites des gains.
+Les 11,06 Gio accessibles /3,68 Gio disponibles sont des relevés utilisateur ; aucune mesure physique reproduite ici.
+À ce niveau de RAM, le test de régression confirme le refus : au moins 4,212 Gio requis, manque 0,532 Gio.
+Budget 0.6B conservé à 2 Gio ; réserve jamais abaissée. Crédit résident limité au PSS observé, plus au budget estimé.
+Configuration 768/96, batch 32/8, un thread, repacking optionnel désactivé, Q4_K_M intacte.
+Compatibilité vérifiée par lecture de l'alignement natif sur 256, test partagé des paramètres et build ARM64 ; inférence Qwen 768 non exécutée.
+30 tests JVM et 3 tests Android simulés ont passé ; test natif des paramètres/annulation réussi. Vérification finale et CI de la nouvelle révision en cours.
+Aucun gain PSS de Qwen ou sur appareil réel mesuré ; aucune baisse d'admission fondée sur des données synthétiques.
+Diagnostics ajoutés : PSS actuel/pic échantillonné par phase, baseline, minimum RAM disponible, réserve/budget/crédit/marge et taille disque GGUF distincte.
+Thermique, batterie, arrêt natif et absence de réseau maintenus. Aucun essai intensif autorisé ou lancé.

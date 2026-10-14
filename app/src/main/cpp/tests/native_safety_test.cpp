@@ -1,5 +1,6 @@
 #include "../cancellation.h"
 #include "../model_check.h"
+#include "../native_configuration.h"
 #include "ggml.h"
 #include "ggml-cpu.h"
 #include <cstdio>
@@ -27,6 +28,15 @@ int main() {
         require(!Cancellation::progress(0.5f, &flag), "model load did not stop");
         flag.begin(0); require(flag.stopped(), "deadline ignored");
         flag.begin(60'000); require(!flag.stopped(), "reset failed");
+        const auto eco = context_params(768, 1, true, &flag);
+        require(eco.n_ctx == 768 && GGML_PAD(eco.n_ctx, 256) == 768, "768 context padding incompatibility");
+        require(eco.n_batch == 32 && eco.n_ubatch == 8 && eco.n_outputs_max == 1, "eco workspace limits");
+        require(maximum_output_tokens(true) == 96 && maximum_output_tokens(false) == 256, "native output limit");
+        require(eco.type_k == GGML_TYPE_F16 && eco.type_v == GGML_TYPE_F16 && !eco.offload_kqv && !eco.op_offload, "cache/backend changed");
+        require(eco.abort_callback == Cancellation::abort && eco.abort_callback_data == &flag, "abort callback missing");
+        bool invalidConfig = false;
+        try { context_params(767, 1, true, &flag); } catch (const std::runtime_error &) { invalidConfig = true; }
+        require(invalidConfig, "unaligned context accepted");
 
         auto * meta = gguf_init_empty();
         gguf_set_val_str(meta, "general.architecture", "other");
@@ -74,7 +84,7 @@ int main() {
         plan.abort_callback = nullptr; plan.abort_callback_data = nullptr;
         require(ggml_graph_compute(graph, &plan) == GGML_STATUS_SUCCESS, "CPU graph did not recover after abort");
         ggml_free(ctx);
-        std::puts("PASS: cross-thread cancellation, load callback, deadline, real CPU graph abort and recovery");
+        std::puts("PASS: 768 native configuration, cross-thread cancellation, load callback, deadline, CPU graph abort/recovery");
         return 0;
     } catch (const std::exception & ex) { std::fprintf(stderr, "FAIL: %s\n", ex.what()); return 1; }
 }

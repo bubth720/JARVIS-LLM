@@ -1,5 +1,10 @@
 # Premier diagnostic — aucun modèle, aucune inférence
 
+Mission 002B : APK version 0.2.0, profil ÉCO renforcé. La RAM nécessaire au premier chargement n'a pas été abaissée sans preuves.
+Relever aussi le budget estimé, la réserve, le crédit PSS observé, la marge d'admission et le pic PSS échantillonné.
+Sur le POCO annoncé à 11,06 Gio total /3,68 Gio disponible, la marge attendue sans modèle résident est environ -0,532 Gio : ne pas forcer un chargement.
+Un relevé passif ne mesure pas la consommation du modèle et n'autorise pas un benchmark.
+
 ## Télécharger et installer
 
 1. Ouvrir l'exécution GitHub Actions réussie indiquée dans le rapport de validation.
