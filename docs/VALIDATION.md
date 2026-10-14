@@ -98,7 +98,20 @@ Les 11,06 Gio accessibles /3,68 Gio disponibles sont des relevés utilisateur ; 
 Budget 0.6B conservé à 2 Gio ; réserve jamais abaissée. Crédit résident limité au PSS observé, plus au budget estimé.
 Configuration 768/96, batch 32/8, un thread, repacking optionnel désactivé, Q4_K_M intacte.
 Compatibilité vérifiée par lecture de l'alignement natif sur 256, test partagé des paramètres et build ARM64 ; inférence Qwen 768 non exécutée.
-30 tests JVM et 3 tests Android simulés ont passé ; test natif des paramètres/annulation réussi. Vérification finale et CI de la nouvelle révision en cours.
+30 tests JVM et 3 tests Android simulés ont passé localement, aucun échec ni test ignoré ; test natif des paramètres/annulation réussi.
+Build ARM64, Lint (0 erreur /11 avertissements), permissions, signature, alignement ELF/ZIP 16 Kio et packaging SHA-256 contrôlés sur l'APK local final.
 Aucun gain PSS de Qwen ou sur appareil réel mesuré ; aucune baisse d'admission fondée sur des données synthétiques.
 Diagnostics ajoutés : PSS actuel/pic échantillonné par phase, baseline, minimum RAM disponible, réserve/budget/crédit/marge et taille disque GGUF distincte.
 Thermique, batterie, arrêt natif et absence de réseau maintenus. Aucun essai intensif autorisé ou lancé.
+
+### Publication Mission 002B
+
+- [Exécution GitHub Actions entièrement réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38540355938), commit `73580dc6f6d250e1cd0e2d8e5d6e433dd121ffa8`.
+- [Nouvelle APK 0.2.0, guide et SHA256SUMS](https://github.com/bubth720/JARVIS-LLM/actions/runs/38540355938/artifacts/11881598991), artefact `jarvis-llm-debug`, rétention configurée à 30 jours.
+- [Rapports distants](https://github.com/bubth720/JARVIS-LLM/actions/runs/38540355938/artifacts/11882271870).
+- Digest du ZIP GitHub (pas du fichier APK) : `6fd86bcce37508e8b70d7a39a0096d81e5c977e916bb60bb084161cfabe7b042`.
+- APK local inspecté : SHA-256 `63def8ee2c9f6835a33c389bc2658ef2a997d7f0992eb1fb744f5b56cd13aa40` ; ne pas utiliser cette empreinte pour le binaire CI à clé debug distincte.
+
+Statut réussi, commit et présence des artefacts observés sur la page publique GitHub. Les comptes détaillés de tests proviennent des rapports locaux ; le ZIP distant n'a pas été extrait dans ce cloud.
+Le workflow impose tous les tests et contrôles avant publication, sans continue-on-error.
+Mesures Qwen réelles, comportement du firmware, capteurs, pics transitoires et délai d'arrêt Android restent non vérifiés.

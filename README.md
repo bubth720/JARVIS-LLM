@@ -44,7 +44,7 @@ La compilation requiert GitHub/Google/Maven ; l'APK fonctionne indépendamment d
 
 ## Installation
 
-La nouvelle version Mission 002B (0.2.0) sera publiée par le [workflow de cette branche](https://github.com/bubth720/JARVIS-LLM/actions?query=branch%3Amission-002b-memory).
+La nouvelle version Mission 002B (0.2.0) est publiée : [CI réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38540355938), [APK, SHA-256 et guide](https://github.com/bubth720/JARVIS-LLM/actions/runs/38540355938/artifacts/11881598991).
 L'[ancien workflow Mission 002](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554) reste une preuve historique, pas l'APK d'optimisation 002B.
 Premier essai : [diagnostic passif uniquement](docs/FIRST_DIAGNOSTIC.md), sans importer ni exécuter de modèle.
 
