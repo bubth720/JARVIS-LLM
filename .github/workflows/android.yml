@@ -8,9 +8,7 @@ permissions:
 jobs:
   verify:
     runs-on: ubuntu-24.04
-    timeout-minutes: 40
-    outputs:
-      memory: ${{ steps.memory.outputs.metrics }}
+    timeout-minutes: 30
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
@@ -22,11 +20,6 @@ jobs:
         run: ./tools/cloud-env.sh ./gradlew :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
-      - name: Build bounded cloud model probe
-        run: ./tools/cloud-env.sh cmake --build build/native-tests --target model_memory_probe -j2
-      - name: Short real-GGUF cloud comparison (not Android PSS)
-        id: memory
-        run: python3 tools/compare-model-memory.py
       - name: Prepare downloadable diagnostic package
         run: ./tools/package-debug.sh
       - name: Upload APK, SHA-256 and first diagnostic instructions
@@ -46,13 +39,38 @@ jobs:
             app/build/test-results/testDebugUnitTest/
             app/build/reports/lint-results-debug.*
             build/native-tests/Testing/Temporary/LastTest.log
+
+          if-no-files-found: warn
+
+  model-probe:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    outputs:
+      memory: ${{ steps.memory.outputs.metrics }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Native tests and pinned sources
+        run: ./tools/test-native.sh
+      - name: Build bounded cloud model probe
+        run: cmake --build build/native-tests --target model_memory_probe -j2
+      - name: Short real-GGUF cloud comparison (not Android PSS)
+        id: memory
+        run: python3 tools/compare-model-memory.py
+      - name: Upload cloud memory evidence
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: jarvis-llm-model-memory
+          path: |
             build/model-memory/*.json
             build/model-memory/*.md
           if-no-files-found: warn
+          retention-days: 30
 
   memory-result:
-    needs: verify
-    name: Cloud Linux peak RSS ${{ needs.verify.outputs.memory }}
+    needs: model-probe
+    name: Cloud Linux peak RSS ${{ needs.model-probe.outputs.memory }}
     runs-on: ubuntu-24.04
     steps:
       - run: echo 'Cloud Linux measurements only. Android PSS and tablet admission remain unqualified.'

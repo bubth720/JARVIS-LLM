@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import re
 import subprocess
+import sys
 import urllib.parse
 import urllib.request
 
@@ -17,11 +18,22 @@ def get_json(url):
     with urllib.request.urlopen(url, timeout=60) as response:
         return json.load(response)
 
+stage = "initialization"
+def report_exception(kind, error, traceback):
+    detail = f"{stage}: {kind.__name__}: {error}"
+    if isinstance(error, subprocess.CalledProcessError):
+        detail += " " + (error.stderr or "")[-2000:]
+    escaped = detail.replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A')
+    print("::error title=GGUF comparison failure::" + escaped, flush=True)
+    sys.__excepthook__(kind, error, traceback)
+sys.excepthook = report_exception
+
 results = []
 for repo, quant in [('Qwen/Qwen3-0.6B-GGUF', 'Q4_K_M'),
                     ('Qwen/Qwen3-0.6B-GGUF', 'Q3_K_M'),
                     ('Qwen/Qwen3-0.6B-GGUF', 'Q2_K'),
                     ('Qwen/Qwen2.5-0.5B-Instruct-GGUF', 'Q4_K_M')]:
+    stage = f'catalog {repo} {quant}'
     info = get_json(f'https://huggingface.co/api/models/{repo}?blobs=true')
     revision = info['sha']
     assert re.fullmatch('[0-9a-f]{40}', revision), 'immutable revision missing'
@@ -39,6 +51,7 @@ for repo, quant in [('Qwen/Qwen3-0.6B-GGUF', 'Q4_K_M'),
     target = OUT / (expected + '.gguf')
     url = f'https://huggingface.co/{repo}/resolve/{revision}/' + urllib.parse.quote(entry['rfilename'])
     digest = hashlib.sha256()
+    stage = f'download {repo} {quant}'
     with urllib.request.urlopen(url, timeout=120) as response, target.open('wb') as output:
         received = 0
         while chunk := response.read(1024 * 1024):
@@ -51,6 +64,7 @@ for repo, quant in [('Qwen/Qwen3-0.6B-GGUF', 'Q4_K_M'),
     record = dict(repo=repo, revision=revision, file=entry['rfilename'], sha256=expected,
                   file_bytes=size, declared_license=info.get('cardData', {}).get('license'), quantization=quant, status='measured_linux_x86_64', runs=[])
     for context in (768, 512):
+        stage = f'inference {repo} {quant} context={context}'
         run = subprocess.run([str(ROOT / 'build/native-tests/model_memory_probe'), str(target), str(context)],
                              capture_output=True, text=True, timeout=90, check=True)
         measured = json.loads(run.stdout)
