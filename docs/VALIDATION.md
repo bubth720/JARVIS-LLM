@@ -122,4 +122,17 @@ Branche `mission-002c-tablet`, APK 0.2.1. Rapport détaillé : [TABLET_002C.md](
 TABLETTE ÉCO : 512/64, batch 16/4, un thread, déchargement après 10 s. Budget 2 Gio et réserve système inchangés. Test de régression Redmi : 7,51 Gio total /3,24 Gio libres -> refus, requis au moins 3,502 Gio.
 Validation locale : 33 tests JVM, 3 tests Android simulés Robolectric, un test natif des paramètres/annulation, aucun échec ni test ignoré. Build ARM64, Lint et inspection signature/permissions/ELF/ZIP 16 Kio réussis. Le programme de mesure réelle des GGUF est compilé ; ses inférences restent à exécuter par GitHub Actions, accès Hugging Face refusé ici (403).
 Aucune mesure PSS de modèle Android ni compatibilité physique Snapdragon 680 démontrée. Les buffers natifs sont désormais disponibles dans le panneau après chargement. Aucun essai intensif ou sur appareil lancé.
-Publication et résultats de comparaison cloud : à compléter après observation d'une exécution réussie ; ne pas utiliser un ancien artefact comme preuve de cette version.
+### Publication et comparaison réelles Mission 002C
+
+- [Exécution entièrement réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120), commit `11984dd099503c5803a3391f058d8fc0eb5773a5`.
+- [APK debug 0.2.1, SHA256SUMS, SOURCE_COMMIT et guide](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120/artifacts/11887534355), artefact `jarvis-llm-debug`, rétention 30 jours.
+- [Mesures GGUF et réponses](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120/artifacts/11889260132), artefact `jarvis-llm-model-memory`.
+- [Rapports tests et Lint](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120/artifacts/11887674108), artefact `jarvis-llm-validation`.
+- Digest du **ZIP APK**, pas de l'APK : `cdb59c26e3e094d8203669be3667194a80b1cb8a1e52c8a41658990aa3c30884`.
+- L'empreinte du fichier **APK** figure dans `SHA256SUMS` et le résumé de packaging du job. La copie locale utilise une autre clé debug : son empreinte ne vérifie pas le binaire CI.
+
+Réussite globale, commit, succès de chaque étape et présence des trois artefacts observés sur les pages publiques GitHub. Les comptes 33 JVM /3 Robolectric proviennent des XML locaux ; les XML et le ZIP APK distants n'ont pas été extraits dans cet environnement. Le workflow impose compilation/tests/Lint/inspection APK et une comparaison de vrais modèles, sans continue-on-error.
+Les huit inférences courtes réelles du cloud ont réussi (quatre fichiers, deux contextes). Le JSON a été lu dans l'annotation publique « Cloud GGUF evidence », puis archivé dans [evidence/mission002c-cloud-11984dd.json](evidence/mission002c-cloud-11984dd.json). Qwen3 utilise les quantifications publiées par **Unsloth**, absentes du catalogue officiel consulté ; Qwen2.5 provient de Qwen. Révisions, hashes et licences déclarées sont conservés.
+Qwen3 Q4 : contexte natif 84 ->56 Mio, pic RSS Linux 516,2 ->487,7 Mio. Q3 à 512 : 440,4 Mio ; Q2 : 391,8 Mio. Qwen2.5 Q4 à 512 : 527,9 Mio, donc pas une amélioration mémoire dans cette comparaison. Réponses françaises insuffisantes pour une qualification de qualité : voir le rapport, aucune équivalence qualitative supposée.
+Aucun pic PSS Android, essai de délai d'arrêt JNI avec vrai modèle sur appareil, autonomie, température physique ni performance du Snapdragon 680 mesurés. Budget Android conservé ; refus à 3,24 Gio maintenu.
+Les changements ultérieurs de cette branche sont uniquement documentaires et n'altèrent pas le code vérifié par cette exécution.

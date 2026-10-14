@@ -60,6 +60,26 @@ Le pic échantillonné (1 s en activité) peut manquer une pointe. Aucun PSS de 
 4. Répéter seulement les contrôles nécessaires, avec autorisation pour une campagne prolongée/intensive. Couvrir démarrage froid, pression de fond, erreurs de fichier, interruptions et questions proches de la limite.
 5. Choisir une enveloppe supérieure aux pics reproductibles avec marge explicite pour les pointes non observées et les différences de firmware. Conserver intégralement la réserve système et le refus si cette enveloppe n'est pas justifiée.
 
+## Résultats réels du cloud — commit 11984dd
+
+Données observées dans l'annotation publique « Cloud GGUF evidence » de [l'exécution 38553690120](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120), recopiées dans [le relevé JSON](evidence/mission002c-cloud-11984dd.json). Les hashes et révisions exacts permettent de retrouver les mêmes fichiers. Le rapport distant est dans l'artefact `jarvis-llm-model-memory`.
+
+| Fichier testé | Taille GGUF Mio | Pic RSS Linux à 768 | Pic RSS Linux à 512 | Buffer contexte à 512 |
+|---|---:|---:|---:|---:|
+| Qwen3 0.6B Q4_K_M — Unsloth | 378,3 | 516,2 | 487,7 | 56,0 |
+| Qwen3 0.6B Q3_K_M — Unsloth | 331,0 | 468,7 | 440,4 | 56,0 |
+| Qwen3 0.6B Q2_K — Unsloth | 282,5 | 420,3 | 391,8 | 56,0 |
+| Qwen2.5 0.5B Instruct Q4_K_M — Qwen | 468,6 | 531,3 | 527,9 | 6,0 |
+
+Toutes les colonnes mémoire de ce tableau sont en **Mio**. Ce sont huit inférences courtes réussies sur Linux, pas des valeurs Android.
+Pour Qwen3 Q4, le passage 768 ->512 réduit le buffer contexte de **28 Mio (84 ->56, -33,3 %)** et le pic RSS observé de **28,5 Mio**. Le buffer calcul ne baisse que d'environ **0,086 Mio** : dans cet essai, la baisse des lots économise peu de mémoire par rapport au contexte. Aucun gain PSS ni autonomie tablette n'est mesuré.
+À 512, Q3 réduit le RSS observé de 47,3 Mio par rapport à Q4 et Q2 de 95,9 Mio. Ces gains ne démontrent pas une qualité suffisante ni un budget d'admission Android plus faible.
+Qwen2.5 0.5B possède un cache nettement plus petit mais son fichier et ses buffers de modèle sont plus gros pour les artefacts comparés : son RSS dépasse Qwen3 Q4 d'environ **40,3 Mio**. Il n'est donc **pas retenu comme solution mémoire** sur ces preuves, malgré son nombre de paramètres nominal plus faible.
+
+L'unique question était « Que signifie bonjour ? ». Q4 a répondu seulement « Bonjour ! », sans donner la définition. Q3 a produit notamment « C'est un salutation », Q2 une explication confuse et répétitive ; Qwen2.5 une réponse partielle et tautologique. Les sorties plafonnées à 24 tokens peuvent être tronquées. Ce test valide un chemin d'inférence non vide et permet de comparer les allocations ; **il ne valide pas la qualité française**, ne permet pas de classer globalement les modèles et ne mesure pas causalement une perte de qualité due à la quantification.
+
+**Recommandation définitive pour cette livraison :** conserver Qwen3 0.6B Q4_K_M en TABLETTE ÉCO, avec le refus à 3,24 Gio libres. Ne pas activer Q3/Q2 ou Qwen2.5 sur Android sans qualification spécifique d'import, formatage, qualité et mémoire. Le gain de contexte est démontré sur Linux ; l'utilisabilité et la marge réelle sur Redmi restent à vérifier lors d'un essai court admis normalement, sans essai intensif.
+
 ## Premier essai et risques prioritaires
 
 Installer seulement l'artefact CI réussi selon [FIRST_DIAGNOSTIC.md](FIRST_DIAGNOSTIC.md). Commencer sans importer de modèle : sélectionner TABLETTE ÉCO, copier le diagnostic passif et vérifier les capteurs. À 3,24 Gio libres, le refus attendu n'est pas une panne.

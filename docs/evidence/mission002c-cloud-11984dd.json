@@ -1,0 +1,140 @@
+{
+  "platform": "Linux x86_64 GitHub-hosted runner; NOT Android PSS",
+  "source_commit": "11984dd099503c5803a3391f058d8fc0eb5773a5",
+  "conditions": "one fresh process per model/context; CPU one thread; 24 output tokens maximum; 60 s native deadline; one French prompt; no quality benchmark",
+  "admission_budget_changed": false,
+  "results": [
+    {
+      "repo": "unsloth/Qwen3-0.6B-GGUF",
+      "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+      "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+      "file": "Qwen3-0.6B-Q4_K_M.gguf",
+      "sha256": "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a",
+      "file_bytes": 396705472,
+      "declared_license": "apache-2.0",
+      "quantization": "Q4_K_M",
+      "status": "measured_linux_x86_64",
+      "runs": [
+        {
+          "context": 768,
+          "batch": 32,
+          "micro_batch": 8,
+          "model_buffer_bytes": 390753280,
+          "context_buffer_bytes": 88080384,
+          "compute_buffer_bytes": 784192,
+          "linux_peak_rss_bytes": 541274112,
+          "response": "Bonjour !"
+        },
+        {
+          "context": 512,
+          "batch": 16,
+          "micro_batch": 4,
+          "model_buffer_bytes": 390753280,
+          "context_buffer_bytes": 58720256,
+          "compute_buffer_bytes": 693984,
+          "linux_peak_rss_bytes": 511381504,
+          "response": "Bonjour !"
+        }
+      ]
+    },
+    {
+      "repo": "unsloth/Qwen3-0.6B-GGUF",
+      "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+      "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+      "file": "Qwen3-0.6B-Q3_K_M.gguf",
+      "sha256": "30bb9f9222cf58c076277879881a24e7127a10be32076d76d8c70f8defc01f5d",
+      "file_bytes": 347127488,
+      "declared_license": "apache-2.0",
+      "quantization": "Q3_K_M",
+      "status": "measured_linux_x86_64",
+      "runs": [
+        {
+          "context": 768,
+          "batch": 32,
+          "micro_batch": 8,
+          "model_buffer_bytes": 341175296,
+          "context_buffer_bytes": 88080384,
+          "compute_buffer_bytes": 784192,
+          "linux_peak_rss_bytes": 491438080,
+          "response": "Bonjour ! C'est un salutation courante en français."
+        },
+        {
+          "context": 512,
+          "batch": 16,
+          "micro_batch": 4,
+          "model_buffer_bytes": 341175296,
+          "context_buffer_bytes": 58720256,
+          "compute_buffer_bytes": 693984,
+          "linux_peak_rss_bytes": 461803520,
+          "response": "Bonjour ! C'est un salutation."
+        }
+      ]
+    },
+    {
+      "repo": "unsloth/Qwen3-0.6B-GGUF",
+      "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+      "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+      "file": "Qwen3-0.6B-Q2_K.gguf",
+      "sha256": "26d035ea15c4a2853e8d20ffc56a76f6164e17dbb6c9e532c5766700c404519d",
+      "file_bytes": 296238784,
+      "declared_license": "apache-2.0",
+      "quantization": "Q2_K",
+      "status": "measured_linux_x86_64",
+      "runs": [
+        {
+          "context": 768,
+          "batch": 32,
+          "micro_batch": 8,
+          "model_buffer_bytes": 290286592,
+          "context_buffer_bytes": 88080384,
+          "compute_buffer_bytes": 784192,
+          "linux_peak_rss_bytes": 440672256,
+          "response": "bonjour signifie que le personne est en conversation en français, généralement, en français, en ce cas,"
+        },
+        {
+          "context": 512,
+          "batch": 16,
+          "micro_batch": 4,
+          "model_buffer_bytes": 290286592,
+          "context_buffer_bytes": 58720256,
+          "compute_buffer_bytes": 693984,
+          "linux_peak_rss_bytes": 410849280,
+          "response": "bonjour signifie que le personne est en conversation en français, et le bonjour est un langage courant en"
+        }
+      ]
+    },
+    {
+      "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+      "requested_repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+      "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+      "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+      "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+      "file_bytes": 491400032,
+      "declared_license": "apache-2.0",
+      "quantization": "Q4_K_M",
+      "status": "measured_linux_x86_64",
+      "runs": [
+        {
+          "context": 768,
+          "batch": 32,
+          "micro_batch": 8,
+          "model_buffer_bytes": 485452288,
+          "context_buffer_bytes": 9437184,
+          "compute_buffer_bytes": 763712,
+          "linux_peak_rss_bytes": 557154304,
+          "response": "Bonjour signifie \"bonjour\" en français. C'est une phrase courante utilisée en France et en Allem"
+        },
+        {
+          "context": 512,
+          "batch": 16,
+          "micro_batch": 4,
+          "model_buffer_bytes": 485452288,
+          "context_buffer_bytes": 6291456,
+          "compute_buffer_bytes": 683744,
+          "linux_peak_rss_bytes": 553594880,
+          "response": "Bonjour est une expression courante en français, signifiant \"bonjour\" ou \"hello\". Elle est utilisée pour"
+        }
+      ]
+    }
+  ]
+}

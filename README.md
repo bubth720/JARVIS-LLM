@@ -1,9 +1,9 @@
-# JARVIS LLM — Mission 002B
+# JARVIS LLM — Mission 002C
 
-Prototype Android textuel, autonome et hors ligne, branche `mission-002b-memory`.
+Prototype Android textuel, autonome et hors ligne, branche `mission-002c-tablet`.
 Phases 1–3 autorisées dans la conversation ; aucune fusion dans main. CORE et VOICE restent inchangés.
-Optimisation mémoire autorisée : ÉCO 768/96, batch 32/8, un thread, diagnostics PSS. Budgets d'admission non abaissés sans preuves.
-Lire [MEMORY_002B.md](docs/MEMORY_002B.md) : à 3,68 Gio disponibles sur 11,06 Gio accessibles, le premier chargement reste refusé.
+TABLETTE ÉCO : 512/64, batch 16/4, un thread, déchargement après 10 s ; ÉCO 768/96 conservé. Diagnostics PSS et buffers natifs. Budgets d'admission non abaissés sans preuves.
+Lire [TABLET_002C.md](docs/TABLET_002C.md) : à 3,24 Gio disponibles sur 7,51 Gio accessibles, le premier chargement reste refusé (au moins 3,502 Gio requis). Comparaison réelle de GGUF sur Linux dans les rapports CI ; aucune assimilation au PSS Android.
 
 ## Périmètre
 
@@ -12,7 +12,7 @@ Lire [MEMORY_002B.md](docs/MEMORY_002B.md) : à 3,68 Gio disponibles sur 11,06 G
 - Qwen3 0.6B / 1.7B GGUF Q4_K_M importés manuellement avec SHA-256 attendu.
 - Conversation en RAM, contexte tokenisé, ressources bornées.
 - Protections batterie/thermique/mémoire/PSS, annulation native et deadline.
-- ÉCO, ÉQUILIBRÉ, AUTO ; PLEINE PUISSANCE refusée tant que non qualifiée.
+- TABLETTE ÉCO, ÉCO, ÉQUILIBRÉ, AUTO ; PLEINE PUISSANCE refusée tant que non qualifiée.
 - Aucune permission réseau ou d'accès aux données, aucun microphone, télémétrie, action ou connexion CORE/VOICE.
 
 Catalogue, documents, mémoire persistante, voix, actions et IPC appartiennent aux phases suivantes.
@@ -40,12 +40,12 @@ Cloud Linux x86_64 :
 
 Les outils sont installés dans `.tools/`, les sources moteur dans `.deps/`, sans modèles.
 Utiliser le checkout cloud existant ; ne pas créer de worktree pour les tâches ordinaires. Aucun serveur à démarrer.
-La compilation requiert GitHub/Google/Maven ; l'APK fonctionne indépendamment de ces accès.
+La compilation requiert GitHub/Google/Maven ; la comparaison de modèles du workflow requiert aussi Hugging Face. L'APK fonctionne indépendamment de ces accès. Les poids téléchargés pour la comparaison cloud ne sont pas embarqués.
 
 ## Installation
 
-La nouvelle version Mission 002B (0.2.0) est publiée : [CI réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38540355938), [APK, SHA-256 et guide](https://github.com/bubth720/JARVIS-LLM/actions/runs/38540355938/artifacts/11881598991).
-L'[ancien workflow Mission 002](https://github.com/bubth720/JARVIS-LLM/actions/runs/38465105554) reste une preuve historique, pas l'APK d'optimisation 002B.
+La version Mission 002C **0.2.1** est publiée : [CI réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120), [APK, SHA-256 et guide](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120/artifacts/11887534355), [mesures réelles des GGUF sur Linux](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120/artifacts/11889260132).
+Le [rapport TABLET_002C](docs/TABLET_002C.md) distingue les économies mesurées des limites Android. Les anciens artefacts 002/002B restent historiques.
 Premier essai : [diagnostic passif uniquement](docs/FIRST_DIAGNOSTIC.md), sans importer ni exécuter de modèle.
 
 APK debug : `app/build/outputs/apk/debug/app-debug.apk`, destiné aux essais contrôlés, pas à la distribution publique.
