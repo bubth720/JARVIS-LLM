@@ -1,6 +1,6 @@
 # Premier diagnostic Mission 003B
 
-Lire d’abord le protocole mémoire [ESSAIS-MEMOIRE-003B.md](ESSAIS-MEMOIRE-003B.md) fourni dans le ZIP. Sauvegarder catalogue et GGUF avant tout remplacement. La capture **Mesures** est passive et ne modifie pas les budgets. À 3,46 Gio disponibles sur la Redmi, le premier chargement reste refusé : ne pas le forcer.
+Lire d’abord le protocole mémoire **ESSAIS-MEMOIRE-003B.md** fourni dans le ZIP. Sauvegarder catalogue et GGUF avant tout remplacement. La capture **Mesures** est passive et ne modifie pas les budgets. À 3,46 Gio disponibles sur la Redmi, le premier chargement reste refusé : ne pas le forcer.
 
 # Premier diagnostic Mission 003
 
