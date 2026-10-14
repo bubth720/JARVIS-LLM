@@ -1,6 +1,7 @@
-# JARVIS LLM — Mission 003
+# JARVIS LLM — Mission 003B
 
-Prototype Android textuel, autonome et hors ligne, branche `mission-003-catalogue`, issue de `mission-002c-tablet`.
+Prototype Android textuel, autonome et hors ligne, branche `mission-003b-resources`, issue de `mission-003-catalogue`.
+Diagnostic mémoire volontaire et coordination des ressources dans le processus ; budget d’admission inchangé. Lire [l’analyse 003B](docs/MISSION_003B.md), [le protocole tablette](docs/ESSAIS_MEMOIRE_003B.md) et [la validation](docs/VALIDATION_003B.md).
 Phases 1–3 autorisées dans la conversation ; aucune fusion dans main. CORE et VOICE restent inchangés.
 Catalogue privé SQLite, 8 réponses de démonstration, variantes facultatives et import/export JSON versionné. Recherche structurée avant LLM, clarifications en cas de conflit. Embeddings désactivés ; interface conservée pour une qualification future.
 Lire [CATALOGUE_003.md](docs/CATALOGUE_003.md) et [les instructions d'essai](docs/TEST_CATALOGUE_003.md). Les profils et protections Mission 002C sont conservés ; aucune baisse du budget LLM.

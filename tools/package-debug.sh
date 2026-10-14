@@ -11,10 +11,11 @@ mkdir -p "$package_dir"
 cp app/build/outputs/apk/debug/app-debug.apk "$package_dir/JARVIS-LLM-debug.apk"
 sed 's/TEST_CATALOGUE_003.md/ESSAIS-CATALOGUE.md/g' docs/FIRST_DIAGNOSTIC.md > "$package_dir/PREMIER-DIAGNOSTIC.md"
 cp docs/TEST_CATALOGUE_003.md "$package_dir/ESSAIS-CATALOGUE.md"
+cp docs/ESSAIS_MEMOIRE_003B.md "$package_dir/ESSAIS-MEMOIRE-003B.md"
 mkdir -p "$package_dir/catalogue-fixtures"
 cp build/catalogue-fixtures/*.json "$package_dir/catalogue-fixtures/"
 git rev-parse HEAD > "$package_dir/SOURCE_COMMIT.txt"
-(cd "$package_dir" && sha256sum JARVIS-LLM-debug.apk ESSAIS-CATALOGUE.md catalogue-fixtures/*.json > SHA256SUMS && sha256sum -c SHA256SUMS)
+(cd "$package_dir" && sha256sum JARVIS-LLM-debug.apk PREMIER-DIAGNOSTIC.md ESSAIS-CATALOGUE.md ESSAIS-MEMOIRE-003B.md SOURCE_COMMIT.txt catalogue-fixtures/*.json > SHA256SUMS && sha256sum -c SHA256SUMS)
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     {
         echo '### APK de tests locaux'

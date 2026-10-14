@@ -13,6 +13,8 @@ import fr.jarvis.domain.RuntimeConfig
 import fr.jarvis.domain.ModelKind
 import fr.jarvis.domain.SafetyPolicy
 import fr.jarvis.llm.DeviceMonitor
+import fr.jarvis.llm.ProcessResources
+import fr.jarvis.domain.resources.Module
 import kotlinx.coroutines.*
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -25,6 +27,7 @@ class CatalogueActivity : ComponentActivity() {
     private val actions = mutableListOf<Button>()
     private val cancelled = AtomicBoolean(false)
     private var busy = false
+    private val resourceOwner = "catalogue-" + java.util.UUID.randomUUID().toString()
     private var offset = 0
     private val importer = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri -> if (uri != null) preview(uri) }
     private val exporter = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri -> if (uri != null) export(uri) }
@@ -64,7 +67,10 @@ class CatalogueActivity : ComponentActivity() {
         if (busy) return
         busy = true; cancelled.set(false); status.text = label; actions.forEach { it.isEnabled = false }
         lifecycleScope.launch {
-            try { checkSafe(); work() }
+            try {
+                checkSafe()
+                ProcessResources.requireHeavy(resourceOwner, Module.CATALOGUE, label, 128L * 1024 * 1024).use { work() }
+            }
             catch (e: CancellationException) { throw e }
             catch (e: Exception) { status.text = "Opération refusée : ${e.message}" }
             finally { busy = false; actions.forEach { it.isEnabled = true } }

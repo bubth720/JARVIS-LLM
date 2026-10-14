@@ -27,6 +27,10 @@ class MainActivity : ComponentActivity() {
     private lateinit var clear: Button
     private lateinit var stop: Button
     private lateinit var catalogue: Button
+    private lateinit var measurements: Button
+    private val measurementExporter = registerForActivityResult(ActivityResultContracts.CreateDocument("application/json")) { uri ->
+        if (uri != null) vm.exportDiagnostic(uri)
+    }
     private var pending: Pair<ModelKind, String>? = null
     private val picker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val reference = pending
@@ -68,7 +72,22 @@ class MainActivity : ComponentActivity() {
             if (!vm.releaseForCatalogue()) return@launch
             if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) startActivity(Intent(this@MainActivity, CatalogueActivity::class.java))
         } } }
-        root.addView(catalogue)
+        val utility = LinearLayout(this)
+        utility.addView(catalogue, LinearLayout.LayoutParams(0, -2, 1f))
+        measurements = Button(this).apply { text = "Mesures"; setOnClickListener {
+            AlertDialog.Builder(this@MainActivity).setTitle("Diagnostic mémoire — aucun calcul automatique")
+                .setItems(arrayOf("Démarrer une capture de 90 s", "Terminer seulement la capture", "Décharger le modèle", "Exporter les dernières mesures")) { _, choice ->
+                    when (choice) {
+                        0 -> vm.startCapture()
+                        1 -> vm.stopCapture()
+                        2 -> vm.unloadForDiagnostic()
+                        3 -> if (!vm.ui.value.busy && !vm.ui.value.capturing) measurementExporter.launch("jarvis-mesures-003b.json")
+                            else AlertDialog.Builder(this@MainActivity).setMessage("Terminez la capture et attendez la fin du calcul avant d'exporter.").setPositiveButton("OK", null).show()
+                    }
+                }.setNegativeButton("Fermer", null).show()
+        } }
+        utility.addView(measurements, LinearLayout.LayoutParams(0, -2, 1f))
+        root.addView(utility)
         conversation = TextView(this).apply { textSize = 16f; setTextIsSelectable(true) }
         val scroll = ScrollView(this).apply { addView(conversation) }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -79,6 +98,7 @@ class MainActivity : ComponentActivity() {
         lifecycleScope.launch { repeatOnLifecycle(Lifecycle.State.STARTED) {
             vm.ui.collect { s ->
                 status.text = "${s.status}\nModèles importés : ${s.models.joinToString { if (it == ModelKind.SMALL) "0.6B" else "1.7B" }.ifEmpty { "aucun" }}"
+                measurements.text = if (s.capturing) "Mesures • active" else "Mesures"
                 diagnostic.text = s.diagnostic
                 conversation.text = s.messages.joinToString("\n\n") { "${if (it.role == "user") "Vous" else "JARVIS"} : ${it.text}" }
                 send.isEnabled = !s.busy; import.isEnabled = !s.busy; clear.isEnabled = !s.busy; stop.isEnabled = s.busy; catalogue.isEnabled = !s.busy

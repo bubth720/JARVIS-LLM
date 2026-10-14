@@ -1,5 +1,6 @@
 plugins { id("com.android.application"); kotlin("android") }
 android {
+    buildFeatures { buildConfig = true }
     namespace = "fr.jarvis.llm"
     compileSdk = 36
     ndkVersion = "28.1.13356709"
@@ -7,8 +8,11 @@ android {
         applicationId = "fr.jarvis.llm"
         minSdk = 29
         targetSdk = 36
-        versionCode = 4
-        versionName = "0.3.0-mission003"
+        versionCode = 5
+        versionName = "0.3.1-mission003b"
+        val revision = providers.exec { commandLine("git", "rev-parse", "HEAD"); isIgnoreExitValue = true }.standardOutput.asText.get().trim()
+        val dirty = providers.exec { commandLine("git", "status", "--porcelain"); isIgnoreExitValue = true }.standardOutput.asText.get().isNotBlank()
+        buildConfigField("String", "SOURCE_COMMIT", "\"${if (dirty) "working-tree" else revision.ifBlank { "unknown" }}\"")
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += listOf("-DLLAMA_SOURCE_DIR=${rootDir}/.deps/llama.cpp"); cppFlags += "-std=c++17" } }
     }

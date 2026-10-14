@@ -15,6 +15,7 @@ data class GenerationRequest(val messages: List<Message>, val config: RuntimeCon
 
 /** Replaceable backend. requestStop must reach native computation, not merely cancel a coroutine. */
 interface LanguageModel {
+    val allocations: NativeAllocations? get() = null
     val allocationDiagnostic: String get() = "Allocations natives non mesurées"
     fun prepareOperation()
     suspend fun load(path: String, config: RuntimeConfig)

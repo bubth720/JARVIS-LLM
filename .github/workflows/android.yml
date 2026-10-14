@@ -20,6 +20,8 @@ jobs:
         run: ./tools/cloud-env.sh ./gradlew :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
+      - name: Publish cloud validation with hardware limitations
+        run: python3 tools/publish-validation-003b.py
       - name: Publish actual catalogue scale evidence
         run: python3 tools/publish-catalogue-evidence.py
       - name: Prepare clearly labelled synthetic fixtures
@@ -44,6 +46,7 @@ jobs:
             app/build/reports/lint-results-debug.*
             build/native-tests/Testing/Temporary/LastTest.log
             app/build/reports/catalogue-scale.json
+            build/mission003b-validation.json
 
           if-no-files-found: warn
 

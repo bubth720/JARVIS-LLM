@@ -12,6 +12,7 @@ class ModelStore(private val context: Context) {
     private val refs = context.getSharedPreferences("model_hashes", Context.MODE_PRIVATE)
     init { root.listFiles()?.filter { it.name.endsWith(".part") }?.forEach { it.delete() } }
     fun file(kind: ModelKind) = File(root, kind.fileName)
+    fun expectedDigest(kind: ModelKind): String? = refs.getString(kind.name, null)?.takeIf { it.matches(Regex("[a-fA-F0-9]{64}")) }
     fun available(): Set<ModelKind> = ModelKind.entries.filter { file(it).isFile && refs.contains(it.name) }.toSet()
     fun import(uri: Uri, kind: ModelKind, digest: String, cancelled: () -> Boolean) {
         val stream = context.contentResolver.openInputStream(uri) ?: error("Document inaccessible")

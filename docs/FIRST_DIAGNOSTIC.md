@@ -1,3 +1,7 @@
+# Premier diagnostic Mission 003B
+
+Lire d’abord le protocole mémoire [ESSAIS-MEMOIRE-003B.md](ESSAIS-MEMOIRE-003B.md) fourni dans le ZIP. Sauvegarder catalogue et GGUF avant tout remplacement. La capture **Mesures** est passive et ne modifie pas les budgets. À 3,46 Gio disponibles sur la Redmi, le premier chargement reste refusé : ne pas le forcer.
+
 # Premier diagnostic Mission 003
 
 Commencer sans importer ni exécuter de GGUF. Le petit catalogue de démonstration doit répondre en mode avion. Le [guide Mission 003](TEST_CATALOGUE_003.md), également fourni sous `ESSAIS-CATALOGUE.md` dans le paquet, décrit installation, sauvegardes, variantes, conflits et essais courts. Aucun benchmark intensif.
