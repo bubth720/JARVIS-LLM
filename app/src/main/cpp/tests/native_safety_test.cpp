@@ -34,6 +34,14 @@ int main() {
         require(maximum_output_tokens(true) == 96 && maximum_output_tokens(false) == 256, "native output limit");
         require(eco.type_k == GGML_TYPE_F16 && eco.type_v == GGML_TYPE_F16 && !eco.offload_kqv && !eco.op_offload, "cache/backend changed");
         require(eco.abort_callback == Cancellation::abort && eco.abort_callback_data == &flag, "abort callback missing");
+        const auto tablet = context_params(512, 1, true, &flag);
+        require(tablet.n_ctx == 512 && GGML_PAD(tablet.n_ctx, 256) == 512, "tablet context padding");
+        require(tablet.n_batch == 16 && tablet.n_ubatch == 4 && tablet.n_outputs_max == 1, "tablet workspace limits");
+        require(tablet.n_threads == 1 && tablet.n_threads_batch == 1 && maximum_output_tokens(true, 512) == 64, "tablet work limit");
+        require(tablet.abort_callback == Cancellation::abort && tablet.abort_callback_data == &flag, "tablet cancellation lost");
+        bool mainRejected = false;
+        try { context_params(512, 1, false, &flag); } catch (const std::runtime_error &) { mainRejected = true; }
+        require(mainRejected, "main model accepted tablet context");
         bool invalidConfig = false;
         try { context_params(767, 1, true, &flag); } catch (const std::runtime_error &) { invalidConfig = true; }
         require(invalidConfig, "unaligned context accepted");
@@ -84,7 +92,7 @@ int main() {
         plan.abort_callback = nullptr; plan.abort_callback_data = nullptr;
         require(ggml_graph_compute(graph, &plan) == GGML_STATUS_SUCCESS, "CPU graph did not recover after abort");
         ggml_free(ctx);
-        std::puts("PASS: 768 native configuration, cross-thread cancellation, load callback, deadline, CPU graph abort/recovery");
+        std::puts("PASS: 512/768 native configuration, cross-thread cancellation, load callback, deadline, CPU graph abort/recovery");
         return 0;
     } catch (const std::exception & ex) { std::fprintf(stderr, "FAIL: %s\n", ex.what()); return 1; }
 }

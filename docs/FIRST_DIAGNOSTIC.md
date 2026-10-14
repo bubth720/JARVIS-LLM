@@ -1,8 +1,9 @@
 # Premier diagnostic — aucun modèle, aucune inférence
 
-Mission 002B : APK version 0.2.0, profil ÉCO renforcé. La RAM nécessaire au premier chargement n'a pas été abaissée sans preuves.
+Mission 002C : APK version 0.2.1, profil TABLETTE ÉCO disponible (512/64, batch 16/4, un thread). La RAM nécessaire au premier chargement n'a pas été abaissée sans preuves.
 Relever aussi le budget estimé, la réserve, le crédit PSS observé, la marge d'admission et le pic PSS échantillonné.
 Sur le POCO annoncé à 11,06 Gio total /3,68 Gio disponible, la marge attendue sans modèle résident est environ -0,532 Gio : ne pas forcer un chargement.
+Sur la Redmi à 7,51 Gio accessibles /3,24 Gio disponibles, le premier chargement reste refusé : au moins 3,502 Gio requis, déficit environ 268 Mio. Sélectionner TABLETTE ÉCO ne contourne pas ce refus.
 Un relevé passif ne mesure pas la consommation du modèle et n'autorise pas un benchmark.
 
 ## Télécharger et installer

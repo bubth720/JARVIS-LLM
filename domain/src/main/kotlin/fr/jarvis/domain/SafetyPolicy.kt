@@ -1,6 +1,6 @@
 package fr.jarvis.domain
 
-enum class Profile { ECO, BALANCED, AUTO, FULL_POWER }
+enum class Profile { ECO, BALANCED, AUTO, FULL_POWER, TABLET_ECO }
 enum class ModelKind(val fileName: String, val maxFileBytes: Long) {
     SMALL("qwen3-0.6b.gguf", 800L * 1024 * 1024),
     MAIN("qwen3-1.7b.gguf", 1600L * 1024 * 1024)
@@ -8,9 +8,10 @@ enum class ModelKind(val fileName: String, val maxFileBytes: Long) {
 data class RuntimeConfig(val model: ModelKind, val context: Int, val maxTokens: Int, val threads: Int) {
     // Conservative prototype admission budgets; these are not measured peaks.
     val memoryBudget: Long get() = if (model == ModelKind.SMALL) 2L * GIB else 4L * GIB
-    val batch: Int get() = if (model == ModelKind.SMALL) 32 else 64
-    val microBatch: Int get() = if (model == ModelKind.SMALL) 8 else 32
-    val idleMillis: Long get() = if (model == ModelKind.SMALL) 30_000 else 120_000
+    val batch: Int get() = if (tabletEco) 16 else if (model == ModelKind.SMALL) 32 else 64
+    val microBatch: Int get() = if (tabletEco) 4 else if (model == ModelKind.SMALL) 8 else 32
+    val tabletEco: Boolean get() = model == ModelKind.SMALL && context == 512
+    val idleMillis: Long get() = if (tabletEco) 10_000 else if (model == ModelKind.SMALL) 30_000 else 120_000
     companion object { const val GIB = 1024L * 1024 * 1024 }
 }
 data class DeviceSnapshot(
@@ -47,15 +48,16 @@ class SafetyPolicy {
         if (s.lowMemory || s.availableBytes <= 0 || s.totalBytes <= 0) return refuse("Pression mémoire")
         val headroom = s.thermalHeadroom?.takeIf { it.isFinite() && it >= 0 }
         if (headroom != null && headroom >= 1f) return refuse("Limite thermique prévue : calcul arrêté")
-        val eco = profile == Profile.ECO || s.thermalStatus >= 1 || s.batteryPercent < 20 || s.powerSave || (headroom != null && headroom >= 0.8f)
-        val small = RuntimeConfig(ModelKind.SMALL, 768, 96, 1)
+        val eco = profile == Profile.ECO || profile == Profile.TABLET_ECO || s.thermalStatus >= 1 || s.batteryPercent < 20 || s.powerSave || (headroom != null && headroom >= 0.8f)
+        val small = if (profile == Profile.TABLET_ECO) RuntimeConfig(ModelKind.SMALL, 512, 64, 1)
+            else RuntimeConfig(ModelKind.SMALL, 768, 96, 1)
         val main = RuntimeConfig(ModelKind.MAIN, 2048, 256, s.cores.coerceIn(1, 4))
         fun fits(config: RuntimeConfig): Boolean {
             return memory(config, s, resident).fits
         }
         val selected = if (!eco && ModelKind.MAIN in models && fits(main)) main
             else if (ModelKind.SMALL in models && fits(small)) small else null
-        if (selected != null) return SafetyDecision(selected, if (selected.model == ModelKind.SMALL) "ÉCO renforcé / repli 0.6B" else "ÉQUILIBRÉ 1.7B", memory(selected, s, resident))
+        if (selected != null) return SafetyDecision(selected, if (selected.tabletEco) "TABLETTE ÉCO / 0.6B" else if (selected.model == ModelKind.SMALL) "ÉCO renforcé / repli 0.6B" else "ÉQUILIBRÉ 1.7B", memory(selected, s, resident))
         val candidate = if (ModelKind.SMALL in models) small else if (!eco && ModelKind.MAIN in models) main else null
         if (candidate == null) return refuse("Modèle vérifié adapté au profil absent")
         val m = memory(candidate, s, resident)

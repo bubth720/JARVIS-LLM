@@ -47,6 +47,7 @@ class DeviceMonitor(private val context: Context, private val thermalChanged: ()
             "RAM disponible : ${gib(s.availableBytes)} Gio ; stockage libre : ${gib(free)} Gio\n" +
             "Batterie : ${s.batteryPercent ?: "?"} % ; thermique : ${s.thermalStatus ?: "?"}\n" +
             "ÉCO renforcé : contexte 768, sortie 96, batch 32/8, 1 thread, poids Q4_K_M\n" +
+            "TABLETTE ÉCO : contexte 512, sortie 64, batch 16/4, 1 thread ; veille après 10 s\n" +
             "Budget estimé application + modèle : ${gib(memory.estimatedBudget)} Gio (pas une mesure)\n" +
             "Réserve système : ${gib(memory.reserve)} Gio ; seuil Android : ${gib(s.androidLowMemoryThreshold)} Gio\n" +
             "Crédit résidence PSS observé : ${gib(memory.measuredCredit)} Gio ; requis : ${gib(memory.requiredAvailable)} Gio\n" +

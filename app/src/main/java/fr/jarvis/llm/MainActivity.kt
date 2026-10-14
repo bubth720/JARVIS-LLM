@@ -41,7 +41,7 @@ class MainActivity : ComponentActivity() {
         }
         root.addView(TextView(this).apply { text = "JARVIS LLM — prototype local"; textSize = 22f })
         val profiles = Spinner(this)
-        val labels = listOf("ÉCO", "ÉQUILIBRÉ", "AUTO", "PLEINE PUISSANCE (non qualifiée)")
+        val labels = listOf("ÉCO", "ÉQUILIBRÉ", "AUTO", "PLEINE PUISSANCE (non qualifiée)", "TABLETTE ÉCO")
         profiles.adapter = ArrayAdapter(this, android.R.layout.simple_spinner_dropdown_item, labels)
         profiles.setSelection(vm.ui.value.profile.ordinal)
         profiles.onItemSelectedListener = object : AdapterView.OnItemSelectedListener {

@@ -56,7 +56,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         val s = monitor.snapshot()
         val file = store.file(ModelKind.SMALL)
         val size = if (file.isFile) "%.1f Mio".format(java.util.Locale.FRANCE, file.length() / 1048576.0) else "absent"
-        return monitor.diagnostic(residency(s, active ?: resident), s) + "\nFichier GGUF 0.6B : $size (taille disque, pas PSS)."
+        return monitor.diagnostic(residency(s, active ?: resident), s) + "\nProfil sélectionné : ${state.value.profile}\n" + (backend?.allocationDiagnostic ?: "Allocations natives non mesurées") + "\nFichier GGUF 0.6B : $size (taille disque, pas PSS)."
     }
     fun foreground(value: Boolean) {
         monitor.foreground = value

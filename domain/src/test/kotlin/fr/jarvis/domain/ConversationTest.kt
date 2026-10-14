@@ -21,4 +21,10 @@ class ConversationTest {
         assertThrows(IllegalArgumentException::class.java) { GenerationRequest(listOf(Message("user", "bonjour")), config.copy(maxTokens = 97)) }
         assertThrows(IllegalArgumentException::class.java) { GenerationRequest(listOf(Message("user", "bonjour")), config.copy(threads = 2)) }
     }
+    @Test fun tabletRequestCannotExpandOutputOrUseMainAt512() {
+        val tablet = config.copy(context = 512, maxTokens = 64)
+        GenerationRequest(listOf(Message("user", "bonjour")), tablet)
+        assertThrows(IllegalArgumentException::class.java) { GenerationRequest(listOf(Message("user", "bonjour")), tablet.copy(maxTokens = 65)) }
+        assertThrows(IllegalArgumentException::class.java) { GenerationRequest(listOf(Message("user", "bonjour")), tablet.copy(model = ModelKind.MAIN)) }
+    }
 }

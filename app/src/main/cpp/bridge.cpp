@@ -1,5 +1,6 @@
 #include <jni.h>
 #include "llama.h"
+#include "llama-ext.h"
 #include "cancellation.h"
 #include "model_check.h"
 #include "native_configuration.h"
@@ -81,7 +82,7 @@ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
         e.ctx = llama_init_from_model(e.model, cp);
         if (!e.ctx) throw std::runtime_error("Création du contexte impossible");
         e.context = llama_n_ctx(e.ctx); e.batch = llama_n_batch(e.ctx);
-        e.max_output = maximum_output_tokens(small); check(e);
+        e.max_output = maximum_output_tokens(small, context); check(e);
     } catch (const std::exception & ex) { if (h) engine(h).unload(); error(env, ex); }
 }
 static std::string format(Engine & e, const std::vector<std::string> & roles, const std::vector<std::string> & texts, size_t start) {
@@ -169,4 +170,19 @@ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_unload(
 }
 extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_destroy(JNIEnv *, jobject, jlong h) {
     delete reinterpret_cast<Engine *>(h);
+}
+
+// Pinned llama.cpp C++ diagnostic API. Buffer sizes are not process PSS.
+extern "C" JNIEXPORT jlongArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_allocations(JNIEnv * env, jobject, jlong h) {
+    try {
+        auto & e = engine(h);
+        if (!e.ctx) throw std::runtime_error("Contexte absent");
+        jlong values[3] = {};
+        for (const auto & entry : llama_get_memory_breakdown(e.ctx)) {
+            values[0] += entry.second.model; values[1] += entry.second.context; values[2] += entry.second.compute;
+        }
+        auto result = env->NewLongArray(3);
+        if (result) env->SetLongArrayRegion(result, 0, 3, values);
+        return result;
+    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
 }

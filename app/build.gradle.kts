@@ -7,8 +7,8 @@ android {
         applicationId = "fr.jarvis.llm"
         minSdk = 29
         targetSdk = 36
-        versionCode = 2
-        versionName = "0.2.0-mission002b"
+        versionCode = 3
+        versionName = "0.2.1-mission002c"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += listOf("-DLLAMA_SOURCE_DIR=${rootDir}/.deps/llama.cpp"); cppFlags += "-std=c++17" } }
     }

@@ -77,4 +77,23 @@ class SafetyPolicyTest {
         assertEquals(768, c.context); assertEquals(96, c.maxTokens); assertEquals(1, c.threads)
         assertEquals(32, c.batch); assertEquals(8, c.microBatch); assertEquals(2L * RuntimeConfig.GIB, c.memoryBudget)
     }
+    @Test fun tabletEcoReducesWorkWithoutReducingSafetyEnvelope() {
+        val config = policy.decide(Profile.TABLET_ECO, normal, both).config!!
+        assertEquals(ModelKind.SMALL, config.model)
+        assertEquals(512, config.context); assertEquals(64, config.maxTokens)
+        assertEquals(16, config.batch); assertEquals(4, config.microBatch)
+        assertEquals(1, config.threads); assertEquals(10_000L, config.idleMillis)
+        assertEquals(2L * RuntimeConfig.GIB, config.memoryBudget)
+        assertNull(policy.decide(Profile.TABLET_ECO, normal, setOf(ModelKind.MAIN)).config)
+    }
+    @Test fun reportedTabletCannotUseHypotheticalSavingsAsCredit() {
+        val tablet = normal.copy(totalBytes = (7.51 * RuntimeConfig.GIB).toLong(),
+            availableBytes = (3.24 * RuntimeConfig.GIB).toLong(), batteryPercent = 76)
+        val decision = policy.decide(Profile.TABLET_ECO, tablet, both)
+        assertNull(decision.config)
+        assertEquals(1.502, decision.memory!!.reserve.toDouble() / RuntimeConfig.GIB, 0.001)
+        assertEquals(3.502, decision.memory.requiredAvailable.toDouble() / RuntimeConfig.GIB, 0.001)
+        assertEquals(-0.262, decision.memory.margin.toDouble() / RuntimeConfig.GIB, 0.001)
+        assertEquals(0L, decision.memory.measuredCredit)
+    }
 }

@@ -11,6 +11,7 @@ internal object NativeBridge {
     external fun cancel(handle: Long)
     external fun load(handle: Long, path: ByteArray, context: Int, threads: Int, small: Boolean)
     external fun generate(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int): ByteArray
+    external fun allocations(handle: Long): LongArray
     external fun unload(handle: Long)
     external fun destroy(handle: Long)
 }
@@ -20,13 +21,18 @@ class LlamaBackend : LanguageModel {
     private val worker = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val handleLock = Any()
     private var handle = NativeBridge.create()
+    @Volatile override var allocationDiagnostic: String = "Allocations natives non mesurées"
+        private set
     private var loaded: Pair<String, RuntimeConfig>? = null
     override fun prepareOperation() = synchronized(handleLock) { check(handle != 0L); NativeBridge.begin(handle) }
     override fun requestStop() = synchronized(handleLock) { if (handle != 0L) NativeBridge.cancel(handle) }
     override suspend fun load(path: String, config: RuntimeConfig) = withContext(worker) {
         if (loaded != (path to config)) {
             loaded = null
+            allocationDiagnostic = "Allocations natives non mesurées"
             NativeBridge.load(handle, path.toByteArray(Charsets.UTF_8), config.context, config.threads, config.model == ModelKind.SMALL)
+            val sizes = NativeBridge.allocations(handle)
+            allocationDiagnostic = "Buffers llama.cpp modèle/contexte/calcul : " + sizes.joinToString(" / ") { "%.1f".format(java.util.Locale.FRANCE, it / 1048576.0) } + " Mio (hors tas JVM et autres allocations ; pas PSS)"
             loaded = path to config
         }
     }
@@ -34,7 +40,7 @@ class LlamaBackend : LanguageModel {
         String(NativeBridge.generate(handle, request.messages.map { it.role.toByteArray(Charsets.UTF_8) }.toTypedArray(),
             request.messages.map { it.text.toByteArray(Charsets.UTF_8) }.toTypedArray(), request.config.maxTokens), Charsets.UTF_8)
     }
-    override suspend fun unload() = withContext(worker) { NativeBridge.unload(handle); loaded = null }
+    override suspend fun unload() = withContext(worker) { NativeBridge.unload(handle); loaded = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
     override suspend fun close() {
         requestStop()
         withContext(worker) {

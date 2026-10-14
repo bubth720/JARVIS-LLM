@@ -115,3 +115,11 @@ Thermique, batterie, arrêt natif et absence de réseau maintenus. Aucun essai i
 Statut réussi, commit et présence des artefacts observés sur la page publique GitHub. Les comptes détaillés de tests proviennent des rapports locaux ; le ZIP distant n'a pas été extrait dans ce cloud.
 Le workflow impose tous les tests et contrôles avant publication, sans continue-on-error.
 Mesures Qwen réelles, comportement du firmware, capteurs, pics transitoires et délai d'arrêt Android restent non vérifiés.
+
+## Mission 002C — 14 octobre 2026
+
+Branche `mission-002c-tablet`, APK 0.2.1. Rapport détaillé : [TABLET_002C.md](TABLET_002C.md).
+TABLETTE ÉCO : 512/64, batch 16/4, un thread, déchargement après 10 s. Budget 2 Gio et réserve système inchangés. Test de régression Redmi : 7,51 Gio total /3,24 Gio libres -> refus, requis au moins 3,502 Gio.
+Validation locale : 33 tests JVM, 3 tests Android simulés Robolectric, un test natif des paramètres/annulation, aucun échec ni test ignoré. Build ARM64, Lint et inspection signature/permissions/ELF/ZIP 16 Kio réussis. Le programme de mesure réelle des GGUF est compilé ; ses inférences restent à exécuter par GitHub Actions, accès Hugging Face refusé ici (403).
+Aucune mesure PSS de modèle Android ni compatibilité physique Snapdragon 680 démontrée. Les buffers natifs sont désormais disponibles dans le panneau après chargement. Aucun essai intensif ou sur appareil lancé.
+Publication et résultats de comparaison cloud : à compléter après observation d'une exécution réussie ; ne pas utiliser un ancien artefact comme preuve de cette version.

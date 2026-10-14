@@ -37,3 +37,5 @@ Capteurs OEM et températures SoC non garantis. Protections natives Android touj
 Zéro chauffe, zéro usure et zéro risque ne sont pas promis ; charger la batterie ne relève pas les limites.
 
 Analyse et protocole de preuve : [MEMORY_002B.md](MEMORY_002B.md). À 11,06 Gio total /3,68 Gio disponible, le premier chargement reste refusé (requis au moins 4,212 Gio).
+
+Mission 002C : TABLETTE ÉCO 512/64, batch 16/4, un thread, déchargement après 10 s. Mêmes seuils et budget 2 Gio. À 7,51 Gio total /3,24 Gio disponibles, refus conservé (requis au moins 3,502 Gio). Les mesures Linux du workflow ne qualifient pas une baisse du budget Android. Voir [TABLET_002C.md](TABLET_002C.md).
