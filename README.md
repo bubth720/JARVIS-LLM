@@ -44,7 +44,7 @@ La compilation requiert GitHub/Google/Maven ; la comparaison de modèles du work
 
 ## Installation
 
-Mission 003 : publication à suivre dans [VALIDATION.md](docs/VALIDATION.md). Les artefacts précédents restent historiques.
+Mission 003 **0.3.0** publiée : [CI réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277), [APK, SHA-256, guides et fixtures](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277/artifacts/11903829000), [rapports de validation](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277/artifacts/11904785815). Les artefacts précédents restent historiques.
 Premier essai : [catalogue en mode avion sans modèle](docs/TEST_CATALOGUE_003.md). Un changement de clé debug peut empêcher la mise à jour : sauvegarder les fichiers originaux avant toute désinstallation.
 
 APK debug : `app/build/outputs/apk/debug/app-debug.apk`, destiné aux essais contrôlés, pas à la distribution publique.

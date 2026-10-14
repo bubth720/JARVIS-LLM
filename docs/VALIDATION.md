@@ -141,5 +141,33 @@ Les changements ultérieurs de cette branche sont uniquement documentaires et n'
 
 Branche `mission-003-catalogue`, issue de `mission-002c-tablet`, version 0.3.0. Analyse : [CATALOGUE_003.md](CATALOGUE_003.md), guide : [TEST_CATALOGUE_003.md](TEST_CATALOGUE_003.md).
 46 tests JVM et 13 tests Android simulés Robolectric passent localement, aucun échec/ignoré. SQLite natif simulé utilisé pour import/versions/export/FTS et 1 500 entrées synthétiques ; UI hors ligne sans bibliothèque llama disponible pour répondre depuis le catalogue. Lint : zéro erreur /29 avertissements. Build ARM64 et inspection APK réussis.
-Les mesures exactes du dernier essai et la publication CI seront consignées après contrôle. Aucun résultat PSS ou performance sur appareil réel n'est attribué au cloud. Votre qualification initiale Redmi (plusieurs réponses Qwen3, déchargement, arrêt 1–2 s) est un relevé utilisateur, pas un test Mission 003 reproduit ici.
+### Publication vérifiée Mission 003
+
+- [Exécution GitHub Actions entièrement réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277), code vérifié `16f493652cac3c194b370775aabdee3fe1fddcf6`.
+- [APK 0.3.0, SHA256SUMS, guides et fixtures synthétiques](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277/artifacts/11903829000), `jarvis-llm-debug`, rétention 30 jours.
+- [Tests, Lint et mesure du catalogue](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277/artifacts/11904785815), `jarvis-llm-validation`.
+- [Essais réels du moteur/GGUF sur Linux](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277/artifacts/11904078162), `jarvis-llm-model-memory` ; pas une mesure Android.
+- **SHA-256 du fichier APK CI** : `c51f9ff909d5b682829d1b9bb725a3cbfca54b1fdf5bebdb78e93c5d65598336`, observé dans l'annotation publique de packaging, également dans SHA256SUMS.
+- Digest du **ZIP**, différent de l'APK : `dbb3ccb7b4438fd183ec57373a6d719706be42c361bb42c7db0706beca516a31`.
+
+Réussite globale, commit, succès des étapes et artefacts observés dans les pages publiques GitHub. Les comptes 46 JVM /13 Android simulés sont issus des XML locaux ; les XML distants et le ZIP n'ont pas été extraits dans cet environnement. Aucune étape requise n'est neutralisée par continue-on-error.
+Le relevé du catalogue a été lu dans l'annotation publique « Catalogue scale evidence », puis archivé dans [evidence/mission003-catalogue-16f4936.json](evidence/mission003-catalogue-16f4936.json).
+
+| Mesure réelle CI, SQLite natif sous Robolectric API35 | Résultat |
+|---|---:|
+| Réponses actives (1 500 synthétiques +8 démos) | 1 508 |
+| JSON de test (hors construction du fichier dans les temps) | 580 993 octets |
+| Lecture/fusion transactionnelle | 1 230,23 ms |
+| Recherche médiane sur 20 demandes exactes synthétiques | 0,696 ms |
+| Recherche maximale dans ces 20 demandes | 1,311 ms |
+| SQLite | 1 704 Kio |
+| Tas Java échantillonné avant import | 85,05 Mio |
+| Pic de tas Java échantillonné durant import/recherches | 131,05 Mio |
+| Hausse de ce tas échantillonné | 46,00 Mio |
+
+Ces mesures comprennent le traitement de test sur JVM/Linux, sans LLM ; elles excluent une partie des allocations natives, ne sont pas un PSS Android et peuvent manquer des pointes. Le tas Java dépend aussi du GC et du runtime de simulation. Le maximum de recherche n'est pas un percentile ni une garantie de temps sur Snapdragon 680 ; le jeu de test comporte une seule formulation et une seule variante par entrée synthétique. Le maximum autorisé de 5 000 identifiants n'est pas qualifié par cet essai à 1 500.
+Inspection locale du contenu APK : uniquement `assets/catalogue-demo.json`, 8 entrées DEMO ; aucun GGUF ni catalogue synthétique embarqué. L'APK local est signé avec une autre clé ; son empreinte ne vérifie pas le binaire CI.
+La documentation finale seule peut évoluer après ce commit de code ; elle n'altère pas l'APK vérifiée.
+
+ Aucun résultat PSS ou performance sur appareil réel n'est attribué au cloud. Votre qualification initiale Redmi (plusieurs réponses Qwen3, déchargement, arrêt 1–2 s) est un relevé utilisateur, pas un test Mission 003 reproduit ici.
 Qwen3, profils, budgets et annulation native conservés. Embeddings non activés. Aucune modification des autres projets ou main, aucun essai intensif sur appareil.

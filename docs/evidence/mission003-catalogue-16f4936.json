@@ -1,0 +1,15 @@
+{
+  "platform": "Linux JVM / Robolectric API35 native SQLite; NOT physical Android PSS",
+  "records": 1508,
+  "synthetic_records": 1500,
+  "json_bytes": 580993,
+  "import_ms": 1230.227637,
+  "query_median_ms": 0.69634,
+  "query_max_ms": 1.311119,
+  "sampled_java_heap_baseline_bytes": 89183856,
+  "sampled_java_heap_peak_bytes": 137418352,
+  "sampled_java_heap_increase_bytes": 48234496,
+  "sqlite": "Catalogue : 1508 réponses actives ; 1508 révisions ; SQLite 1704 Kio ; cache pages cible 2 Mio. Embeddings désactivés.",
+  "llama_loaded": false,
+  "source_commit": "16f493652cac3c194b370775aabdee3fe1fddcf6"
+}

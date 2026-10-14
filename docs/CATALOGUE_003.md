@@ -91,3 +91,9 @@ Les tests couvrent import atomique/idempotent, collision/ancienne révision, éd
 La mesure du passage à l'échelle est produite par le test réel SQLite natif sous Robolectric API35 : durée import, 20 recherches, taille SQLite et pic **échantillonné du tas Java Linux/JVM**. Ce n'est pas un PSS Android et les allocations SQLite natives sont hors de ce tas. Pas de garantie sur les pointes transitoires ni de seuil de vitesse déduit pour la Redmi.
 Votre retour utilisateur — plusieurs réponses Qwen3 0.6B, déchargement observé et arrêt manuel 1–2 s sur Redmi — est une qualification initiale encourageante, non reproduite par le cloud, sans garantie du délai sous toutes charges. Mission 003 n'effectue aucun essai physique ou benchmark intensif.
 Résultats et publication exacts : [VALIDATION.md](VALIDATION.md). Essais courts : [TEST_CATALOGUE_003.md](TEST_CATALOGUE_003.md).
+
+## Résumé des résultats et recommandation
+
+[CI réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38583319277) sur le code `16f4936` : 46 tests JVM et 13 tests Android simulés passent localement, plus tests natifs, compilation, Lint et inspection APK ; toutes les étapes correspondantes réussissent dans GitHub Actions.
+Mesures CI réelles sur 1 508 entrées : import 1,23 s, recherche médiane 0,70 ms (20 requêtes exactes synthétiques), base 1 704 Kio, hausse du tas Java échantillonné 46 Mio. Voir [le JSON complet](evidence/mission003-catalogue-16f4936.json). Ces résultats ne démontrent ni le PSS Android ni la qualité sur un corpus réel de 1 000 demandes.
+Recommandation : commencer sur Redmi avec les 8 démonstrations, variantes et petit fichier de conflits, en mode avion ; garder les embeddings désactivés et le fallback Qwen3 soumis aux protections. Qualifier ensuite les formulations réelles et le coût Android avant d'élargir la reconnaissance. Ne pas changer les budgets LLM sur la base de ces mesures de catalogue.
