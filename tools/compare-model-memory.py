@@ -35,11 +35,19 @@ for repo, quant in [('Qwen/Qwen3-0.6B-GGUF', 'Q4_K_M'),
                     ('Qwen/Qwen2.5-0.5B-Instruct-GGUF', 'Q4_K_M')]:
     stage = f'catalog {repo} {quant}'
     info = get_json(f'https://huggingface.co/api/models/{repo}?blobs=true')
+    requested_repo = repo
+    def matching_files(catalog):
+        return [f for f in catalog['siblings'] if f['rfilename'].lower().endswith(f'-{quant.lower()}.gguf')]
+    files = matching_files(info)
+    if not files and repo == 'Qwen/Qwen3-0.6B-GGUF':
+        repo = 'unsloth/Qwen3-0.6B-GGUF'
+        stage = f'fallback catalog {repo} {quant}'
+        info = get_json(f'https://huggingface.co/api/models/{repo}?blobs=true')
+        files = matching_files(info)
     revision = info['sha']
     assert re.fullmatch('[0-9a-f]{40}', revision), 'immutable revision missing'
-    files = [f for f in info['siblings'] if f['rfilename'].lower().endswith(f'-{quant.lower()}.gguf')]
     if not files:
-        results.append(dict(repo=repo, revision=revision, quantization=quant, status='not_published_in_official_repository'))
+        results.append(dict(repo=repo, requested_repo=requested_repo, revision=revision, quantization=quant, status='not_published_in_checked_repositories', available_files=[f['rfilename'] for f in info['siblings']]))
         continue
     assert len(files) == 1, 'ambiguous or sharded artifact'
     entry = files[0]
@@ -61,7 +69,7 @@ for repo, quant in [('Qwen/Qwen3-0.6B-GGUF', 'Q4_K_M'),
             digest.update(chunk)
             output.write(chunk)
     assert received == size and digest.hexdigest() == expected, 'GGUF checksum mismatch'
-    record = dict(repo=repo, revision=revision, file=entry['rfilename'], sha256=expected,
+    record = dict(repo=repo, requested_repo=requested_repo, revision=revision, file=entry['rfilename'], sha256=expected,
                   file_bytes=size, declared_license=info.get('cardData', {}).get('license'), quantization=quant, status='measured_linux_x86_64', runs=[])
     for context in (768, 512):
         stage = f'inference {repo} {quant} context={context}'
@@ -89,6 +97,8 @@ if os.environ.get('GITHUB_STEP_SUMMARY'):
     with open(os.environ['GITHUB_STEP_SUMMARY'], 'a') as output:
         output.write(summary)
 print(summary)
+# Synthetic prompts and public model provenance only; no device/user data.
+print('::notice title=Cloud GGUF evidence::' + json.dumps(report, ensure_ascii=False).replace('%', '%25').replace('\r', '%0D').replace('\n', '%0A'), flush=True)
 # Public downstream job title exposes only these nonsensitive cloud measurements.
 q4 = results[0]
 assert q4.get('runs'), 'mandatory Qwen3 Q4 probe not executed'

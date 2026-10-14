@@ -35,7 +35,7 @@ Le contexte 512 est court : réponses et suivi de conversation plus limités. Un
 | SmolLM2 135M /360M | Poids nettement plus petits | Orientation principalement anglaise : compréhension française non démontrée ici ; pas de choix par défaut |
 
 Q4_K, Q3_K et Q2_K occupent respectivement 144, 110 et 84 octets par bloc de 256 éléments dans GGML, soit 4,5, 3,4375 et 2,625 bits/élément pour **ces types de tenseur**. Ce ne sont pas les tailles globales d'un GGUF Q4_K_M/Q3_K_M/Q2_K : mélanges de types, embeddings, métadonnées et vocabulaire changent le résultat. La quantification des poids ne réduit pas automatiquement le cache K/V FP16 ni le tas JVM.
-Le script cloud interroge les dépôts officiels Qwen, épingle la révision retournée, exige un SHA-256 LFS et une taille bornée, puis vérifie le téléchargement immuable. Il note les quantifications absentes du dépôt officiel sans leur inventer un fichier. Aucun téléchargement de poids n'est intégré à l'APK ; aucun nouveau format n'est silencieusement autorisé dans l'import Android.
+Le script cloud interroge les dépôts officiels Qwen et, lorsque Qwen3 ne publie pas la quantification demandée, le dépôt tiers `unsloth/Qwen3-0.6B-GGUF`. Cette provenance tierce est explicite dans le rapport : elle ne constitue pas une publication officielle Qwen. Il épingle la révision retournée, exige un SHA-256 LFS et une taille bornée, puis vérifie le téléchargement immuable. Il note les quantifications absentes des dépôts consultés sans leur inventer un fichier. Aucun téléchargement de poids n'est intégré à l'APK ; aucun nouveau format n'est silencieusement autorisé dans l'import Android.
 
 ## Mesures et protocole de preuve
 
@@ -43,7 +43,7 @@ Le script cloud interroge les dépôts officiels Qwen, épingle la révision ret
 
 Le workflow compile l'APK ARM64, exécute les tests JVM, Android **simulés par Robolectric**, natifs, Lint, et vérifie permissions/signature/alignement ELF et ZIP 16 Kio.
 Un outil séparé `model_memory_probe` exécute de vraies inférences CPU Linux x86_64 : un prompt français, au plus 24 tokens de sortie, un thread, deadline native 60 s, timeout du processus 90 s. Chaque modèle/contexte démarre dans un processus neuf. Ce n'est ni un test Android émulé d'inférence, ni un benchmark de qualité ou d'endurance.
-Les fichiers `comparison.json` et `SUMMARY.md` sont publiés dans `jarvis-llm-validation` : révision et hash GGUF, taille disque, réponse, pic RSS Linux et buffers natifs modèle/contexte/calcul. Les modèles ne sont pas embarqués dans les artefacts. Un échec de téléchargement, de checksum, de chargement ou d'inférence d'un fichier disponible fait échouer le job ; aucune réussite fictive.
+Les fichiers `comparison.json` et `SUMMARY.md` sont publiés dans `jarvis-llm-model-memory` : révision et hash GGUF, taille disque, réponse, pic RSS Linux et buffers natifs modèle/contexte/calcul. Les modèles ne sont pas embarqués dans les artefacts. Un échec de téléchargement, de checksum, de chargement ou d'inférence d'un fichier disponible fait échouer le job ; aucune réussite fictive.
 Les économies natives **mesurées dans ces essais** peuvent être comparées ; elles ne démontrent pas le pic PSS Android, les allocations transitoires, la latence d'arrêt JNI, le comportement du firmware ou l'autonomie de la tablette. Le budget mobile ne change pas en fonction du RSS Linux.
 Dans ce cloud de développement, Hugging Face refuse l'accès réseau (403) : aucune mesure locale de vrais poids n'est affirmée. Le runner GitHub constitue une tentative indépendante et son résultat doit être vérifié.
 
