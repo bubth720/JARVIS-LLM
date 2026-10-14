@@ -1,4 +1,8 @@
-# Premier diagnostic — aucun modèle, aucune inférence
+# Premier diagnostic Mission 003
+
+Commencer sans importer ni exécuter de GGUF. Le petit catalogue de démonstration doit répondre en mode avion. Le [guide Mission 003](TEST_CATALOGUE_003.md), également fourni sous `ESSAIS-CATALOGUE.md` dans le paquet, décrit installation, sauvegardes, variantes, conflits et essais courts. Aucun benchmark intensif.
+
+# Diagnostic matériel passif conservé
 
 Mission 002C : APK version 0.2.1, profil TABLETTE ÉCO disponible (512/64, batch 16/4, un thread). La RAM nécessaire au premier chargement n'a pas été abaissée sans preuves.
 Relever aussi le budget estimé, la réserve, le crédit PSS observé, la marge d'admission et le pic PSS échantillonné.

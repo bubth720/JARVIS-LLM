@@ -7,8 +7,8 @@ android {
         applicationId = "fr.jarvis.llm"
         minSdk = 29
         targetSdk = 36
-        versionCode = 3
-        versionName = "0.2.1-mission002c"
+        versionCode = 4
+        versionName = "0.3.0-mission003"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += listOf("-DLLAMA_SOURCE_DIR=${rootDir}/.deps/llama.cpp"); cppFlags += "-std=c++17" } }
     }
@@ -22,6 +22,7 @@ android {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { testTask ->
             // Keep Robolectric's runtime artifact cache writable in restricted cloud machines.
+            testTask.systemProperty("jarvis.catalogue.report", layout.buildDirectory.file("reports/catalogue-scale.json").get().asFile.absolutePath)
             testTask.systemProperty("user.home", rootProject.file(".tools/test-home").apply { mkdirs() }.absolutePath)
             testTask.systemProperty("robolectric.dependency.repo.url", "https://repo.maven.apache.org/maven2")
             for (name in listOf("http.proxyHost", "http.proxyPort", "https.proxyHost", "https.proxyPort", "javax.net.ssl.trustStore")) {

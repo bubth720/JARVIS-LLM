@@ -1,9 +1,9 @@
-# JARVIS LLM — Mission 002C
+# JARVIS LLM — Mission 003
 
-Prototype Android textuel, autonome et hors ligne, branche `mission-002c-tablet`.
+Prototype Android textuel, autonome et hors ligne, branche `mission-003-catalogue`, issue de `mission-002c-tablet`.
 Phases 1–3 autorisées dans la conversation ; aucune fusion dans main. CORE et VOICE restent inchangés.
-TABLETTE ÉCO : 512/64, batch 16/4, un thread, déchargement après 10 s ; ÉCO 768/96 conservé. Diagnostics PSS et buffers natifs. Budgets d'admission non abaissés sans preuves.
-Lire [TABLET_002C.md](docs/TABLET_002C.md) : à 3,24 Gio disponibles sur 7,51 Gio accessibles, le premier chargement reste refusé (au moins 3,502 Gio requis). Comparaison réelle de GGUF sur Linux dans les rapports CI ; aucune assimilation au PSS Android.
+Catalogue privé SQLite, 8 réponses de démonstration, variantes facultatives et import/export JSON versionné. Recherche structurée avant LLM, clarifications en cas de conflit. Embeddings désactivés ; interface conservée pour une qualification future.
+Lire [CATALOGUE_003.md](docs/CATALOGUE_003.md) et [les instructions d'essai](docs/TEST_CATALOGUE_003.md). Les profils et protections Mission 002C sont conservés ; aucune baisse du budget LLM.
 
 ## Périmètre
 
@@ -15,7 +15,7 @@ Lire [TABLET_002C.md](docs/TABLET_002C.md) : à 3,24 Gio disponibles sur 7,51 Gi
 - TABLETTE ÉCO, ÉCO, ÉQUILIBRÉ, AUTO ; PLEINE PUISSANCE refusée tant que non qualifiée.
 - Aucune permission réseau ou d'accès aux données, aucun microphone, télémétrie, action ou connexion CORE/VOICE.
 
-Catalogue, documents, mémoire persistante, voix, actions et IPC appartiennent aux phases suivantes.
+Catalogue éditorial local livré. Documents/RAG, mémoire de conversation persistante, voix, actions et IPC appartiennent aux phases suivantes.
 
 ## Construire
 
@@ -44,9 +44,8 @@ La compilation requiert GitHub/Google/Maven ; la comparaison de modèles du work
 
 ## Installation
 
-La version Mission 002C **0.2.1** est publiée : [CI réussie](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120), [APK, SHA-256 et guide](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120/artifacts/11887534355), [mesures réelles des GGUF sur Linux](https://github.com/bubth720/JARVIS-LLM/actions/runs/38553690120/artifacts/11889260132).
-Le [rapport TABLET_002C](docs/TABLET_002C.md) distingue les économies mesurées des limites Android. Les anciens artefacts 002/002B restent historiques.
-Premier essai : [diagnostic passif uniquement](docs/FIRST_DIAGNOSTIC.md), sans importer ni exécuter de modèle.
+Mission 003 : publication à suivre dans [VALIDATION.md](docs/VALIDATION.md). Les artefacts précédents restent historiques.
+Premier essai : [catalogue en mode avion sans modèle](docs/TEST_CATALOGUE_003.md). Un changement de clé debug peut empêcher la mise à jour : sauvegarder les fichiers originaux avant toute désinstallation.
 
 APK debug : `app/build/outputs/apk/debug/app-debug.apk`, destiné aux essais contrôlés, pas à la distribution publique.
 Au démarrage : diagnostic passif uniquement, aucun modèle chargé.

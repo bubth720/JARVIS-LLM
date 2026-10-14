@@ -136,3 +136,10 @@ Les huit inférences courtes réelles du cloud ont réussi (quatre fichiers, deu
 Qwen3 Q4 : contexte natif 84 ->56 Mio, pic RSS Linux 516,2 ->487,7 Mio. Q3 à 512 : 440,4 Mio ; Q2 : 391,8 Mio. Qwen2.5 Q4 à 512 : 527,9 Mio, donc pas une amélioration mémoire dans cette comparaison. Réponses françaises insuffisantes pour une qualification de qualité : voir le rapport, aucune équivalence qualitative supposée.
 Aucun pic PSS Android, essai de délai d'arrêt JNI avec vrai modèle sur appareil, autonomie, température physique ni performance du Snapdragon 680 mesurés. Budget Android conservé ; refus à 3,24 Gio maintenu.
 Les changements ultérieurs de cette branche sont uniquement documentaires et n'altèrent pas le code vérifié par cette exécution.
+
+## Mission 003 — Catalogue local
+
+Branche `mission-003-catalogue`, issue de `mission-002c-tablet`, version 0.3.0. Analyse : [CATALOGUE_003.md](CATALOGUE_003.md), guide : [TEST_CATALOGUE_003.md](TEST_CATALOGUE_003.md).
+46 tests JVM et 13 tests Android simulés Robolectric passent localement, aucun échec/ignoré. SQLite natif simulé utilisé pour import/versions/export/FTS et 1 500 entrées synthétiques ; UI hors ligne sans bibliothèque llama disponible pour répondre depuis le catalogue. Lint : zéro erreur /29 avertissements. Build ARM64 et inspection APK réussis.
+Les mesures exactes du dernier essai et la publication CI seront consignées après contrôle. Aucun résultat PSS ou performance sur appareil réel n'est attribué au cloud. Votre qualification initiale Redmi (plusieurs réponses Qwen3, déchargement, arrêt 1–2 s) est un relevé utilisateur, pas un test Mission 003 reproduit ici.
+Qwen3, profils, budgets et annulation native conservés. Embeddings non activés. Aucune modification des autres projets ou main, aucun essai intensif sur appareil.

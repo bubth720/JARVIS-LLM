@@ -37,14 +37,31 @@ class OfflineStartupTest {
         } finally { controller.pause().stop().destroy() }
     }
 
+    private fun awaitUi(condition: () -> Boolean) {
+        val deadline = System.nanoTime() + 5_000_000_000L
+        while (!condition() && System.nanoTime() < deadline) { shadowOf(Looper.getMainLooper()).idle(); Thread.sleep(10) }
+        shadowOf(Looper.getMainLooper()).idle(); assertTrue(condition())
+    }
+    @Test fun catalogueReplyWorksOfflineWithoutAnyNativeModel() {
+        val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
+        try {
+            shadowOf(Looper.getMainLooper()).idle()
+            val all = views(controller.get().window.decorView)
+            all.filterIsInstance<EditText>().single().setText("Tu marches quand il n'y a pas de connexion ?")
+            all.filterIsInstance<Button>().single { it.text == "Envoyer" }.performClick()
+            awaitUi { all.filterIsInstance<TextView>().any { "réponses du catalogue" in it.text.toString() } }
+            assertFalse(all.filterIsInstance<Button>().single { it.text == "Arrêter" }.isEnabled)
+            assertTrue(all.filterIsInstance<TextView>().any { "Modèles importés : aucun" in it.text.toString() })
+        } finally { controller.pause().stop().destroy() }
+    }
     @Test fun sendWithoutModelIsRefusedAndLeavesUiAvailable() {
         val controller = Robolectric.buildActivity(MainActivity::class.java).setup()
         try {
             shadowOf(Looper.getMainLooper()).idle()
             val all = views(controller.get().window.decorView)
-            all.filterIsInstance<EditText>().single().setText("Bonjour")
+            all.filterIsInstance<EditText>().single().setText("Explique les aurores boréales")
             val send = all.filterIsInstance<Button>().single { it.text == "Envoyer" }
-            send.performClick(); shadowOf(Looper.getMainLooper()).idle()
+            send.performClick(); shadowOf(Looper.getMainLooper()).idle(); awaitUi { send.isEnabled }
             assertTrue(send.isEnabled)
             assertFalse(all.filterIsInstance<Button>().single { it.text == "Arrêter" }.isEnabled)
             assertTrue(all.filterIsInstance<TextView>().any { "Modèles importés : aucun" in it.text.toString() })

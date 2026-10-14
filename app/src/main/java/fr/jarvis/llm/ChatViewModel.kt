@@ -6,13 +6,15 @@ import android.os.SystemClock
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import fr.jarvis.domain.*
+import fr.jarvis.domain.catalogue.*
+import fr.jarvis.llm.catalogue.CatalogueStore
 import fr.jarvis.llm.engine.LlamaBackend
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import java.util.concurrent.atomic.AtomicBoolean
 
-data class ChatState(val messages: List<Message> = emptyList(), val status: String = "Importe un modèle GGUF vérifié pour commencer.",
+data class ChatState(val messages: List<Message> = emptyList(), val status: String = "Catalogue local disponible ; GGUF requis seulement pour les demandes non couvertes.",
                      val busy: Boolean = false, val profile: Profile = Profile.AUTO, val models: Set<ModelKind> = emptySet(),
                      val diagnostic: String = "")
 
@@ -21,6 +23,10 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     val ui = state.asStateFlow()
     private val policy = SafetyPolicy()
     private val store = ModelStore(app)
+    private val catalogue = CatalogueStore(app)
+    private val router = IntentRouter(catalogue)
+    private var clarifications: List<String> = emptyList()
+    @Volatile private var catalogueDiagnostic = "Catalogue local : initialisation différée ; embeddings désactivés"
     private var backend: LanguageModel? = null
     private val stopped = AtomicBoolean(false)
     private var resident: RuntimeConfig? = null
@@ -33,6 +39,10 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     private val monitor = DeviceMonitor(app) { enforceSafety() }
     init {
         update { it.copy(models = store.available(), diagnostic = monitor.diagnostic()) }
+        viewModelScope.launch {
+            runCatching { withContext(Dispatchers.IO) { catalogue.stats() } }.onSuccess { catalogueDiagnostic = it }
+            update { it.copy(diagnostic = diagnostic()) }
+        }
         viewModelScope.launch {
             while (isActive) {
                 enforceSafety()
@@ -56,7 +66,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         val s = monitor.snapshot()
         val file = store.file(ModelKind.SMALL)
         val size = if (file.isFile) "%.1f Mio".format(java.util.Locale.FRANCE, file.length() / 1048576.0) else "absent"
-        return monitor.diagnostic(residency(s, active ?: resident), s) + "\nProfil sélectionné : ${state.value.profile}\n" + (backend?.allocationDiagnostic ?: "Allocations natives non mesurées") + "\nFichier GGUF 0.6B : $size (taille disque, pas PSS)."
+        return monitor.diagnostic(residency(s, active ?: resident), s) + "\nProfil sélectionné : ${state.value.profile}\n" + (backend?.allocationDiagnostic ?: "Allocations natives non mesurées") + "\nFichier GGUF 0.6B : $size (taille disque, pas PSS).\n" + catalogueDiagnostic
     }
     fun foreground(value: Boolean) {
         monitor.foreground = value
@@ -91,8 +101,57 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
         monitor.snapshot()
         monitor.telemetry.phase(MemoryPhase.PASSIVE)
     }
-    fun clearConversation() { if (!state.value.busy) update { it.copy(messages = emptyList(), status = "Conversation effacée (mémoire vive uniquement).") } }
+    fun clearConversation() { clarifications = emptyList(); if (!state.value.busy) update { it.copy(messages = emptyList(), status = "Conversation effacée (mémoire vive uniquement).") } }
+    suspend fun releaseForCatalogue(): Boolean {
+        if (state.value.busy) return false
+        update { it.copy(busy = true) }
+        try { unload(); return monitor.foreground }
+        catch (e: CancellationException) { throw e }
+        catch (e: Exception) { update { it.copy(status = "Déchargement impossible : ${e.message}") }; return false }
+        finally { update { it.copy(busy = false) } }
+    }
     fun send(text: String) {
+        if (state.value.busy || !monitor.foreground) return
+        val original = text.trim()
+        if (original.isEmpty() || original.length > 4_000) { update { it.copy(status = "Question vide ou trop longue (4 000 caractères maximum).") }; return }
+        val choice = original.toIntOrNull()?.takeIf { it in 1..clarifications.size }
+        val question = choice?.let { clarifications[it - 1] } ?: original
+        clarifications = emptyList()
+        stopped.set(false); stoppingReason = null
+        update { it.copy(busy = true, status = "Recherche dans le catalogue local…") }
+        viewModelScope.launch {
+            var llm = false
+            try {
+                val start = SystemClock.elapsedRealtime()
+                val route = withContext(Dispatchers.IO) {
+                    val result = router.route(question)
+                    catalogueDiagnostic = catalogue.stats() + "\nRecherche catalogue : ${SystemClock.elapsedRealtime() - start} ms ; aucune inférence sémantique."
+                    result
+                }
+                check(!stopped.get() && monitor.foreground) { "Recherche arrêtée" }
+                when (route) {
+                    is CatalogueRoute.Llm -> { llm = true }
+                    is CatalogueRoute.Answer -> {
+                        unload()
+                        check(!stopped.get() && monitor.foreground) { "Recherche arrêtée" }
+                        val prefix = if (route.record.origin == CatalogueOrigin.SYNTHETIC) "[TEST SYNTHÉTIQUE] " else ""
+                        update { it.copy(messages = (it.messages + Message("user", original) + Message("assistant", prefix + route.text)).takeLast(40),
+                            status = "Catalogue — ${route.record.title}, révision ${route.record.revision}, variante ${route.variant + 1}") }
+                    }
+                    is CatalogueRoute.Clarify -> {
+                        unload()
+                        check(!stopped.get() && monitor.foreground) { "Recherche arrêtée" }
+                        clarifications = route.suggestedQueries
+                        update { it.copy(messages = (it.messages + Message("user", original) + Message("assistant", route.text)).takeLast(40), status = "Clarification requise — aucun LLM chargé") }
+                    }
+                }
+            } catch (e: CancellationException) { throw e }
+            catch (e: Exception) { update { it.copy(status = stoppingReason ?: "Catalogue indisponible : ${e.message}") } }
+            finally { update { it.copy(busy = false, diagnostic = diagnostic()) } }
+            if (llm && !stopped.get() && monitor.foreground) sendLlm(original)
+        }
+    }
+    private fun sendLlm(text: String) {
         if (state.value.busy) return
         val question = text.trim()
         if (question.isEmpty() || question.length > 4_000) { update { it.copy(status = "Question vide ou trop longue (4 000 caractères maximum).") }; return }
@@ -176,6 +235,7 @@ class ChatViewModel(app: Application) : AndroidViewModel(app) {
     }
     override fun onCleared() {
         stopped.set(true); backend?.requestStop(); monitor.close()
+        CoroutineScope(Dispatchers.IO).launch { catalogue.close() }
         val model = backend
         // This cleanup scope survives the cancelled ViewModel scope and queues release behind native work.
         if (model != null) CoroutineScope(Dispatchers.IO).launch { model.close() }

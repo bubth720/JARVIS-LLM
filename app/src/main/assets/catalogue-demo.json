@@ -1,0 +1,141 @@
+{
+  "formatVersion": 1,
+  "answers": [
+    {
+      "id": "demo.bonjour",
+      "intent": "bonjour",
+      "title": "Bonjour",
+      "category": "conversation",
+      "revision": 1,
+      "examples": [
+        "Bonjour",
+        "Salut",
+        "Coucou"
+      ],
+      "variants": [
+        "Bonjour ! Je suis JARVIS, votre assistant local.",
+        "Bonjour ! Que souhaitez-vous savoir ?"
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    },
+    {
+      "id": "demo.offline",
+      "intent": "offline",
+      "title": "Fonctionnement hors ligne",
+      "category": "fonctionnement",
+      "revision": 1,
+      "examples": [
+        "Peux-tu fonctionner sans Internet ?",
+        "Fonctionnes-tu hors ligne ?",
+        "Tu marches sans connexion ?",
+        "As-tu besoin d’Internet ?"
+      ],
+      "variants": [
+        "Les réponses du catalogue et le modèle importé fonctionnent localement, sans Internet. Un fichier GGUF doit être importé avant les demandes nécessitant le LLM."
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    },
+    {
+      "id": "demo.privacy",
+      "intent": "privacy",
+      "title": "Confidentialité des messages",
+      "category": "confidentialite",
+      "revision": 1,
+      "examples": [
+        "Envoies-tu mes messages sur Internet ?",
+        "Mes messages sont-ils privés ?",
+        "Mes données sont-elles confidentielles ?"
+      ],
+      "variants": [
+        "Cette application ne possède aucune permission réseau. La conversation reste en mémoire vive ; le catalogue est stocké localement dans SQLite. Les exports sont créés uniquement à votre demande."
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    },
+    {
+      "id": "demo.battery",
+      "intent": "battery",
+      "title": "Protection de la batterie",
+      "category": "protections",
+      "revision": 1,
+      "examples": [
+        "Comment protèges-tu la batterie ?",
+        "Quelles sont les protections de batterie ?",
+        "Quels sont les seuils de batterie ?"
+      ],
+      "variants": [
+        "Le calcul LLM est refusé sous 10 % de batterie. Sous 20 %, ou en économie d’énergie, un profil ÉCO est imposé. Le catalogue léger ne charge pas de modèle."
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    },
+    {
+      "id": "demo.thermal",
+      "intent": "thermal",
+      "title": "Protection thermique",
+      "category": "protections",
+      "revision": 1,
+      "examples": [
+        "Comment protèges-tu la tablette de la surchauffe ?",
+        "Quelles sont les protections contre la chauffe ?",
+        "Que fais-tu si l’appareil chauffe ?"
+      ],
+      "variants": [
+        "Le moteur réduit son profil dès un état thermique léger et arrête le calcul à partir de SEVERE. Il utilise les indications Android, pas une température physique garantie."
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    },
+    {
+      "id": "demo.stop",
+      "intent": "stop",
+      "title": "Arrêter le calcul",
+      "category": "fonctionnement",
+      "revision": 1,
+      "examples": [
+        "Comment arrêter le calcul ?",
+        "Comment interrompre les calculs ?",
+        "Comment stopper une réponse ?"
+      ],
+      "variants": [
+        "Utilisez Arrêter. Le signal atteint le moteur natif ; l’application attend son retour avant de libérer le modèle. Certains appels système ne sont pas immédiatement interruptibles."
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    },
+    {
+      "id": "demo.modes",
+      "intent": "modes",
+      "title": "Modes disponibles",
+      "category": "fonctionnement",
+      "revision": 1,
+      "examples": [
+        "Quels sont les modes disponibles ?",
+        "Quels modes de puissance proposes-tu ?"
+      ],
+      "variants": [
+        "ÉCO, ÉQUILIBRÉ, AUTO et TABLETTE ÉCO sont disponibles. PLEINE PUISSANCE est réservée pour une qualification future et ne contourne aucune protection."
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    },
+    {
+      "id": "demo.diagnostic",
+      "intent": "diagnostic",
+      "title": "Lire le diagnostic",
+      "category": "fonctionnement",
+      "revision": 1,
+      "examples": [
+        "Comment lire le diagnostic ?",
+        "Comment consulter le diagnostic ?"
+      ],
+      "variants": [
+        "Le panneau indique RAM, batterie, état thermique et PSS échantillonné. Un diagnostic passif ne charge aucun modèle ; il ne mesure pas la consommation d’un LLM absent."
+      ],
+      "origin": "DEMO",
+      "deleted": false
+    }
+  ]
+}

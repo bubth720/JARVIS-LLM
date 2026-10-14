@@ -1,6 +1,8 @@
 package fr.jarvis.llm
 
 import android.app.AlertDialog
+import android.content.Intent
+import fr.jarvis.llm.catalogue.CatalogueActivity
 import android.os.Bundle
 import android.text.InputType
 import android.view.View
@@ -24,6 +26,7 @@ class MainActivity : ComponentActivity() {
     private lateinit var import: Button
     private lateinit var clear: Button
     private lateinit var stop: Button
+    private lateinit var catalogue: Button
     private var pending: Pair<ModelKind, String>? = null
     private val picker = registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
         val reference = pending
@@ -61,6 +64,11 @@ class MainActivity : ComponentActivity() {
         stop = Button(this).apply { text = "Arrêter"; setOnClickListener { vm.stop() } }
         listOf(import, clear, stop).forEach { buttons.addView(it, LinearLayout.LayoutParams(0, -2, 1f)) }
         root.addView(buttons)
+        catalogue = Button(this).apply { text = "Catalogue"; setOnClickListener { lifecycleScope.launch {
+            if (!vm.releaseForCatalogue()) return@launch
+            if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) startActivity(Intent(this@MainActivity, CatalogueActivity::class.java))
+        } } }
+        root.addView(catalogue)
         conversation = TextView(this).apply { textSize = 16f; setTextIsSelectable(true) }
         val scroll = ScrollView(this).apply { addView(conversation) }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
@@ -73,7 +81,7 @@ class MainActivity : ComponentActivity() {
                 status.text = "${s.status}\nModèles importés : ${s.models.joinToString { if (it == ModelKind.SMALL) "0.6B" else "1.7B" }.ifEmpty { "aucun" }}"
                 diagnostic.text = s.diagnostic
                 conversation.text = s.messages.joinToString("\n\n") { "${if (it.role == "user") "Vous" else "JARVIS"} : ${it.text}" }
-                send.isEnabled = !s.busy; import.isEnabled = !s.busy; clear.isEnabled = !s.busy; stop.isEnabled = s.busy
+                send.isEnabled = !s.busy; import.isEnabled = !s.busy; clear.isEnabled = !s.busy; stop.isEnabled = s.busy; catalogue.isEnabled = !s.busy
             }
         } }
     }
