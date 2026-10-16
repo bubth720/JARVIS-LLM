@@ -24,12 +24,12 @@ internal fun uuid(value: String) {
     checkP2(value.length == 36 && runCatching { UUID.fromString(value).toString() == value }.getOrDefault(false), P2Error.INVALID_INPUT)
 }
 internal fun sha(value: String) { checkP2(value.matches(Regex("[a-f0-9]{64}")), P2Error.INVALID_INPUT) }
-internal fun boundedText(text: String, maxBytes: Int, blankAllowed: Boolean = false) {
+internal fun boundedText(text: String, maxBytes: Int, blankAllowed: Boolean = false, allowNoThink: Boolean = false) {
     checkP2(blankAllowed || text.isNotBlank(), P2Error.INVALID_INPUT)
     checkP2(text.length <= maxBytes, P2Error.INPUT_TOO_LARGE)
     checkP2(utf8Size(text) <= maxBytes, P2Error.INPUT_TOO_LARGE)
     checkP2(text.none { it == '\u0000' || (it.code < 32 && it !in "\n\r\t") }, P2Error.INVALID_INPUT)
-    checkP2(listOf("<|", "<think>", "</think>", "/think", "/no_think", "[INST]", "[/INST]", "<<SYS>>").none { text.contains(it, ignoreCase = true) }, P2Error.INVALID_INPUT)
+    checkP2(listOf("<|", "<think>", "</think>", "/think", "/no_think", "[INST]", "[/INST]", "<<SYS>>").filterNot { allowNoThink && it == "/no_think" }.none { text.contains(it, ignoreCase = true) }, P2Error.INVALID_INPUT)
 }
 /** References identify an operation; they do NOT authenticate CORE or grant a permission. */
 data class OperationKey(val epoch: String, val operationId: String, val sessionId: String, val correlationId: String,
@@ -67,7 +67,7 @@ class P2Request private constructor(val key: OperationKey, val system: String, h
         fun create(version: String, key: OperationKey, system: String, history: List<HistoryTurn>,
                    documents: List<DocumentExcerpt>, question: String, model: ModelKind, modelSha256: String, limits: P2Limits): P2Request {
             checkP2(version == P2_VERSION, P2Error.UNSUPPORTED_VERSION)
-            boundedText(system, 8192, blankAllowed = true); boundedText(question, 8192); sha(modelSha256)
+            boundedText(system, 8192, blankAllowed = true, allowNoThink = true); boundedText(question, 8192); sha(modelSha256)
             checkP2(history.size <= 6 && history.size % 2 == 0 && documents.size <= 4, P2Error.INVALID_INPUT)
             history.forEachIndexed { index, turn -> checkP2(turn.role == (if (index % 2 == 0) HistoryRole.USER else HistoryRole.ASSISTANT), P2Error.INVALID_ROLE) }
             checkP2(documents.map { it.reference }.distinct().size == documents.size, P2Error.INVALID_INPUT)

@@ -21,7 +21,7 @@ Le décodeur `Fields` reçoit des listes explicites de champs pour refuser les d
 
 `inputBytes` borne la somme des contenus textuels décodés, pas les tokens ni la taille d'une enveloppe sérialisée. Le futur contrôle UNIFIED `max_input_bytes` devra aussi porter sur le payload réellement transporté, métadonnées comprises ; aucune équivalence automatique de ces budgets.
 
-Les marqueurs ChatML (`<|…`), marqueurs de raisonnement (`<think>`, `</think>`, `/think`, `/no_think`), `[INST]`, `[/INST]`, `<<SYS>>`, NUL et contrôles incompatibles sont refusés dans tous les textes entrants, y compris système CORE. Les règles fixes internes ne viennent pas du demandeur. Ce choix ferme refuse certaines citations littérales ; aucun échappement ou suppression silencieuse ne les transforme.
+Les marqueurs ChatML (`<|…`), délimiteurs de raisonnement (`<think>`, `</think>`), activation `/think`, `[INST]`, `[/INST]`, `<<SYS>>`, NUL et contrôles incompatibles sont refusés dans tous les textes entrants. `/no_think` est autorisé **uniquement dans le système CORE soumis au gate**, cohérent avec la règle fixe native et le véritable prompt par défaut CORE004B ; il est préservé littéralement, pas retiré. Il est refusé dans question/historique/documents. Les règles fixes internes ne viennent pas du demandeur. Ce choix ferme refuse certaines citations littérales ; aucun échappement ou suppression silencieuse ne les transforme.
 
 Ce filtrage **ne prouve pas l'absence d'injection sémantique** dans un document en langue naturelle. L'autorité d'outils, de confirmation et de mémoire doit rester dans CORE ; un système en langage naturel n'est pas un mécanisme d'autorisation.
 
