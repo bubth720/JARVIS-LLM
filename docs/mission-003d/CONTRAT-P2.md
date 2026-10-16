@@ -37,6 +37,8 @@ Aucun seuil n'évolue : SMALL 2 Gio, MAIN 4 Gio, réserve et contraintes batteri
 
 `P2Planner` prépare une seule instruction SYSTEM : **politique native fixe exacte**, instructions CORE autorisées subordonnées, puis règle explicite sur les documents non fiables. Les tours user/assistant gardent leur rôle et ordre. Le dernier USER contient les extraits identifiés comme données, puis la question complète en fin. Aucun texte documentaire n'est promu en SYSTEM. Le préremplissage assistant de raisonnement court est conservé : `<think>\n\n</think>\n\n`.
 
+Chaque message **après composition** est aussi borné à 16000 caractères et 128 Kio UTF-8, conservant les bornes textuelles legacy/native ; un agrégat de documents trop long est refusé avant le tokenizer, jamais raccourci.
+
 Les structures `PromptSpec/PromptMessage` ne contiennent pas de ChatML construit à la main. `TemplateTokenizer` devra appliquer le **template officiel du GGUF réellement chargé**, puis son vocabulaire, politique BOS/special tokens et préfill, et retourner `TokenMeasurement` avec digest modèle/template et origine de vérification. Un tokenizer absent/incompatible doit refuser. Les tests actuels injectent un compteur **FIXTURE** ; un test compare la politique fixe à la source C++ existante, pas un rendu Qwen réel.
 
 Admission : `tokens(prompt complet formaté + préfill) + sortie effective + garde 8 ≤ contexte utile`. L'addition est en Long pour éviter un débordement. Système, documents, historique et question sont tous comptés. **Aucune troncature**, même d'historique : un dépassement refuse toute la requête. L'appelant peut proposer une nouvelle requête avec une sélection explicite, sans mutation silencieuse ni changement de permissions.

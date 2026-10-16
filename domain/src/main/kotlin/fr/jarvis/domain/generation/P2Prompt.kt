@@ -55,6 +55,7 @@ object P2Planner {
         val messages = listOf(PromptMessage(PromptRole.SYSTEM, system)) + request.history.map {
             PromptMessage(if (it.role == HistoryRole.USER) PromptRole.USER else PromptRole.ASSISTANT, it.text)
         } + PromptMessage(PromptRole.USER, last)
+        messages.forEach { checkP2(it.text.length <= 16_000 && utf8Size(it.text) <= 128 * 1024, P2Error.INPUT_TOO_LARGE) }
         val spec = PromptSpec(messages)
         val measurement = tokenizer.measure(spec, verifiedModelSha)
         checkP2(measurement.modelSha256 == verifiedModelSha, P2Error.MODEL_MISMATCH)

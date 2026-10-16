@@ -103,4 +103,13 @@ class P2ContractTest {
         assertFalse(port.requestStop(key()))
     }
 
+    @Test fun renderedMessageCannotBypassLegacyCharacterAndNativeByteBounds() {
+        val docs=listOf(DocumentExcerpt(ID,1,"x".repeat(4096)),DocumentExcerpt("00000000-0000-0000-0000-000000000002",1,"x".repeat(4096)))
+        val r=request(question="q".repeat(8192),documents=docs)
+        rejects(P2Error.INPUT_TOO_LARGE) {
+            P2Planner.prepare(r,SafetyDecision(RuntimeConfig(ModelKind.SMALL,512,64,1),"synthetic"),SHA,
+                TemplateTokenizer { _,_->error("Oversized rendered message must not reach tokenizer") },true,CoreAuthorizationGate { true })
+        }
+    }
+
 }
