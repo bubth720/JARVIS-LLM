@@ -26,7 +26,7 @@ SafetyPolicy, ResourceCoordinator, ProcessResources, native_configuration.h, can
 - Nouveau harnais Java : charge la bibliothèque JNI issue du **même bridge.cpp**, avec un GGUF Qwen3 0.6B Q4_K_M public vérifié par SHA-256. Vérifie format SYSTEM/USER effectif, règles fixes, tokenisation, génération historique/P2, refus de dépassement, annulation, déchargement et échec de chargement. Inspection du prompt disponible uniquement dans la compilation hôte, absente d'Android.
 - ARM64, Lint et contrôle APK : compilation et inspection statique de l'application, sans installation.
 
-Les résultats exacts de cette branche seront consignés dans `VALIDATION.md` après exécution. Les anciennes exécutions ne sont pas des preuves de ce nouveau chemin JNI.
+Les résultats exacts de cette branche sont consignés dans `VALIDATION.md` : CI entièrement réussie au commit `0f13573eafaf461714ba9dc00bbb208b1e723fb8`. Les anciennes exécutions ne sont pas des preuves de ce nouveau chemin JNI.
 
 ## Limites et prochaine étape
 
