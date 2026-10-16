@@ -28,8 +28,19 @@ data class GenerationRequest(val messages: List<Message>, val config: RuntimeCon
     }
 }
 
+/** Local capabilities only; never a statement of Android physical qualification or CORE connectivity. */
+data class EngineCapabilities(
+    val contractVersion: String = "jarvis.llm.engine/1.0",
+    val separateSystemPrompt: Boolean = false,
+    val nativeCancellation: Boolean = false,
+    val processLocalCoordinator: Boolean = true,
+    val structuredCoreSession: Boolean = false,
+    val interprocessArbiter: Boolean = false
+)
+
 /** Replaceable backend. requestStop must reach native computation, not merely cancel a coroutine. */
 interface LanguageModel {
+    val capabilities: EngineCapabilities get() = EngineCapabilities()
     val allocations: NativeAllocations? get() = null
     val allocationDiagnostic: String get() = "Allocations natives non mesurées"
     fun prepareOperation()

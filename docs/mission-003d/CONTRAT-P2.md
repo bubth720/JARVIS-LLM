@@ -14,6 +14,8 @@ Ce point d'entrée interne ne remplace pas le protocole P2Request complet. Les p
 
 ## Capacités et erreurs
 
+`LanguageModel.capabilities` expose `jarvis.llm.engine/1.0`. Le backend réel annonce `separateSystemPrompt=true`, `nativeCancellation=true`, `processLocalCoordinator=true`, mais `structuredCoreSession=false` et `interprocessArbiter=false`. Les adaptateurs historiques non qualifiés gardent les valeurs prudentes par défaut.
+
 Capacités à annoncer au futur CORE : un moteur CPU llama.cpp, modèles SMALL/MAIN vérifiés, SYSTEM distinct disponible dans l'ABI locale, profils admis fournis par SafetyPolicy, contexte et sortie effectifs bornés par le modèle résident, arrêt natif disponible, un seul modèle résident, coordinateur local au processus, absence de transport et de preuve de qualification physique.
 
 Erreurs typées domaine : version/champs/rôles/UTF-8/tailles invalides, contexte dépassé, modèle incompatible, refus d'autorisation ou de ressources, BUSY, CANCELLED, EXPIRED, résultat tardif, NATIVE_FAILURE, CLEANUP_FAILED, UNKNOWN_STATE. Les exceptions JNI restent des IllegalStateException locales ; leur traduction exhaustive en erreurs CORE est à valider, pas un contrat partagé déjà opérationnel.

@@ -43,7 +43,9 @@ public final class NativeBridge {
             generator.start();
             try { Thread.sleep(20); n.cancel(h); n.cancel(h); generator.join(5000); }
             catch (InterruptedException e) { throw new AssertionError(e); }
-            require(!generator.isAlive() && outcome.get() instanceof IllegalStateException);
+            // Never free a handle still in use, even when this test detects broken cancellation.
+            if (generator.isAlive()) { System.err.println("Native worker did not stop; refusing premature destroy"); Runtime.getRuntime().halt(1); }
+            require(outcome.get() instanceof IllegalStateException);
             n.begin(h); require(n.allocations(h).length == 3);
             n.unload(h); n.unload(h);
             refused(() -> n.allocations(h));
