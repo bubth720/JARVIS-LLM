@@ -1,3 +1,9 @@
+# JARVIS LLM — Mission 003C
+
+Qualification physique **en attente utilisateur**. Branche `mission-003c-device-qualification`, base exacte `1756e29557287550b5cfdffdd911cada2a302db6` de `mission-003b-resources`. Runtime 003B inchangé, budgets et protections conservés.
+
+Lire [le rapport 003C](docs/mission-003c/RAPPORT.md), [la préservation 003B](docs/mission-003c/PRESERVATION-003B.md), [le protocole](docs/mission-003c/PROTOCOLE.md), les fiches [Redmi](docs/mission-003c/REDMI-PAD-SE.md) / [POCO](docs/mission-003c/POCO-X8-PRO.md) et [le formulaire de retour](docs/mission-003c/RETOUR-UTILISATEUR.md). Aucun appareil ni budget nouveau qualifié dans le cloud.
+
 # JARVIS LLM — Mission 003B
 
 Prototype Android textuel, autonome et hors ligne, branche `mission-003b-resources`, issue de `mission-003-catalogue`.

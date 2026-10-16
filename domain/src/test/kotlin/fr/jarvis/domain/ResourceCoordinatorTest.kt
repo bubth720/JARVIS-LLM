@@ -49,4 +49,27 @@ class ResourceCoordinatorTest {
         assertEquals(-0.042,decision.memory.margin.toDouble()/RuntimeConfig.GIB,0.001)
         token.close()
     }
+    @Test fun failedLoadKeepsOwnershipUntilConfirmedCleanupThenAllowsRetry() {
+        val broker = ResourceCoordinator()
+        lateinit var resident: fr.jarvis.domain.resources.ResourceLease
+        assertThrows(IllegalStateException::class.java) {
+            lease(broker.acquire(request("loader"))).use {
+                resident = lease(broker.acquire(request("loader", ResourceClass.MODEL)))
+                throw IllegalStateException("SIMULATED load failure, not a JNI/device test")
+            }
+        }
+        assertNull(broker.snapshot().heavy)
+        assertNotNull(broker.snapshot().model)
+        assertTrue(broker.acquire(request("replacement")) is ResourceGrant.Refused)
+        // A failed operation is not proof that the native resident allocation was freed.
+        resident.close() // simulated explicit completion of cleanup, never a timeout
+        lease(broker.acquire(request("replacement"))).use {
+            lease(broker.acquire(request("replacement", ResourceClass.MODEL))).use {
+                assertEquals("replacement", broker.snapshot().model!!.owner)
+            }
+        }
+        assertNull(broker.snapshot().model)
+        assertNull(broker.snapshot().heavy)
+    }
+
 }

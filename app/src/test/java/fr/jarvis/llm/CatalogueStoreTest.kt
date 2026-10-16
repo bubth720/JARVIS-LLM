@@ -115,4 +115,23 @@ class CatalogueStoreTest {
             } finally { done.set(true); sampler.join() }
         }
     }
+    @Test fun failedTransactionLeavesExportAndPersistentHistoryUnchanged() {
+        val name = "catalogue-003c-rollback.db"
+        val before: ByteArray
+        store(name).use { s ->
+            s.merge(listOf(record()))
+            before = ByteArrayOutputStream().also { s.export(it) }.toByteArray()
+            val historyBefore = s.stats()
+            assertThrows(IllegalArgumentException::class.java) {
+                s.merge(listOf(record("partial.new"), record().copy(variants=listOf("conflict"))))
+            }
+            assertArrayEquals(before, ByteArrayOutputStream().also { s.export(it) }.toByteArray())
+            assertEquals(historyBefore, s.stats())
+        }
+        CatalogueStore(context, name).use { reopened ->
+            assertArrayEquals(before, ByteArrayOutputStream().also { reopened.export(it) }.toByteArray())
+            assertNull(reopened.get("partial.new"))
+        }
+    }
+
 }

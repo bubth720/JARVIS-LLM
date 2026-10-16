@@ -1,56 +1,15 @@
-# Premier diagnostic Mission 003B
+# Premier diagnostic Mission 003C
 
-Lire d’abord le protocole mémoire **ESSAIS-MEMOIRE-003B.md** fourni dans le ZIP. Sauvegarder catalogue et GGUF avant tout remplacement. La capture **Mesures** est passive et ne modifie pas les budgets. À 3,46 Gio disponibles sur la Redmi, le premier chargement reste refusé : ne pas le forcer.
+**QUALIFICATION PHYSIQUE EN ATTENTE UTILISATEUR.** Aucun téléphone n'est déclaré qualifié par les tests cloud.
 
-# Premier diagnostic Mission 003
+1. Consulter le [rapport 003C en ligne](https://github.com/bubth720/JARVIS-LLM/blob/mission-003c-device-qualification/docs/mission-003c/RAPPORT.md) : exécution réussie, commit source, SHA-256 APK et certificat.
+2. Lire [le protocole utilisateur](mission-003c/PROTOCOLE.md), dans l'ordre 1 à 10. Vérifier APK puis sauvegarder catalogue et GGUF **avant** toute installation incompatible.
+3. Commencer sans modèle résident, par une capture passive d'environ 10 s via **Mesures** ; terminer et exporter. La capture ne lance aucun modèle.
+4. Remplir la fiche [Redmi Pad SE](mission-003c/REDMI-PAD-SE.md) ou [POCO X8 Pro](mission-003c/POCO-X8-PRO.md), puis le [retour simple](mission-003c/RETOUR-UTILISATEUR.md).
+5. Si l'admission reste refusée, conserver le refus et ne pas générer. Aucun seuil ne peut être abaissé pour cet essai.
 
-Commencer sans importer ni exécuter de GGUF. Le petit catalogue de démonstration doit répondre en mode avion. Le [guide Mission 003](TEST_CATALOGUE_003.md), également fourni sous `ESSAIS-CATALOGUE.md` dans le paquet, décrit installation, sauvegardes, variantes, conflits et essais courts. Aucun benchmark intensif.
+L'APK conserve version **0.3.1-mission003b / code 5**, avec la provenance du nouveau commit ; les moteurs, profils et protections 003B sont inchangés. Une signature debug différente peut empêcher une mise à jour : ne pas désinstaller sans sauvegardes. Identifiant `fr.jarvis.llm`, Android API 29+, ARM64.
 
-# Diagnostic matériel passif conservé
+Le paquet contient `APK-IDENTITE.json`, `SOURCE_COMMIT.txt`, `SHA256SUMS`, `VALIDATION-CLOUD.json`, `PRESERVATION-003B.json` et les guides. Le vérificateur HTML hors ligne `mission-003c/VERIFIER-APK.html` ne contrôle que le SHA du fichier ; signature/permissions sont vérifiées en CI, et sa compatibilité navigateur Android reste à constater. Si le navigateur local ne permet pas le calcul, utiliser un vérificateur fiable existant ou un ordinateur avant installation.
 
-Mission 002C : APK version 0.2.1, profil TABLETTE ÉCO disponible (512/64, batch 16/4, un thread). La RAM nécessaire au premier chargement n'a pas été abaissée sans preuves.
-Relever aussi le budget estimé, la réserve, le crédit PSS observé, la marge d'admission et le pic PSS échantillonné.
-Sur le POCO annoncé à 11,06 Gio total /3,68 Gio disponible, la marge attendue sans modèle résident est environ -0,532 Gio : ne pas forcer un chargement.
-Sur la Redmi à 7,51 Gio accessibles /3,24 Gio disponibles, le premier chargement reste refusé : au moins 3,502 Gio requis, déficit environ 268 Mio. Sélectionner TABLETTE ÉCO ne contourne pas ce refus.
-Un relevé passif ne mesure pas la consommation du modèle et n'autorise pas un benchmark.
-
-## Télécharger et installer
-
-1. Ouvrir l'exécution GitHub Actions réussie indiquée dans le rapport de validation.
-2. Dans **Artifacts**, télécharger **jarvis-llm-debug** (connexion GitHub généralement nécessaire).
-3. Extraire le ZIP : `JARVIS-LLM-debug.apk`, `SHA256SUMS`, `SOURCE_COMMIT.txt` et ce guide.
-4. Vérifier le SHA-256 de l'APK contre `SHA256SUMS`. Sur Linux/macOS : `shasum -a 256 JARVIS-LLM-debug.apk` ; Windows PowerShell : `Get-FileHash .\JARVIS-LLM-debug.apk -Algorithm SHA256`.
-5. Copier l'APK localement sur chaque appareil, ouvrir le fichier et autoriser ponctuellement cette source d'installation si Android le demande.
-6. Installer **JARVIS LLM**, identifiant `fr.jarvis.llm`. Aucun autre projet JARVIS n'est remplacé.
-
-APK debug, Android API 29+, ARM64 ; pas une version de production. Une signature debug différente peut empêcher une mise à jour d'une ancienne installation : ne pas désinstaller aveuglément, car ses données privées seraient supprimées.
-Une empreinte assure l'identité du fichier téléchargé, pas une certification de sécurité matérielle.
-
-## Diagnostic passif sur POCO et Redmi
-
-1. Ouvrir l'application, sans toucher à **Importer** ni **Envoyer**.
-2. Vérifier **Modèles importés : aucun** sur une installation neuve.
-3. Lire le panneau : modèle/référence, Android/API, SoC déclaré, ABI, taille de page mémoire, RAM accessible/disponible, stockage libre, batterie, état thermique et PSS.
-4. Le texte du panneau est sélectionnable : le copier dans vos notes locales. Aucun envoi automatique n'est effectué.
-5. Relever séparément la RAM physique et l'extension mémoire dans les réglages constructeur ; l'extension ne doit pas être ajoutée au budget RAM.
-6. Revenir à l'accueil puis rouvrir l'application : aucune génération ni import ne doit démarrer.
-7. Fermer l'application. Fournir les deux relevés pour décider des essais suivants.
-
-Ce diagnostic ne charge pas llama.cpp et n'exécute ni modèle ni benchmark. Il ne valide pas le débit de stockage, les capteurs OEM, le GPU/NPU ou l'arrêt d'un vrai Qwen.
-Ne pas utiliser PLEINE PUISSANCE ni procéder à un essai prolongé. L'import et la génération feront l'objet d'une étape ultérieure après examen des protections et des relevés.
-
-## Fiche à remplir pour chaque appareil
-
-| Information | Relevé |
-|---|---|
-| Appareil et référence exacte | |
-| Android / API / firmware | |
-| SoC déclaré / ABI / page mémoire | |
-| RAM physique / extension mémoire séparée | |
-| RAM accessible / disponible | |
-| Stockage libre | |
-| Batterie / état thermique / PSS | |
-| Modèles importés | Aucun attendu |
-| Ouverture / retour accueil / réouverture | |
-
-Si une information est absente ou surprenante, la signaler ; ne pas forcer un calcul pour la vérifier.
+Les [essais catalogue Mission 003](TEST_CATALOGUE_003.md) et [protocole mémoire 003B](ESSAIS_MEMOIRE_003B.md) restent disponibles. Aucune importation du catalogue SYNTHÉTIQUE n'est nécessaire aux essais matériels. Ne publier ni catalogue personnel ni modèle. Pas d'IPC, pas de connexion CORE, pas de PLEINE PUISSANCE, pas de benchmark intensif.

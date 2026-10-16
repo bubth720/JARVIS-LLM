@@ -12,6 +12,12 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - name: Verify unchanged 003B runtime and safety policy
+        run: python3 tools/check-preservation-003c.py
+      - name: Test offline APK hash verifier (not Android hardware)
+        run: node tools/test-apk-verifier.cjs
       - name: Install verified JDK, SDK, NDK and native sources
         run: ./tools/setup-cloud.sh
       - name: Native cancellation and model admission tests
@@ -21,7 +27,7 @@ jobs:
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
       - name: Publish cloud validation with hardware limitations
-        run: python3 tools/publish-validation-003b.py
+        run: python3 tools/publish-validation-003b.py --mission 003C
       - name: Publish actual catalogue scale evidence
         run: python3 tools/publish-catalogue-evidence.py
       - name: Prepare clearly labelled synthetic fixtures
@@ -46,7 +52,9 @@ jobs:
             app/build/reports/lint-results-debug.*
             build/native-tests/Testing/Temporary/LastTest.log
             app/build/reports/catalogue-scale.json
-            build/mission003b-validation.json
+            build/mission003c-validation.json
+            build/mission003c-preservation.json
+            build/mission003c-apk-identity.json
 
           if-no-files-found: warn
 

@@ -1,10 +1,15 @@
 #!/usr/bin/env python3
 """Publish actual cloud checks, never fabricate Android hardware measurements."""
+import argparse
 import hashlib
 import json
 from pathlib import Path
 import subprocess
 import xml.etree.ElementTree as ET
+
+parser = argparse.ArgumentParser()
+parser.add_argument('--mission', choices=('003B', '003C'), default='003B')
+args = parser.parse_args()
 
 def junit(folder):
     suites = [ET.parse(p).getroot() for p in sorted(Path(folder).glob('TEST-*.xml'))]
@@ -26,7 +31,7 @@ native_passes = Path('build/native-tests/Testing/Temporary/LastTest.log').read_t
 if native_passes < 1:
     raise SystemExit('Missing native pass evidence')
 report = {
-    'mission': '003B', 'platform': 'cloud-linux-jvm-robolectric-not-android-hardware',
+    'mission': args.mission, 'platform': 'cloud-linux-jvm-robolectric-not-android-hardware',
     'sourceCommit': ('working-tree' if subprocess.check_output(['git', 'status', '--porcelain'], text=True).strip()
                      else subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip()),
     'domain': junit('domain/build/test-results/test'),
@@ -35,7 +40,7 @@ report = {
     'safetyPolicySha256': hashlib.sha256(Path('domain/src/main/kotlin/fr/jarvis/domain/SafetyPolicy.kt').read_bytes()).hexdigest(),
     'tabletMemoryMeasurements': None, 'newAdmissionBudgetQualified': False,
 }
-output = Path('build/mission003b-validation.json')
+output = Path('build/mission' + args.mission.lower() + '-validation.json')
 output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps(report, indent=2) + '\n')
-print('::notice title=Mission 003B cloud validation::' + json.dumps(report, separators=(',', ':')))
+print('::notice title=Mission ' + args.mission + ' cloud validation::' + json.dumps(report, separators=(',', ':')))

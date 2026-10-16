@@ -1,0 +1,189 @@
+{
+  "documentType": "jarvis-003c-manual-return-template",
+  "templateOnly": true,
+  "physicalQualification": "EN ATTENTE UTILISATEUR",
+  "conclusion": "DONNÉES INSUFFISANTES",
+  "privacy": "No messages, personal catalogue, GGUF weights, serial, account or private paths. Raw app export stays separate.",
+  "device": {
+    "observedModel": null,
+    "android": null,
+    "api": null,
+    "firmware": null
+  },
+  "artifact": {
+    "versionName": null,
+    "versionCode": null,
+    "sourceCommit": null,
+    "apkSha256": null,
+    "signerCertificateSha256": null,
+    "apkHashChecked": null
+  },
+  "model": {
+    "kind": null,
+    "ggufName": null,
+    "trustedSourceReference": null,
+    "expectedSha256": null,
+    "coldVerificationSucceeded": null
+  },
+  "configuration": {
+    "profile": null,
+    "context": null,
+    "maxOutputTokens": null,
+    "batch": null,
+    "microBatch": null,
+    "threads": null,
+    "actuallyLoadedKind": null
+  },
+  "conditions": {
+    "freshProcess": null,
+    "airplaneMode": null,
+    "charging": null,
+    "otherHeavyWorkAbsent": null,
+    "stableSessionCount": null
+  },
+  "admission": {
+    "permitted": null,
+    "reason": null,
+    "reserveBytes": null,
+    "estimatedBudgetBytes": null,
+    "residencyCreditBytes": null
+  },
+  "phases": [
+    {
+      "phase": "PASSIVE_COLD",
+      "elapsedMs": null,
+      "pssBytes": null,
+      "rssBytes": null,
+      "rssLifetimeHighWaterBytes": null,
+      "availableBytes": null,
+      "totalBytes": null,
+      "admissionMarginBytes": null,
+      "nativeBuffersReported": {
+        "modelBytes": null,
+        "contextBytes": null,
+        "computeBytes": null
+      },
+      "batteryPercent": null,
+      "thermalStatus": null,
+      "thermalHeadroom": null
+    },
+    {
+      "phase": "VERIFYING",
+      "elapsedMs": null,
+      "pssBytes": null,
+      "rssBytes": null,
+      "rssLifetimeHighWaterBytes": null,
+      "availableBytes": null,
+      "totalBytes": null,
+      "admissionMarginBytes": null,
+      "nativeBuffersReported": {
+        "modelBytes": null,
+        "contextBytes": null,
+        "computeBytes": null
+      },
+      "batteryPercent": null,
+      "thermalStatus": null,
+      "thermalHeadroom": null
+    },
+    {
+      "phase": "LOADING",
+      "elapsedMs": null,
+      "pssBytes": null,
+      "rssBytes": null,
+      "rssLifetimeHighWaterBytes": null,
+      "availableBytes": null,
+      "totalBytes": null,
+      "admissionMarginBytes": null,
+      "nativeBuffersReported": {
+        "modelBytes": null,
+        "contextBytes": null,
+        "computeBytes": null
+      },
+      "batteryPercent": null,
+      "thermalStatus": null,
+      "thermalHeadroom": null
+    },
+    {
+      "phase": "GENERATING",
+      "elapsedMs": null,
+      "pssBytes": null,
+      "rssBytes": null,
+      "rssLifetimeHighWaterBytes": null,
+      "availableBytes": null,
+      "totalBytes": null,
+      "admissionMarginBytes": null,
+      "nativeBuffersReported": {
+        "modelBytes": null,
+        "contextBytes": null,
+        "computeBytes": null
+      },
+      "batteryPercent": null,
+      "thermalStatus": null,
+      "thermalHeadroom": null
+    },
+    {
+      "phase": "UNLOADING",
+      "elapsedMs": null,
+      "pssBytes": null,
+      "rssBytes": null,
+      "rssLifetimeHighWaterBytes": null,
+      "availableBytes": null,
+      "totalBytes": null,
+      "admissionMarginBytes": null,
+      "nativeBuffersReported": {
+        "modelBytes": null,
+        "contextBytes": null,
+        "computeBytes": null
+      },
+      "batteryPercent": null,
+      "thermalStatus": null,
+      "thermalHeadroom": null
+    },
+    {
+      "phase": "POST_UNLOAD",
+      "elapsedMs": null,
+      "pssBytes": null,
+      "rssBytes": null,
+      "rssLifetimeHighWaterBytes": null,
+      "availableBytes": null,
+      "totalBytes": null,
+      "admissionMarginBytes": null,
+      "nativeBuffersReported": {
+        "modelBytes": null,
+        "contextBytes": null,
+        "computeBytes": null
+      },
+      "batteryPercent": null,
+      "thermalStatus": null,
+      "thermalHeadroom": null
+    }
+  ],
+  "externalSensors": {
+    "temperatureC": null,
+    "temperatureSensorType": null,
+    "source": null,
+    "currentMa": null,
+    "energyMWh": null
+  },
+  "timings": {
+    "loadApproxMs": null,
+    "sendToFullVisibleAnswerMs": null,
+    "generationApproxMs": null,
+    "nativeFirstTokenMs": null,
+    "nativeFirstTokenStatus": "NOT_INSTRUMENTED",
+    "stopToConfirmedUnloadMs": null,
+    "methodAndLimits": null
+  },
+  "outcomes": {
+    "generationSucceeded": null,
+    "stopDuringActiveComputeObserved": null,
+    "nativeUnloadConfirmed": null,
+    "residentLeaseReleased": null,
+    "backgroundCaptureStopped": null,
+    "resumeWithoutAutoLoad": null,
+    "cataloguePreserved": null,
+    "anomaly": null
+  },
+  "rawAppExportReferences": [],
+  "unitsAndLimits": "All memory values in bytes. null means unknown. Never sum PSS/RSS/native buffers. No automatic budget or qualification."
+}

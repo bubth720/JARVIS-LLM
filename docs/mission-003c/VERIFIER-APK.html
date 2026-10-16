@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="fr"><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'unsafe-inline'; style-src 'unsafe-inline'; connect-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Vérifier le SHA-256 de l’APK JARVIS — hors ligne</title>
+<style>body{font:18px sans-serif;max-width:42em;margin:2em auto;padding:1em}input,button{display:block;width:100%;margin:1em 0;padding:.7em;box-sizing:border-box}output{overflow-wrap:anywhere;white-space:pre-wrap}</style>
+<h1>Vérification locale de l’APK</h1>
+<p>Ouvrir ce fichier dans un navigateur Android compatible, même en mode avion. Aucun téléchargement ni envoi réseau. Le fichier choisi est lu en mémoire (64 Mio maximum).</p>
+<p>Copier l’empreinte APK depuis le rapport GitHub Actions de confiance, indépendamment du ZIP. Ce contrôle ne vérifie ni le certificat ni les permissions : consulter les preuves CI.</p>
+<label>APK à vérifier<input id="file" type="file" accept=".apk,application/vnd.android.package-archive"></label>
+<label>SHA-256 APK attendu (64 caractères)<input id="expected" type="text" autocomplete="off" spellcheck="false" maxlength="64"></label>
+<button id="verify" type="button">Calculer et comparer localement</button>
+<output id="result" aria-live="polite"></output>
+<script>
+'use strict';
+document.getElementById('verify').addEventListener('click', async () => {
+  const result = document.getElementById('result');
+  const file = document.getElementById('file').files[0];
+  const expected = document.getElementById('expected').value.trim().toLowerCase();
+  result.textContent = '';
+  if (!file || !/^[a-f0-9]{64}$/.test(expected)) { result.textContent = 'Choisir un APK et une empreinte de référence valide.'; return; }
+  if (file.size > 64 * 1024 * 1024 || file.size === 0) { result.textContent = 'Taille refusée (fichier vide ou supérieur à 64 Mio).'; return; }
+  if (!globalThis.crypto?.subtle) { result.textContent = 'SHA-256 indisponible dans ce navigateur/contexte local. Utiliser un vérificateur local fiable ou un ordinateur ; ne pas ignorer cette vérification.'; return; }
+  try {
+    result.textContent = 'Calcul local en cours…';
+    const bytes = await file.arrayBuffer();
+    const hash = await crypto.subtle.digest('SHA-256', bytes);
+    const actual = Array.from(new Uint8Array(hash), b => b.toString(16).padStart(2, '0')).join('');
+    result.textContent = (actual === expected ? 'CONFORME' : 'DIFFÉRENT — ne pas installer') + '\nSHA-256 : ' + actual;
+  } catch (_) { result.textContent = 'Lecture ou calcul impossible. Ne pas installer avant vérification indépendante.'; }
+});
+</script></html>
