@@ -2,6 +2,8 @@
 
 ## État de clôture cloud et portée
 
+**Volet cloud terminé et publication vérifiée. Volet physique en attente utilisateur.**
+
 Module : **JARVIS LLM uniquement**. Mission : qualification matérielle Android et protections de ressources. Branche : `mission-003c-device-qualification`, départ exact `1756e29557287550b5cfdffdd911cada2a302db6` sur `mission-003b-resources`. Aucune fusion dans main, aucun autre dépôt JARVIS modifié, aucune connexion CORE–LLM/IPC ajoutée.
 
 **QUALIFICATION PHYSIQUE EN ATTENTE UTILISATEUR**, pour les deux appareils. Aucun nouveau relevé matériel, gain RAM, autonomie ou performance Android mesuré par Codex. L'ADR-001 est signalée comme approuvée par l'utilisateur, sans consultation/modification de JARVIS-UNIFIED. Cette mission prépare des preuves, pas une intégration.
@@ -63,11 +65,28 @@ node tools/test-apk-verifier.cjs
 python3 tools/publish-validation-003b.py --mission 003C
 ```
 
-Les rapports JUnit/Lint/natifs seront fournis par l'exécution 003C, sans assimiler une simulation à un test physique. La comparaison GGUF courte héritée mesure Linux x86_64/RSS seulement, pas les appareils ; pas d'amélioration annoncée sur sa base.
+Les rapports JUnit/Lint/natifs sont fournis dans l’artefact `jarvis-llm-validation` de l’exécution 003C réussie, sans assimiler une simulation à un test physique. GitHub Actions confirme les mêmes **56 tests domaine et 21 simulations Android**, sans échec/erreur/ignoré, le CTest 1/1, compilation, contrôles APK et **Lint 0 erreur /36 avertissements** (local : 32). Le vérificateur HTML et la préservation 003B ont également réussi dans la CI. Les trois jobs sont réussis. La comparaison GGUF courte héritée mesure Linux x86_64/RSS seulement, pas les appareils ; pas d'amélioration annoncée sur sa base.
 
 ### Publication et provenance
 
-Références du commit source testé, exécution CI, artefacts, SHA-256 APK et certificat : **à consigner après succès effectif de cette exécution**. Le paquet de diagnostic contiendra les identités et rapports machine au moment du build, ainsi que les guides/fiches vierges, le vérificateur hors ligne et le formulaire. Un commit documentaire final pourra consigner les liens sans modifier le runtime ni le code testé.
+- **Branche publiée :** `mission-003c-device-qualification`.
+- **Base vérifiée :** `1756e29557287550b5cfdffdd911cada2a302db6`.
+- **Préparation guides/tests :** `da9eda22260ed7450f2174af021e1ffde7e3d5fe`.
+- **Commit source testé / embarqué dans l'APK :** `4501881b64b97a553e66be6167469b15759c20a7`.
+- **Exécution entièrement réussie :** https://github.com/bubth720/JARVIS-LLM/actions/runs/38887000314
+- **APK et guides téléchargeables :** https://github.com/bubth720/JARVIS-LLM/actions/runs/38887000314/artifacts/12040866326
+- **Rapports de validation :** https://github.com/bubth720/JARVIS-LLM/actions/runs/38887000314/artifacts/12039858241
+- **Comparaison GGUF Linux héritée :** https://github.com/bubth720/JARVIS-LLM/actions/runs/38887000314/artifacts/12040366031
+- **SHA-256 APK (pas ZIP) :** `2c60d53e03ef6972ed7c2b44ba188b554b624119714ba5c25b10cb1aea4ac78b`.
+- **SHA-256 certificat signataire debug :** `a958b964354ab1bd1b5726cc6fd853fe3aee0f2747c398778095c0cd8d79f0a3`.
+
+Connexion GitHub généralement nécessaire pour télécharger les artefacts, conservés 30 jours. Le SHA du ZIP publié par GitHub est distinct du SHA de l'APK. La notice de l'étape d'empaquetage fournit les identités ci-dessus après contrôle ; elles ne proviennent pas d'un téléchargement du ZIP distant dans cette session. [Preuve structurée des pages publiques et annotations CI](../evidence/mission003c-4501881.json).
+
+Le paquet contient `APK-IDENTITE.json`, `SOURCE_COMMIT.txt`, `SHA256SUMS`, `PRESERVATION-003B.json`, `VALIDATION-CLOUD.json`, guides/fiches vierges, formulaire et vérificateur HTML hors ligne. Aucun modèle ni données personnelles. La même procédure d'empaquetage a aussi été exécutée avec succès localement ; son APK signée avec une autre clé locale a naturellement une empreinte différente et **n'est pas la référence de téléchargement**.
+
+Le premier contrôle local de traçabilité a détecté un parseur `aapt` trop permissif (capture d'un suffixe de champ). Le commit `4501881` corrige uniquement ce lecteur d'identité d'artefact, validé ensuite sur la sortie réelle de `aapt` et dans la CI. L'exécution précédente `38886812739` n'est pas retenue comme preuve de validation finale. Aucun fichier de runtime ni seuil n'a été modifié par cette correction.
+
+Un commit documentaire ultérieur consigne ces résultats et cette preuve avec `[skip ci]`, sans changer le runtime ni le code testé. L'APK publiée reste liée au commit source `4501881`, et non à ce commit documentaire.
 
 ## Prochaine action
 
