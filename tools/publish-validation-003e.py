@@ -8,7 +8,7 @@ def junit(folder,minimum):
  return r
 report={'mission':'003E','sourceCommit':subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(),
  'domain':junit('domain/build/test-results/test',87),'app':junit('app/build/test-results/testDebugUnitTest',27),
- 'fixture':junit('fixtures/p2-endpoint/build/test-results/testDebugUnitTest',18),'lint':{},'androidCrossApkExecuted':False,'physicalQualification':False,'realArbiterAvailable':False}
+ 'fixture':junit('fixtures/p2-endpoint/build/test-results/testDebugUnitTest',19),'lint':{},'androidCrossApkExecuted':False,'physicalQualification':False,'realArbiterAvailable':False}
 for pattern in ['app/build/reports/lint-results-debug.xml','fixtures/p2-endpoint/build/reports/lint-results-debug.xml','fixtures/p2-client/build/reports/lint-results-*.xml']:
  paths=list(Path('.').glob(pattern));assert paths,pattern
  for p in paths:

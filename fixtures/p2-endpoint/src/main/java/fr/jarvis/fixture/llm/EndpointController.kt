@@ -53,7 +53,7 @@ class EndpointController(private val runtime: RuntimePort,private val authority:
             synchronized(this) { checkActive(); demand(expires > clock() && expires <= deadline,"EXPIRED_LEASE"); deadline=expires
                 if (!journal.begin(r.keyFields)) { blocked=true; throw Refusal("JOURNAL_FAILED") }; admitted=true; phase=Phase.ADMITTED }
             watch=scope.launch {
-                while (isActive) { delay(250); if (clock() >= deadline || !runtime.safe(r)) { stop(r.keyFields,"SAFETY_OR_DEADLINE"); break } }
+                while (isActive) { delay(250); if (clock() >= deadline || !runCatching { runtime.safe(r) }.getOrDefault(false)) { stop(r.keyFields,"SAFETY_OR_DEADLINE"); break } }
             }
             checkActive(); val config=runtime.admit(r); synchronized(this) { effective=config }; checkActive()
             update(Phase.LOADING)
@@ -77,7 +77,7 @@ class EndpointController(private val runtime: RuntimePort,private val authority:
                         unloaded=true; phase=Phase.UNLOADED; released=true
                         if (!journal.complete(receipt(r))) { released=false; blocked=true; phase=Phase.UNKNOWN; text=""; code="JOURNAL_FAILED" }
                     }
-                } catch (_: Exception) { synchronized(this@EndpointController) { blocked=true; phase=Phase.CLEANUP_FAILED; text=""; code="CLEANUP_FAILED" } }
+                } catch (_: Throwable) { synchronized(this@EndpointController) { blocked=true; phase=Phase.CLEANUP_FAILED; text=""; code="CLEANUP_FAILED" } }
             }
         }
     }
@@ -104,7 +104,7 @@ class EndpointController(private val runtime: RuntimePort,private val authority:
             draining?.join()
             withContext(NonCancellable) {
                 try { runtime.close() }
-                catch (_: Exception) { synchronized(this@EndpointController) {
+                catch (_: Throwable) { synchronized(this@EndpointController) {
                     blocked=true; phase=Phase.CLEANUP_FAILED; released=false; text=""; code="CLEANUP_FAILED"
                     active?.let { journal.begin(it.keyFields) }
                 } }

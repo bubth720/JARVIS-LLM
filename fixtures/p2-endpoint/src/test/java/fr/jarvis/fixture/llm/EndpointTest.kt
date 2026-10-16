@@ -70,6 +70,7 @@ class EndpointTest {
     private class Engine : RuntimePort {
         val inGeneration=CountDownLatch(1); val continueGeneration=CountDownLatch(1)
         @Volatile var closed=false
+        @Volatile var sensorFailure=false
         var loads=0; var unloads=0; @Volatile var stops=0; var failUnload=false
         override suspend fun admit(request: Request)=RuntimeConfig(ModelKind.SMALL,512,8,1)
         override suspend fun load(request: Request,config: RuntimeConfig,nativeDispatched: () -> Unit) { loads++; nativeDispatched() }
@@ -77,7 +78,7 @@ class EndpointTest {
         override suspend fun unload() { unloads++; check(!failUnload) }
         override fun stop() { stops++ }
         override suspend fun close() { closed=true }
-        override fun safe(request: Request)=true
+        override fun safe(request: Request): Boolean { check(!sensorFailure); return true }
     }
     private class Rig(val e: Engine=Engine(),val j: Log=Log(),authority: Authority=object:Authority { override suspend fun authorize(request: Request,uid: Int,deadline: Long)=deadline }) {
         val scope=CoroutineScope(SupervisorJob()+Dispatchers.Default)
@@ -164,6 +165,16 @@ class EndpointTest {
             rig.e.continueGeneration.countDown()
             withTimeout(10000) { while(!rig.e.closed) delay(10) }
             assertEquals(1,rig.e.unloads); assertFalse(rig.j.dirty)
+        } finally { rig.cleanup() }
+    }
+
+    @Test fun sensorExceptionStopsWithoutPretendingNativeEndOrRelease() = runBlocking {
+        val rig=Rig(); val r=request()
+        try { rig.controller.submit(r,123); assertTrue(rig.e.inGeneration.await(5,TimeUnit.SECONDS)); rig.e.sensorFailure=true
+            withTimeout(10000) { while(rig.e.stops == 0) delay(10) }
+            val pending=rig.controller.status(r.keyFields)
+            assertEquals("false",pending["effective_end"]); assertEquals("false",pending["release_confirmed"]); assertTrue(rig.j.dirty)
+            rig.e.continueGeneration.countDown(); assertEquals("",rig.await(r,"UNLOADED")["text"])
         } finally { rig.cleanup() }
     }
 
