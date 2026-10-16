@@ -1,0 +1,336 @@
+{
+  "run": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903",
+  "status": [
+    "success"
+  ],
+  "commits": [
+    "74093e37c3cf2e9951af7f0fe4c98defe4972159"
+  ],
+  "jobs": [
+    {
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903/job/117066981534",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Native tests and pinned sources",
+          "conclusion": "success"
+        },
+        {
+          "name": "Build bounded cloud model probe",
+          "conclusion": "success"
+        },
+        {
+          "name": "Short real-GGUF cloud comparison (not Android PSS)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload cloud memory evidence",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "annotations": [
+        {
+          "platform": "Linux x86_64 GitHub-hosted runner; NOT Android PSS",
+          "source_commit": "74093e37c3cf2e9951af7f0fe4c98defe4972159",
+          "conditions": "one fresh process per model/context; CPU one thread; 24 output tokens maximum; 60 s native deadline; one French prompt; no quality benchmark",
+          "admission_budget_changed": false,
+          "results": [
+            {
+              "repo": "unsloth/Qwen3-0.6B-GGUF",
+              "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+              "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+              "file": "Qwen3-0.6B-Q4_K_M.gguf",
+              "sha256": "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a",
+              "file_bytes": 396705472,
+              "declared_license": "apache-2.0",
+              "quantization": "Q4_K_M",
+              "status": "measured_linux_x86_64",
+              "runs": [
+                {
+                  "context": 768,
+                  "batch": 32,
+                  "micro_batch": 8,
+                  "model_buffer_bytes": 390753280,
+                  "context_buffer_bytes": 88080384,
+                  "compute_buffer_bytes": 784192,
+                  "linux_peak_rss_bytes": 541065216,
+                  "response": "Bonjour !"
+                },
+                {
+                  "context": 512,
+                  "batch": 16,
+                  "micro_batch": 4,
+                  "model_buffer_bytes": 390753280,
+                  "context_buffer_bytes": 58720256,
+                  "compute_buffer_bytes": 693984,
+                  "linux_peak_rss_bytes": 511307776,
+                  "response": "Bonjour !"
+                }
+              ]
+            },
+            {
+              "repo": "unsloth/Qwen3-0.6B-GGUF",
+              "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+              "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+              "file": "Qwen3-0.6B-Q3_K_M.gguf",
+              "sha256": "30bb9f9222cf58c076277879881a24e7127a10be32076d76d8c70f8defc01f5d",
+              "file_bytes": 347127488,
+              "declared_license": "apache-2.0",
+              "quantization": "Q3_K_M",
+              "status": "measured_linux_x86_64",
+              "runs": [
+                {
+                  "context": 768,
+                  "batch": 32,
+                  "micro_batch": 8,
+                  "model_buffer_bytes": 341175296,
+                  "context_buffer_bytes": 88080384,
+                  "compute_buffer_bytes": 784192,
+                  "linux_peak_rss_bytes": 491552768,
+                  "response": "Bonjour ! C'est un salutation courante en français."
+                },
+                {
+                  "context": 512,
+                  "batch": 16,
+                  "micro_batch": 4,
+                  "model_buffer_bytes": 341175296,
+                  "context_buffer_bytes": 58720256,
+                  "compute_buffer_bytes": 693984,
+                  "linux_peak_rss_bytes": 461934592,
+                  "response": "Bonjour ! C'est un salutation."
+                }
+              ]
+            },
+            {
+              "repo": "unsloth/Qwen3-0.6B-GGUF",
+              "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+              "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+              "file": "Qwen3-0.6B-Q2_K.gguf",
+              "sha256": "26d035ea15c4a2853e8d20ffc56a76f6164e17dbb6c9e532c5766700c404519d",
+              "file_bytes": 296238784,
+              "declared_license": "apache-2.0",
+              "quantization": "Q2_K",
+              "status": "measured_linux_x86_64",
+              "runs": [
+                {
+                  "context": 768,
+                  "batch": 32,
+                  "micro_batch": 8,
+                  "model_buffer_bytes": 290286592,
+                  "context_buffer_bytes": 88080384,
+                  "compute_buffer_bytes": 784192,
+                  "linux_peak_rss_bytes": 440569856,
+                  "response": "bonjour signifie que le personne est en conversation en français, généralement, en français, en ce cas,"
+                },
+                {
+                  "context": 512,
+                  "batch": 16,
+                  "micro_batch": 4,
+                  "model_buffer_bytes": 290286592,
+                  "context_buffer_bytes": 58720256,
+                  "compute_buffer_bytes": 693984,
+                  "linux_peak_rss_bytes": 410902528,
+                  "response": "bonjour signifie que le personne est en conversation en français, et le bonjour est un langage courant en"
+                }
+              ]
+            },
+            {
+              "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+              "requested_repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+              "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+              "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+              "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+              "file_bytes": 491400032,
+              "declared_license": "apache-2.0",
+              "quantization": "Q4_K_M",
+              "status": "measured_linux_x86_64",
+              "runs": [
+                {
+                  "context": 768,
+                  "batch": 32,
+                  "micro_batch": 8,
+                  "model_buffer_bytes": 485452288,
+                  "context_buffer_bytes": 9437184,
+                  "compute_buffer_bytes": 763712,
+                  "linux_peak_rss_bytes": 556740608,
+                  "response": "Bonjour signifie \"bonjour\" en français. C'est une phrase courante utilisée en France et en Allem"
+                },
+                {
+                  "context": 512,
+                  "batch": 16,
+                  "micro_batch": 4,
+                  "model_buffer_bytes": 485452288,
+                  "context_buffer_bytes": 6291456,
+                  "compute_buffer_bytes": 683744,
+                  "linux_peak_rss_bytes": 553246720,
+                  "response": "Bonjour est une expression courante en français, signifiant \"bonjour\" ou \"hello\". Elle est utilisée pour"
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903/job/117066981294",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Verify 003C runtime preserved and P2 not activated",
+          "conclusion": "success"
+        },
+        {
+          "name": "Test offline APK hash verifier (not Android hardware)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Install verified JDK, SDK, NDK and native sources",
+          "conclusion": "success"
+        },
+        {
+          "name": "Native cancellation and model admission tests",
+          "conclusion": "success"
+        },
+        {
+          "name": "JVM and simulated Android tests, Lint, ARM64 APK",
+          "conclusion": "success"
+        },
+        {
+          "name": "Check APK permissions, signature and 16 KiB compatibility",
+          "conclusion": "success"
+        },
+        {
+          "name": "Publish cloud validation with hardware limitations",
+          "conclusion": "success"
+        },
+        {
+          "name": "Publish actual catalogue scale evidence",
+          "conclusion": "success"
+        },
+        {
+          "name": "Record verified build identity (no installation or APK distribution in 003D)",
+          "conclusion": "success"
+        },
+        {
+          "name": "Upload validation reports even on failure",
+          "conclusion": "success"
+        },
+        {
+          "name": "Post Checkout",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "annotations": [
+        {
+          "package": "fr.jarvis.llm",
+          "versionName": "0.3.1-mission003b",
+          "versionCode": "5",
+          "sourceCommit": "74093e37c3cf2e9951af7f0fe4c98defe4972159",
+          "apkSha256": "8dcc0925a1eab3f2c56c060a7dce94feaeef0ec93d523675de81e6a36d3599c4",
+          "signerCertificateSha256": "57d5810057bdabcf5dc9ba7777a1078c6fb97e9f03507bf34067d7fa9ee27ca4",
+          "signingPurpose": "ephemeral debug only, not production",
+          "physicalQualification": false
+        },
+        {
+          "platform": "Linux JVM / Robolectric API35 native SQLite; NOT physical Android PSS",
+          "records": 1508,
+          "synthetic_records": 1500,
+          "json_bytes": 580993,
+          "import_ms": 1319.672124,
+          "query_median_ms": 0.652788,
+          "query_max_ms": 1.55727,
+          "sampled_java_heap_baseline_bytes": 91606088,
+          "sampled_java_heap_peak_bytes": 140364872,
+          "sampled_java_heap_increase_bytes": 48758784,
+          "sqlite": "Catalogue : 1508 réponses actives ; 1508 révisions ; SQLite 1704 Kio ; cache pages cible 2 Mio. Embeddings désactivés.",
+          "llama_loaded": false,
+          "source_commit": "74093e37c3cf2e9951af7f0fe4c98defe4972159"
+        },
+        {
+          "mission": "003D",
+          "platform": "cloud-linux-jvm-robolectric-not-android-hardware",
+          "sourceCommit": "74093e37c3cf2e9951af7f0fe4c98defe4972159",
+          "domain": {
+            "tests": 83,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          },
+          "simulatedAndroid": {
+            "tests": 21,
+            "failures": 0,
+            "errors": 0,
+            "skipped": 0
+          },
+          "nativePassed": 1,
+          "lint": {
+            "Warning": 36
+          },
+          "safetyPolicySha256": "7fefc8ce65f80375666eefb8ea05d44ab5edee940d49c2d53183e675818f3999",
+          "tabletMemoryMeasurements": null,
+          "newAdmissionBudgetQualified": false
+        }
+      ]
+    },
+    {
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903/job/117068055719",
+      "steps": [
+        {
+          "name": "Set up job",
+          "conclusion": "success"
+        },
+        {
+          "name": "Run echo 'Cloud Linux measurements only. Android PSS and tablet admission remain unqualified.'",
+          "conclusion": "success"
+        },
+        {
+          "name": "Complete job",
+          "conclusion": "success"
+        }
+      ],
+      "annotations": []
+    }
+  ],
+  "artifacts": [
+    {
+      "id": "12057728080",
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903/artifacts/12057728080",
+      "description": "jarvis-llm-model-memory 1.71 KB sha256:5396d789d29f295c8073396b973295b7c24dbb5383df00071ef7d95c1e503522"
+    },
+    {
+      "id": "12058282293",
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903/artifacts/12058282293",
+      "description": "jarvis-llm-validation 49.6 KB sha256:3620a50fe32dd628cc8359b962cdd3a66a02ad0d8511a33653f3671535e2505a"
+    }
+  ],
+  "observationMethod": "Public GitHub Actions run/job pages and annotations, remote artifact ZIPs not downloaded in this cloud session.",
+  "nativeP2ParityProven": false,
+  "ipcIntegrated": false,
+  "physicalQualification": false
+}

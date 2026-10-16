@@ -16,6 +16,34 @@
 
 Le modèle conserve volontairement le bail lourd jusqu'au déchargement, plus strictement que le backend autonome actuel qui finit son bail lourd au retour de load/generate tout en gardant la résidence. **Ne pas entourer LlamaBackend d'une seconde acquisition par P2Lifecycle** : cela ferait une double acquisition/refus. Le raccordement futur devra alimenter ce contrat depuis les **baux et le worker déjà existants**, ou refactoriser leur propriété dans une mission autorisée, sans nouveau coordinateur concurrent.
 
+## Vue des transitions principales (modèle de contrat)
+
+```mermaid
+stateDiagram-v2
+    [*] --> IDLE
+    IDLE --> PREPARED: autorisation et admission locales
+    PREPARED --> LOADING: bail modèle avant appel
+    LOADING --> READY: retour du chargement
+    READY --> TOKENIZING: début rendu et comptage
+    TOKENIZING --> PROMPT_READY: retour et budget validés
+    PROMPT_READY --> RUNNING: génération
+    LOADING --> STOP_REQUESTED: arrêt demandé
+    TOKENIZING --> STOP_REQUESTED: arrêt demandé
+    RUNNING --> STOP_REQUESTED: arrêt demandé
+    STOP_REQUESTED --> NATIVE_DONE: retour effectif attendu
+    RUNNING --> NATIVE_DONE: retour effectif
+    NATIVE_DONE --> UNLOADING: nettoyage
+    UNLOADING --> CLEANUP_FAILED: échec, baux conservés
+    CLEANUP_FAILED --> UNLOADING: nouvel essai explicite
+    UNLOADING --> UNLOADED: retour et libération confirmés
+    UNLOADED --> PREPARED: nouvelle opération autorisée
+    UNLOADED --> CLOSED: fermeture
+    RUNNING --> UNKNOWN: perte de contrôle
+    UNKNOWN --> NATIVE_DONE: retour local authentique attendu
+```
+
+Vue simplifiée : un refus avant appel ou un échec de comptage rejoint aussi NATIVE_DONE après preuve du non-démarrage/retour. Aucun trait « arrêt demandé » ne signifie libération.
+
 ## Invariants de corrélation, temps et pannes
 
 - Clé exacte : epoch destinataire, session, corrélation, operationID, cancellationID, authorizationRef, leaseID et génération. Une ancienne clé ne peut ni annuler ni libérer la nouvelle opération.

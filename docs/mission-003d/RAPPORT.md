@@ -34,9 +34,25 @@ python3 tools/check-preservation-003d.py
 python3 tools/publish-validation-003b.py --mission 003D
 ```
 
-Les contrôles locaux passent : **83 tests domaine (56 de base +27 nouveaux), 21 simulations Android**, zéro échec/erreur/ignoré ; CTest1/1, ARM64, Lint local 0 erreur/32 avertissements, contrôle APK et préservation. Résultats CI et lien à consigner après vérification de l’exécution. Le CTest historique vérifie configuration et annulation d'un graphe CPU, **pas P2**. Les tests Android sont Robolectric, pas du JNI ARM64 exécuté sur téléphone. Les preuves du package 003D restent des contrats/fixtures ; **parité native P2 non démontrée** et qualification physique en attente.
+Les contrôles locaux passent : **83 tests domaine (56 de base +27 nouveaux), 21 simulations Android**, zéro échec/erreur/ignoré ; CTest1/1, ARM64, Lint local 0 erreur/32 avertissements, contrôle APK et préservation. GitHub Actions confirme **83 tests domaine /21 Android simulés**, zéro échec/erreur/ignoré ; CTest1/1, ARM64, contrôles APK et **Lint CI 0 erreur/36 avertissements** (local :32). Les trois jobs sont réussis. Le contrôle de préservation confirme les 38 fichiers existants inchangés et les tests de base identiques octet pour octet. Le CTest historique vérifie configuration et annulation d'un graphe CPU, **pas P2**. Les tests Android sont Robolectric, pas du JNI ARM64 exécuté sur téléphone. Les preuves du package 003D restent des contrats/fixtures ; **parité native P2 non démontrée** et qualification physique en attente.
 
 La CI construit et contrôle l'APK (signature/permissions/alignement) pour non-régression, enregistre son identité, mais **ne publie pas d'APK d'installation pour cette mission**. Les rapports de validation sont publiés. Le job GGUF Linux historique ne passe pas par P2 et ne prouve ni parité ni gain matériel.
+
+## Publication vérifiée
+
+- **Branche :** `mission-003d-core-generation-contract`, sans fusion dans main.
+- **Base 003C :** `43503f59f530f2bb48955bce9d7d71e2470fb668`.
+- **Contrats initiaux :** `89a9defb725259b6be9af8e26b1b0b2e2ace6366`.
+- **Cycle de comptage / bornes des messages :** `b25af4a`.
+- **Code final testé (dont compatibilité du défaut CORE /no_think) :** `74093e37c3cf2e9951af7f0fe4c98defe4972159`.
+- **CI entièrement réussie :** https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903
+- **Rapports JUnit/Lint/CTest/préservation/identité du build :** https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903/artifacts/12058282293
+- **Contrôle GGUF Linux hérité, hors P2 :** https://github.com/bubth720/JARVIS-LLM/actions/runs/38928638903/artifacts/12057728080
+- **Preuve structurée :** [mission003d-74093e3.json](../evidence/mission003d-74093e3.json).
+
+Les résultats sont observés sur les pages publiques/annotations Actions, sans prétendre avoir téléchargé le ZIP distant dans cette session. Connexion GitHub généralement nécessaire pour les rapports, rétention 30 jours. Aucun artefact d'APK d'installation publié dans cette exécution ; seulement rapports et comparaison Linux héritée. L'outil d'identité APK historique 003C est réutilisé pour le fichier réellement construit au commit74093e3, sans qualification physique.
+
+Les exécutions des commits intermédiaires sont remplacées comme preuve de livraison par celle du code74093e3. Un dernier commit **documentaire seulement** consigne ces résultats et le diagramme de cycle de vie avec `[skip ci]`, sans modifier le code testé ou les protections. Ne pas attribuer les nouveaux tests P2 au chemin natif : la disponibilité P2 effective reste false.
 
 ## Blocages et prochaine action
 
