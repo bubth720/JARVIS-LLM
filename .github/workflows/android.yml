@@ -15,7 +15,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify unchanged safety policies, catalogue and baseline tests
-        run: python3 tools/check-preservation-003d.py
+        run: python3 tools/check-preservation-003e.py
       - name: Test offline APK hash verifier (not Android hardware)
         run: node tools/test-apk-verifier.cjs
       - name: Install verified JDK, SDK, NDK and native sources
@@ -23,9 +23,13 @@ jobs:
       - name: Native cancellation and model admission tests
         run: ./tools/cloud-env.sh ./tools/test-native.sh
       - name: JVM and simulated Android tests, Lint, ARM64 APK
-        run: ./tools/cloud-env.sh ./gradlew :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon
+        run: ./tools/cloud-env.sh ./gradlew :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
+      - name: Check isolated fixture APKs, signatures, shared engine and contract digest
+        run: ./tools/cloud-env.sh python3 tools/check-fixtures.py
+      - name: Publish fixture test and failure evidence
+        run: python3 tools/publish-validation-003e.py
       - name: Publish cloud validation with hardware limitations
         run: python3 tools/publish-validation-003b.py --mission 003D
       - name: Publish actual catalogue scale evidence
@@ -44,7 +48,12 @@ jobs:
             build/native-tests/Testing/Temporary/LastTest.log
             app/build/reports/catalogue-scale.json
             build/mission003d-validation.json
-            build/mission003d-preservation.json
+            build/mission003e-preservation.json
+            build/mission003e-apks.json
+            build/mission003e-validation.json
+            fixtures/p2-endpoint/build/test-results/testDebugUnitTest/
+            fixtures/p2-endpoint/build/reports/lint-results-debug.*
+            fixtures/p2-client/build/reports/lint-results-*.xml
             build/mission003c-apk-identity.json
 
           if-no-files-found: warn

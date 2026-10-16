@@ -13,6 +13,8 @@ internal interface NativeApi {
     fun load(handle: Long, path: ByteArray, context: Int, threads: Int, small: Boolean)
     fun generate(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int): ByteArray
     fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
+    fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray> = error("fixture measure unsupported")
+    fun generateFixtureP2(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int): ByteArray = error("fixture generate unsupported")
     fun allocations(handle: Long): LongArray
     fun unload(handle: Long)
     fun destroy(handle: Long)
@@ -26,6 +28,8 @@ internal object NativeBridge : NativeApi {
     external override fun load(handle: Long, path: ByteArray, context: Int, threads: Int, small: Boolean)
     external override fun generate(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int): ByteArray
     external override fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
+    external override fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray>
+    external override fun generateFixtureP2(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int): ByteArray
     external override fun allocations(handle: Long): LongArray
     external override fun unload(handle: Long)
     external override fun destroy(handle: Long)
@@ -100,6 +104,29 @@ class LlamaBackend internal constructor(private val native: NativeApi) : Languag
     }
         } finally { generating.set(false) }
     }
+    /** Text-only fixture: never feed P2Planner's already-prefixed SYSTEM into this path. */
+    suspend fun generateFixtureP2(request: GenerationRequest, contextLimit: Int): FixtureGeneration {
+        val customSystem=requireNotNull(request.systemPrompt)
+        require(request.messages.size == 1)
+        require(contextLimit in 512..request.config.context && contextLimit % 256 == 0)
+        if (request.config.model == ModelKind.MAIN) require(contextLimit >= 768)
+        check(!cleanupFailed && generating.compareAndSet(false, true)) { "BUSY or CLEANUP_FAILED" }
+        try { return withContext(worker) {
+            ProcessResources.requireHeavy(owner, Module.LLM, "fixture comptage et génération P2").use {
+                check(loaded?.second == request.config)
+                val system = customSystem.toByteArray(Charsets.UTF_8)
+                val question = request.messages.single().text.toByteArray(Charsets.UTF_8)
+                val measured = native.measureFixtureP2(handle, system, question)
+                check(measured.size == 3)
+                val tokens = measured[0].toString(Charsets.US_ASCII).toInt()
+                if (tokens <= 0 || tokens.toLong() + request.config.maxTokens + 8 > contextLimit) throw FixtureContextExceeded()
+                fun hash(bytes: ByteArray) = java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it.toInt() and 255) }
+                val template = hash(measured[2]); val rendered = hash(measured[1])
+                val text = native.generateFixtureP2(handle, system, question, request.config.maxTokens, contextLimit).toString(Charsets.UTF_8)
+                FixtureGeneration(text, tokens, template, rendered, contextLimit)
+            }
+        } } finally { generating.set(false) }
+    }
     override suspend fun unload() = withContext(worker) { try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }; cleanupFailed = false; loaded = null; allocations = null; modelLease?.close(); modelLease = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
     override suspend fun close() {
         requestStop()
@@ -113,3 +140,11 @@ class LlamaBackend internal constructor(private val native: NativeApi) : Languag
         worker.close()
     }
 }
+
+/** No prompt or generated content in implicit logs. Digests attest to the canonical native rendering. */
+class FixtureGeneration(val text: String, val inputTokens: Int, val templateSha256: String,
+                        val renderedSha256: String, val contextLimit: Int) {
+    override fun toString() = "FixtureGeneration(redacted)"
+}
+
+class FixtureContextExceeded : IllegalArgumentException("CONTEXT_EXCEEDED")

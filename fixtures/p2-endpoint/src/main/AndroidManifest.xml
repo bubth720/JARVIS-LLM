@@ -1,0 +1,9 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <permission android:name="fr.jarvis.fixture.llm.permission.BIND_P2" android:protectionLevel="signature" />
+    <uses-permission android:name="fr.jarvis.fixture.llm.permission.BIND_P2" />
+    <queries><package android:name="fr.jarvis.fixture.core" /></queries>
+    <application android:name=".FixtureApplication" android:label="JARVIS P2 FIXTURE" android:allowBackup="false">
+        <activity android:name=".FixtureActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+        <service android:name=".P2EndpointService" android:exported="true" android:permission="fr.jarvis.fixture.llm.permission.BIND_P2" />
+    </application>
+</manifest>

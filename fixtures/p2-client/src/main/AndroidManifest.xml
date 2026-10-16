@@ -1,0 +1,7 @@
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <uses-permission android:name="fr.jarvis.fixture.llm.permission.BIND_P2" />
+    <queries><package android:name="fr.jarvis.fixture.llm" /></queries>
+    <application android:label="P2 identity probe ONLY" android:allowBackup="false">
+        <activity android:name="fr.jarvis.fixture.client.IdentityProbeActivity" android:exported="true"><intent-filter><action android:name="android.intent.action.MAIN"/><category android:name="android.intent.category.LAUNCHER"/></intent-filter></activity>
+    </application>
+</manifest>

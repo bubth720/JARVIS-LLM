@@ -1,0 +1,2 @@
+fixtures/p2-contract/CONTRACT.txt text eol=lf
+fixtures/p2-contract/src/main/aidl/** text eol=lf

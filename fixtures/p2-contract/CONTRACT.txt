@@ -1,0 +1,22 @@
+jarvis.fixture.p2/1
+Experimental synthetic text-only Binder contract; no UNIFIED v1 modification.
+All payloads: UTF-8 strict JSON object <=24576 bytes, flat string values, no duplicate/unknown fields.
+Required request fields: version,contract,epoch,session_id,operation_id,correlation_id,cancellation_id,authorization_ref,lease_id,generation,system,question,model,model_sha256,profile,context_tokens,output_tokens,remaining_ms,synthetic.
+version=jarvis.fixture.p2/1; contract=SHA256(bundle: sorted relative paths CONTRACT.txt and src/main/aidl/**/*.aidl; for each path UTF-8 path,NUL,exact file bytes,NUL); synthetic=true.
+IDs: lower canonical UUID. generation=decimal 1..9007199254740991; no signs/leading zeroes.
+model=SMALL|MAIN; profile=TABLET_ECO|ECO|BALANCED|AUTO, no FULL_POWER.
+Limits: context_tokens=512..2048 multiple256; output_tokens=1..256; remaining_ms=1..90000.
+SYSTEM<=8192 UTF-8 bytes, question<=8192; P2 strict delimiters and UTF-8 apply.
+Pilot questions: Dis bonjour en français. | Combien font deux plus deux ?
+Pilot systems: empty | Réponds brièvement en français. /no_think | Réponds en une phrase en français. /no_think
+No history, memory, documents, sources, model paths or implicit fallback. Unsupported fields refuse, never drop.
+Digest: SHA256 of uint32BE field count then, for each lexicographically sorted key, uint32BE UTF-8 key length,key,uint32BE UTF-8 value length,value. Includes all fields including contract. No Unicode normalization.
+hello: version,contract,session_id. Repeat requires same live liveness Binder; a dead token may be replaced in the same session, never resetting recovery. Reply includes fresh receiver epoch, contract, process-local scope and arbiter connectivity.
+submit: request; accepted receipt means queued for authorization, NOT admission. One outstanding operation; no automatic replay.
+status/cancel: exact complete key fields version,contract,epoch,session_id,operation_id,correlation_id,cancellation_id,authorization_ref,lease_id,generation.
+Receipt: full key,request_digest,phase,code,native_ever_started,effective_end,model_unloaded,release_confirmed,model_sha256,template_sha256,rendered_sha256,input_tokens,context_tokens,loaded_context_tokens,threads,output_tokens,text (all string values).
+Only UNLOADED with effective_end=true and release_confirmed=true may carry final text. STOP_REQUESTED is never a release. UNKNOWN/CLEANUP_FAILED block new admission and retain journal; no reset API.
+Arbiter service: fr.jarvis.fixture.core/fr.jarvis.fixture.core.P2ArbiterService; signature permission fr.jarvis.fixture.llm.permission.BIND_P2; common dedicated test signing key. No arbiter implementation in LLM.
+Arbiter authorize query: exact request key + request_digest,model,model_sha256,profile,context_tokens,output_tokens,remaining_ms,client_uid,server_uid. Reply echoes query fields plus approved=true,expires_elapsed_ms (monotonic Android elapsedRealtime absolute). Approval must be exact and expires within request deadline.
+Client and arbiter callback UID/package/current sole signer must match fr.jarvis.fixture.core, no shared UID or signing rotation. Endpoint certificate equals dedicated fixture certificate, never historical application certificate. Client-death, broker-death, disconnect or expiry -> stop/drain/unload; not immediate release.
+On restart with unresolved journal: UNKNOWN, no loading. CORE must reconcile; this contract provides no unsafe reset or proof-of-process-death shortcut.

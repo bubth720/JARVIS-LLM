@@ -135,11 +135,13 @@ static std::string format(Engine & e, const std::vector<std::string> & roles, co
     result += "<think>\n\n</think>\n\n";
     return result;
 }
-static jbyteArray generate(JNIEnv * env, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens, const std::string * custom) {
+static jbyteArray generate(JNIEnv * env, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens, const std::string * custom, int contextLimit = 0) {
     try {
         auto & e = engine(h); check(e);
         if (!e.ctx || maxTokens < 1 || maxTokens > e.max_output) throw std::runtime_error("Moteur non prêt ou sortie hors budget");
         if (!roleArray || !textArray) throw std::runtime_error("Historique absent");
+        const int effective = contextLimit == 0 ? e.context : contextLimit;
+        if (effective < 512 || effective > e.context || effective % 256 != 0) throw std::runtime_error("Contexte P2 invalide");
         const int size = env->GetArrayLength(roleArray);
         if (size < 1 || size > 8 || size != env->GetArrayLength(textArray)) throw std::runtime_error("Historique invalide");
         std::vector<std::string> roles, texts;
@@ -168,7 +170,7 @@ static jbyteArray generate(JNIEnv * env, jlong h, jobjectArray roleArray, jobjec
             check(e);
             const auto prompt = format(e, roles, texts, start, custom);
             n = llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), tokens.size(), true, true);
-            if (n > 0 && n + maxTokens + 8 <= e.context) break;
+            if (n > 0 && n + maxTokens + 8 <= effective) break;
             if (custom) throw std::runtime_error("P2_CONTEXT_EXCEEDED");
             if (start + 2 < roles.size()) start += 2;
             else throw std::runtime_error("Question trop longue pour le contexte : raccourcis-la");
@@ -228,6 +230,46 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_g
         if (prompt.size() > 8192 || prompt.find("<|") != std::string::npos || prompt.find("<think>") != std::string::npos || prompt.find("</think>") != std::string::npos || prompt.find('\0') != std::string::npos)
             throw std::runtime_error("Prompt système P2 invalide");
         return generate(env, h, roles, texts, maxTokens, &prompt);
+    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
+}
+// Fixture-only calls use the SAME canonical formatter and actual tokenizer as generate().
+extern "C" JNIEXPORT jobjectArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_measureFixtureP2(
+    JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question) {
+    try {
+        auto & e = engine(h); check(e);
+        if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+        const auto custom = bytes(env, system), user = bytes(env, question);
+        validate_p2(custom, true); validate_p2(user);
+        if (custom.size() > 8192) throw std::runtime_error("Système hors limites");
+        const auto prompt = format(e, {"user"}, {user}, 0, &custom);
+        const auto * tmpl = llama_model_chat_template(e.model, nullptr);
+        const int n = llama_tokenize(llama_model_get_vocab(e.model), prompt.data(), prompt.size(), nullptr, 0, true, true);
+        const std::vector<std::string> values{std::to_string(n < 0 ? -n : n), prompt, tmpl};
+        auto result = env->NewObjectArray(3, env->FindClass("[B"), nullptr);
+        for (int i = 0; i < 3; ++i) {
+            auto value = env->NewByteArray(values[i].size());
+            env->SetByteArrayRegion(value, 0, values[i].size(), reinterpret_cast<const jbyte *>(values[i].data()));
+            env->SetObjectArrayElement(result, i, value); env->DeleteLocalRef(value);
+        }
+        return result;
+    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
+}
+extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generateFixtureP2(
+    JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question, jint maxTokens, jint contextLimit) {
+    try {
+        auto & e = engine(h);
+        if (contextLimit < 512 || contextLimit > e.context || contextLimit % 256 != 0)
+            throw std::runtime_error("Contexte P2 invalide");
+        const auto custom = bytes(env, system), user = bytes(env, question);
+        validate_p2(custom, true); validate_p2(user);
+        if (custom.size() > 8192) throw std::runtime_error("Système hors limites");
+        auto cls = env->FindClass("[B");
+        auto roles = env->NewObjectArray(1, cls, nullptr), texts = env->NewObjectArray(1, cls, nullptr);
+        auto role = env->NewByteArray(4); env->SetByteArrayRegion(role, 0, 4, reinterpret_cast<const jbyte *>("user"));
+        env->SetObjectArrayElement(roles, 0, role); env->SetObjectArrayElement(texts, 0, question);
+        auto result = generate(env, h, roles, texts, maxTokens, &custom, contextLimit);
+        env->DeleteLocalRef(role); env->DeleteLocalRef(roles); env->DeleteLocalRef(texts);
+        return result;
     } catch (const std::exception & ex) { error(env, ex); return nullptr; }
 }
 extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_unload(JNIEnv * env, jobject, jlong h) {

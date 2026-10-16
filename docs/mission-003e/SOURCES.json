@@ -1,0 +1,14 @@
+{
+  "repository": "bubth720/JARVIS-UNIFIED",
+  "branch": "audit/d4-02c-core-llm-convergence",
+  "commit": "0dbb978994994fa3210124f1e150ca23426d410d",
+  "documents": {
+    "DECISION_O3_PROPOSEE.md": "b872d1c98556dceb3f8b880192f71c786ae611157438db002e7f05af3868bb33",
+    "ECARTS_ET_CORRECTIONS.md": "626793ee22708e570aae145e58cb879b798cc952041b5091002e17367e5bbc02",
+    "MATRICE_CONVERGENCE.md": "35286386314226a9a4284865bf297fb1f10f69e10585079f9147a3d4e77c0735",
+    "MISSIONS_SUIVANTES.md": "72e6836313ef7cccce1e00ca535298a845d833ace377aaad61611dac0a02a104",
+    "RAPPORT_FINAL.md": "c0d6e409caa1f2d3c8938aa95432b15e30d1a5d67feaec9b4e7addc6b1fe69e3",
+    "REFERENCES.md": "ddfda1f5dd2d3a3a62a10a611a85efea18583454aa20f17640f47f362480be2d"
+  },
+  "approval": "T1-T5 authorized by user exclusively for experimental fixtures; no deployment, migration or merge authorization"
+}
