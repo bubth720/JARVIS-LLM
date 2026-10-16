@@ -1,3 +1,9 @@
+# JARVIS LLM — Mission 003D
+
+Contrats P2 typés et états de génération **inactifs dans le chemin natif de production**. Branche `mission-003d-core-generation-contract`, base 003C `43503f5`. Aucun IPC, activation ou installation, aucun nouveau moteur ou changement de seuil.
+
+Lire [le rapport 003D](docs/mission-003d/RAPPORT.md), [le contrat](docs/mission-003d/CONTRAT-P2.md), [le cycle de vie](docs/mission-003d/CYCLE-DE-VIE.md) et [la matrice CORE004B provisoire](docs/mission-003d/COMPATIBILITE-CORE-004B.md). Parité native P2 non démontrée ; qualification physique toujours en attente.
+
 # JARVIS LLM — Mission 003C
 
 Qualification physique **en attente utilisateur**. Branche `mission-003c-device-qualification`, base exacte `1756e29557287550b5cfdffdd911cada2a302db6` de `mission-003b-resources`. Runtime 003B inchangé, budgets et protections conservés.

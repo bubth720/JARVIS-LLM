@@ -14,8 +14,8 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Verify unchanged 003B runtime and safety policy
-        run: python3 tools/check-preservation-003c.py
+      - name: Verify 003C runtime preserved and P2 not activated
+        run: python3 tools/check-preservation-003d.py
       - name: Test offline APK hash verifier (not Android hardware)
         run: node tools/test-apk-verifier.cjs
       - name: Install verified JDK, SDK, NDK and native sources
@@ -27,20 +27,11 @@ jobs:
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
       - name: Publish cloud validation with hardware limitations
-        run: python3 tools/publish-validation-003b.py --mission 003C
+        run: python3 tools/publish-validation-003b.py --mission 003D
       - name: Publish actual catalogue scale evidence
         run: python3 tools/publish-catalogue-evidence.py
-      - name: Prepare clearly labelled synthetic fixtures
-        run: python3 tools/generate-catalogue-fixtures.py
-      - name: Prepare downloadable diagnostic package
-        run: ./tools/package-debug.sh
-      - name: Upload APK, SHA-256 and first diagnostic instructions
-        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
-        with:
-          name: jarvis-llm-debug
-          path: build/diagnostic-package/
-          if-no-files-found: error
-          retention-days: 30
+      - name: Record verified build identity (no installation or APK distribution in 003D)
+        run: ./tools/cloud-env.sh python3 tools/apk-identity-003c.py app/build/outputs/apk/debug/app-debug.apk
       - name: Upload validation reports even on failure
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
@@ -52,8 +43,8 @@ jobs:
             app/build/reports/lint-results-debug.*
             build/native-tests/Testing/Temporary/LastTest.log
             app/build/reports/catalogue-scale.json
-            build/mission003c-validation.json
-            build/mission003c-preservation.json
+            build/mission003d-validation.json
+            build/mission003d-preservation.json
             build/mission003c-apk-identity.json
 
           if-no-files-found: warn

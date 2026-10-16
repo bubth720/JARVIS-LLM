@@ -1,0 +1,109 @@
+{
+  "unifiedBranch": "design/d4-02-ownership-mapping",
+  "unifiedCommit": "52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1",
+  "method": "read-only archive; no external scripts executed or repositories changed",
+  "readFiles": {
+    "contracts/v1/SEMANTICS.md": {
+      "sha256": "632427a7fd262a1e602cdf0e4459f2d04577624f28d0304a6326b9b68b818bab",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/contracts/v1/SEMANTICS.md"
+    },
+    "contracts/v1/capability-manifest.schema.json": {
+      "sha256": "fdeda2a14c9ea818ebfedaad43035b192ccddc8b941fa61d6c25fa8d98b03b9a",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/contracts/v1/capability-manifest.schema.json"
+    },
+    "contracts/v1/health-status.schema.json": {
+      "sha256": "84420f0f18763f557d1f14cd7a06be9bc1d05705e11c672c91d68ecfbadf2bd0",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/contracts/v1/health-status.schema.json"
+    },
+    "contracts/v1/request-envelope.schema.json": {
+      "sha256": "9c13abea1907cccb7f01990888d4eeb4a81aad90b5d823213bb5fe75372450fc",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/contracts/v1/request-envelope.schema.json"
+    },
+    "contracts/v1/resource-lease.schema.json": {
+      "sha256": "0cabee9828db1ee719d5d43ab3b1e268aeafce7af49755224c78bf705595343c",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/contracts/v1/resource-lease.schema.json"
+    },
+    "contracts/v1/response-envelope.schema.json": {
+      "sha256": "3649f25aab483c20fc53e909a0b6486724abc050245e15acdb03f8f4b17edd38",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/contracts/v1/response-envelope.schema.json"
+    },
+    "docs/D4-02/ADAPTATIONS_ET_CONTRATS.md": {
+      "sha256": "f659e640f433b642579422808d0b45ee2e918b6bd771808ca13b8f2609d49b0a",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/docs/D4-02/ADAPTATIONS_ET_CONTRATS.md"
+    },
+    "docs/D4-02/DECISIONS_ET_MISSIONS.md": {
+      "sha256": "3671e3f9aee57b8c59170638545138781f70da4d282ba41054a913f60320a3c3",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/docs/D4-02/DECISIONS_ET_MISSIONS.md"
+    },
+    "docs/D4-02/MATRICE_RESPONSABILITES.md": {
+      "sha256": "083d75656237f63dd5598a8df1544f1eb94a984af2b27633c4e8875151999f4f",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/docs/D4-02/MATRICE_RESPONSABILITES.md"
+    },
+    "docs/D4-02/PREMIER_RACCORDEMENT_CORE_LLM.md": {
+      "sha256": "693fb5dc5ec2e38135ead69d1f71e3c9b1875768051245644290f5fef0d1f494",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/docs/D4-02/PREMIER_RACCORDEMENT_CORE_LLM.md"
+    },
+    "docs/D4-02/RAPPORT_ET_SOURCES.md": {
+      "sha256": "878d7c7ea4fb2a7239588da1d81d9079fdc71d5e93ce087fbe0d11290941a372",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/docs/D4-02/RAPPORT_ET_SOURCES.md"
+    },
+    "docs/D4-02/RISQUES_ET_PROTECTIONS.md": {
+      "sha256": "bfb668244cf6f0877554a8e14f1fe3438b684b524995f769b5ca723e349feac4",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/52a44fb6cf01623a8c5d96edc5d2bbac76abd9a1/docs/D4-02/RISQUES_ET_PROTECTIONS.md"
+    }
+  },
+  "llmBase": "43503f59f530f2bb48955bce9d7d71e2470fb668",
+  "core004bReference": {
+    "branch": "mission-004b-inference-contract",
+    "commit": "07cd282603205d57f3d2ded1b14d5d95e68989e2",
+    "readFiles": {
+      "app/src/main/java/com/stark/jarvislocal/InferenceContract.kt": {
+        "sha256": "c3d01ba355868544dd497dc6f328bc4e08a1a5afec05c00f06695960e990302a",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/app/src/main/java/com/stark/jarvislocal/InferenceContract.kt",
+        "scope": "source read"
+      },
+      "app/src/main/java/com/stark/jarvislocal/InferenceController.kt": {
+        "sha256": "6bffb704953d87272b38afa33d05f497f2c048536462e10de661f9f42712b31a",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/app/src/main/java/com/stark/jarvislocal/InferenceController.kt",
+        "scope": "source read"
+      },
+      "app/src/main/java/com/stark/jarvislocal/LocalLanguageModel.kt": {
+        "sha256": "2b980c6a4d4603fcfbc3b5320b7e60a3a135ecd7e4296c879b15011f8665dc07",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/app/src/main/java/com/stark/jarvislocal/LocalLanguageModel.kt",
+        "scope": "source read"
+      },
+      "app/src/main/java/com/stark/jarvislocal/PromptBuilder.kt": {
+        "sha256": "7867a3c6c2e76e4ab5e4d1a436f9cd61bfd88f7bd82661e660f2a2015640fb4d",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/app/src/main/java/com/stark/jarvislocal/PromptBuilder.kt",
+        "scope": "source read"
+      },
+      "app/src/test/java/com/stark/jarvislocal/InferenceControllerTest.kt": {
+        "sha256": "7d2bdd7488f6bbf04fe33dbf82324ac85cefd6ad557c44306bdec4a962d86733",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/app/src/test/java/com/stark/jarvislocal/InferenceControllerTest.kt",
+        "scope": "hash of full source; first 80 lines read; tests not executed"
+      },
+      "docs/mission-004b/LLM_003D_MAPPING.md": {
+        "sha256": "61002c889f041f1df49aed2a9d7579a1e447f644b5a0cf1fd6b2dc5c31817fed",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/docs/mission-004b/LLM_003D_MAPPING.md",
+        "scope": "versioned report read; tests not rerun here"
+      },
+      "docs/mission-004b/REPORT.md": {
+        "sha256": "2db19d419a7313adeecef8d77c17d0ffda51204315dd398e188225d7ce412f28",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/docs/mission-004b/REPORT.md",
+        "scope": "versioned report read; tests not rerun here"
+      },
+      "docs/mission-004b/VALIDATION.md": {
+        "sha256": "e63933b037036cffb34785fd720c875350f2f589972f6f82cfce5dfaf9c40174",
+        "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/07cd282603205d57f3d2ded1b14d5d95e68989e2/docs/mission-004b/VALIDATION.md",
+        "scope": "versioned report read; tests not rerun here"
+      }
+    }
+  },
+  "coreRefsObserved": [
+    "main:226e2e8cc3eebd479805b89d035eb5c1cbcad540",
+    "mission-004a-core-stability:306a89b7cc33803aba9b7af9c6a553f1bc40f08f",
+    "mission-004b-inference-contract:07cd282603205d57f3d2ded1b14d5d95e68989e2"
+  ],
+  "core004bCompatibilityVerified": false,
+  "core004bTextOnlyFieldMappingFixtureTested": true
+}

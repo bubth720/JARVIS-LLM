@@ -8,7 +8,7 @@ import subprocess
 import xml.etree.ElementTree as ET
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--mission', choices=('003B', '003C'), default='003B')
+parser.add_argument('--mission', choices=('003B', '003C', '003D'), default='003B')
 args = parser.parse_args()
 
 def junit(folder):
@@ -40,6 +40,9 @@ report = {
     'safetyPolicySha256': hashlib.sha256(Path('domain/src/main/kotlin/fr/jarvis/domain/SafetyPolicy.kt').read_bytes()).hexdigest(),
     'tabletMemoryMeasurements': None, 'newAdmissionBudgetQualified': False,
 }
+if args.mission == '003D':
+    if report['domain']['tests'] < 56 or report['simulatedAndroid']['tests'] < 21 or report['domain']['skipped'] or report['simulatedAndroid']['skipped']:
+        raise SystemExit('003C minimum coverage or no-skipped requirement failed')
 output = Path('build/mission' + args.mission.lower() + '-validation.json')
 output.parent.mkdir(parents=True, exist_ok=True)
 output.write_text(json.dumps(report, indent=2) + '\n')
