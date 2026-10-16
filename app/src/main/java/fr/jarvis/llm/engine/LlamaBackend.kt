@@ -53,7 +53,8 @@ class LlamaBackend internal constructor(private val native: NativeApi) : Languag
         check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
         if (loaded != (path to config)) {
             ProcessResources.requireHeavy(owner, Module.LLM, "chargement natif").use {
-                native.unload(handle); loaded = null; allocations = null
+                try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }
+                loaded = null; allocations = null
                 modelLease?.close(); modelLease = null
                 allocationDiagnostic = "Allocations natives non mesurées"
                 val lease = ProcessResources.requireLease(ResourceRequest(owner, Module.LLM, ResourceClass.MODEL,
@@ -103,7 +104,10 @@ class LlamaBackend internal constructor(private val native: NativeApi) : Languag
     override suspend fun close() {
         requestStop()
         withContext(worker) {
-            synchronized(handleLock) { if (handle != 0L) { native.destroy(handle); handle = 0 } }
+            synchronized(handleLock) { if (handle != 0L) {
+                try { native.destroy(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }
+                handle = 0
+            } }
             loaded = null; allocations = null; modelLease?.close(); modelLease = null
         }
         worker.close()

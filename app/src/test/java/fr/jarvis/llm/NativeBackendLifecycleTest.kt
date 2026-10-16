@@ -32,7 +32,7 @@ class NativeBackendLifecycleTest {
         }
         override fun allocations(handle: Long) = longArrayOf(1,2,3)
         override fun unload(handle: Long) { check(!failCleanup) { "injected cleanup failure" } }
-        override fun destroy(handle: Long) { destroyed = true }
+        override fun destroy(handle: Long) { check(!failCleanup); destroyed = true }
     }
     @Test fun concurrentGenerationRefusedAndCustomSystemPassedToNativeApi() = runBlocking {
         val api = Api(); val backend = LlamaBackend(api)
@@ -83,4 +83,19 @@ class NativeBackendLifecycleTest {
             assertNotNull(ProcessResources.coordinator.snapshot().model)
         } finally { api.failCleanup = false; backend.close() }
     }
+    @Test fun unloadAndCloseFailuresRetainLeaseAndBlockRearming() = runBlocking {
+        val api = Api(); val backend = LlamaBackend(api)
+        try {
+            backend.prepareOperation(); backend.load("synthetic", config)
+            api.failCleanup = true
+            try { backend.unload(); fail() } catch (_: IllegalStateException) { }
+            try { backend.close(); fail() } catch (_: IllegalStateException) { }
+            assertNotNull(ProcessResources.coordinator.snapshot().model)
+            assertFalse(api.destroyed)
+            try { backend.prepareOperation(); fail() } catch (_: IllegalStateException) { }
+            api.failCleanup = false; backend.unload()
+            assertNull(ProcessResources.coordinator.snapshot().model)
+        } finally { api.failCleanup = false; backend.close() }
+    }
+
 }
