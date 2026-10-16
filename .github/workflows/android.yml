@@ -14,7 +14,7 @@ jobs:
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
         with:
           fetch-depth: 0
-      - name: Verify 003C runtime preserved and P2 not activated
+      - name: Verify unchanged safety policies, catalogue and baseline tests
         run: python3 tools/check-preservation-003d.py
       - name: Test offline APK hash verifier (not Android hardware)
         run: node tools/test-apk-verifier.cjs
@@ -30,7 +30,7 @@ jobs:
         run: python3 tools/publish-validation-003b.py --mission 003D
       - name: Publish actual catalogue scale evidence
         run: python3 tools/publish-catalogue-evidence.py
-      - name: Record verified build identity (no installation or APK distribution in 003D)
+      - name: Record verified build identity (no installation)
         run: ./tools/cloud-env.sh python3 tools/apk-identity-003c.py app/build/outputs/apk/debug/app-debug.apk
       - name: Upload validation reports even on failure
         if: always()
@@ -57,13 +57,15 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Install verified toolchain
+        run: ./tools/setup-cloud.sh
       - name: Native tests and pinned sources
-        run: ./tools/test-native.sh
+        run: ./tools/cloud-env.sh ./tools/test-native.sh
       - name: Build bounded cloud model probe
         run: cmake --build build/native-tests --target model_memory_probe -j2
       - name: Short real-GGUF cloud comparison (not Android PSS)
         id: memory
-        run: python3 tools/compare-model-memory.py
+        run: ./tools/cloud-env.sh python3 tools/compare-model-memory.py
       - name: Upload cloud memory evidence
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6

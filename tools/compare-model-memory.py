@@ -78,9 +78,14 @@ for repo, quant in [('Qwen/Qwen3-0.6B-GGUF', 'Q4_K_M'),
         measured = json.loads(run.stdout)
         measured['response'] = bytes.fromhex(measured.pop('response_utf8_hex')).decode('utf-8', errors='replace')
         record['runs'].append(measured)
+    if requested_repo == 'Qwen/Qwen3-0.6B-GGUF' and quant == 'Q4_K_M':
+        jni = subprocess.run(['./tools/test-jni-p2.sh', str(target)], capture_output=True, text=True, timeout=180, check=True)
+        (OUT / 'p2-jni.json').write_text(json.dumps(dict(source_commit=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip(), model_sha256=expected, platform='Linux x86_64 real JNI, NOT Android qualification', passed=True, result=jni.stdout),indent=2)+'\n')
+        print(jni.stdout, flush=True)
     results.append(record)
     # Models are not included in the diagnostic artifact or Android APK.
     target.unlink()
+assert (OUT / 'p2-jni.json').exists(), 'required P2 JNI evidence missing'
 report = dict(platform='Linux x86_64 GitHub-hosted runner; NOT Android PSS',
               source_commit=subprocess.check_output(['git', 'rev-parse', 'HEAD'], cwd=ROOT, text=True).strip(),
               conditions='one fresh process per model/context; CPU one thread; 24 output tokens maximum; 60 s native deadline; one French prompt; no quality benchmark',

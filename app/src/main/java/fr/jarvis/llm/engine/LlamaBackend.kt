@@ -13,6 +13,7 @@ internal object NativeBridge {
     external fun cancel(handle: Long)
     external fun load(handle: Long, path: ByteArray, context: Int, threads: Int, small: Boolean)
     external fun generate(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int): ByteArray
+    external fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
     external fun allocations(handle: Long): LongArray
     external fun unload(handle: Long)
     external fun destroy(handle: Long)
@@ -26,13 +27,16 @@ class LlamaBackend : LanguageModel {
         private set
     private val worker = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
     private val handleLock = Any()
+    private val generating = java.util.concurrent.atomic.AtomicBoolean(false)
     private var handle = NativeBridge.create()
     @Volatile override var allocationDiagnostic: String = "Allocations natives non mesurées"
         private set
+    @Volatile private var cleanupFailed = false
     private var loaded: Pair<String, RuntimeConfig>? = null
-    override fun prepareOperation() = synchronized(handleLock) { check(handle != 0L); NativeBridge.begin(handle) }
+    override fun prepareOperation() = synchronized(handleLock) { check(handle != 0L && !generating.get() && !cleanupFailed) { "BUSY ou moteur fermé" }; NativeBridge.begin(handle) }
     override fun requestStop() = synchronized(handleLock) { if (handle != 0L) NativeBridge.cancel(handle) }
     override suspend fun load(path: String, config: RuntimeConfig) = withContext(worker) {
+        check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
         if (loaded != (path to config)) {
             ProcessResources.requireHeavy(owner, Module.LLM, "chargement natif").use {
                 NativeBridge.unload(handle); loaded = null; allocations = null
@@ -40,6 +44,7 @@ class LlamaBackend : LanguageModel {
                 allocationDiagnostic = "Allocations natives non mesurées"
                 val lease = ProcessResources.requireLease(ResourceRequest(owner, Module.LLM, ResourceClass.MODEL,
                     "résidence du modèle", config.memoryBudget, config.model.name))
+                modelLease = lease // retain even if load AND cleanup fail
                 try {
                     NativeBridge.load(handle, path.toByteArray(Charsets.UTF_8), config.context, config.threads, config.model == ModelKind.SMALL)
                     modelLease = lease
@@ -47,7 +52,9 @@ class LlamaBackend : LanguageModel {
                     loaded = path to config
                 } catch (e: Throwable) {
                     // The native call has returned. Release only after actual native cleanup.
-                    NativeBridge.unload(handle); allocations = null; modelLease = null; lease.close()
+                    try { NativeBridge.unload(handle) }
+                    catch (cleanup: Throwable) { cleanupFailed = true; cleanup.addSuppressed(e); throw cleanup }
+                    allocations = null; modelLease = null; lease.close()
                     throw e
                 }
             }
@@ -58,18 +65,27 @@ class LlamaBackend : LanguageModel {
         allocations = NativeAllocations(sizes[0], sizes[1], sizes[2])
         allocationDiagnostic = "Buffers llama.cpp modèle/contexte/calcul : " + sizes.joinToString(" / ") { "%.1f".format(java.util.Locale.FRANCE, it / 1048576.0) } + " Mio (hors tas JVM et autres allocations ; pas PSS ni pic)"
     }
-    override suspend fun generate(request: GenerationRequest): String = withContext(worker) {
+    override suspend fun generate(request: GenerationRequest): String {
+        check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
+        check(generating.compareAndSet(false, true)) { "BUSY : génération concurrente refusée" }
+        try { return withContext(worker) {
         ProcessResources.requireHeavy(owner, Module.LLM, "génération native").use {
             check(loaded?.second == request.config) { "Configuration du modèle résident différente de la demande" }
             try {
-                String(NativeBridge.generate(handle, request.messages.map { it.role.toByteArray(Charsets.UTF_8) }.toTypedArray(),
-                    request.messages.map { it.text.toByteArray(Charsets.UTF_8) }.toTypedArray(), request.config.maxTokens), Charsets.UTF_8)
+                val roles = request.messages.map { it.role.toByteArray(Charsets.UTF_8) }.toTypedArray()
+                val texts = request.messages.map { it.text.toByteArray(Charsets.UTF_8) }.toTypedArray()
+                val output = request.systemPrompt?.let {
+                    NativeBridge.generateP2(handle, roles, texts, request.config.maxTokens, it.toByteArray(Charsets.UTF_8))
+                } ?: NativeBridge.generate(handle, roles, texts, request.config.maxTokens)
+                String(output, Charsets.UTF_8)
             } finally {
                 if (loaded != null) runCatching { refreshAllocations() }.onFailure { allocations = null; allocationDiagnostic = "Buffers natifs indisponibles" }
             }
         }
     }
-    override suspend fun unload() = withContext(worker) { NativeBridge.unload(handle); loaded = null; allocations = null; modelLease?.close(); modelLease = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
+        } finally { generating.set(false) }
+    }
+    override suspend fun unload() = withContext(worker) { try { NativeBridge.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }; cleanupFailed = false; loaded = null; allocations = null; modelLease?.close(); modelLease = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
     override suspend fun close() {
         requestStop()
         withContext(worker) {

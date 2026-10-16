@@ -1,13 +1,9 @@
-# Mission native séparée nécessaire — aucune adaptation native active 003D
+# Disponibilité et limites natives
 
-Le périmètre présent livre les contrats purs, pas un JNI P2. Avant toute implémentation ou activation, faire valider :
+Livré : système distinct via generateP2, règles fixes, template réel Qwen3, préremplissage vide, comptage tokenizer réel, refus du dépassement sans troncature, validation JNI indépendante, génération et arrêt sur le moteur existant. Configuration mémoire/threads/KV/batch inchangée.
 
-1. Une entrée **opt-in/versionnée** du backend/JNI existant, avec absence de branchement dans le parcours autonome tant que non qualifiée. Pas de second moteur, service ou lib native concurrente.
-2. Un SYSTEM correctement transmis au template officiel chargé du GGUF, conservant politique fixe et système CORE autorisé. Ne pas faire passer le nouveau SYSTEM à l'ancienne API user/assistant, qui le refuse ; ne pas laisser cette API préfixer une deuxième politique ni tronquer l'histoire P2.
-3. Un compteur fiable rendu complet + préfill + tokens spéciaux/BOS du même modèle/vocabulaire, provenance/digest template, refus si prompt+sortie+8 dépasse le contexte utile. Aucun estimateur caractères/octets présenté comme tokenizer. Vérifications avant allocations additionnelles/génération et maintien des contraintes SMALL/MAIN.
-4. Un pipeline commun vérification GGUF, admission matérielle actualisée, annulation native et ressources pour toutes les entrées. Les gardes sont aujourd'hui principalement dans ChatViewModel ; **ne pas appeler LlamaBackend seul depuis un futur endpoint**. Revoir l'ordre admission/bail → SHA → load → format/tokenize → generate → retour → unload et les limites exactes de chaque buffer UTF-8.
-5. L'observation du worker réel et de ses baux : begin/load/generate/requestStop/unload/destroy, erreurs et retours partiels. Raccorder un état de contrat sans empiler les acquisitions du modèle de test sur celles de LlamaBackend. Conserver les baux si cleanup_failed/inconnu et bloquer une nouvelle opération tant que la fin/libération n'est pas prouvée.
-6. Tests natifs effectifs : systèmes distincts, template officiel Qwen3 exact, délimiteurs, contextes512/768/2048 et cap SMALL/MAIN, annulation répétée pendant load/decode, résultat tardif, erreur partielle et nettoyage. Les tests de DTO et le CTest historique ne couvrent pas ces chemins.
-7. Qualification de performances/ressources **sur appareil**, après autorisation d'installation/essais distincte, sans stress ni baisse des seuils. Aucun succès cloud ou mock n'autorise une activation automatique.
+Tests hôte : même bridge.cpp, JNI Java, GGUF public avec SHA contrôlé. Les fonctions d'inspection de prompt sont sous JARVIS_HOST_TESTS, compilées uniquement sur l'hôte. Aucun contenu de prompt personnel publié.
 
-Même après cette mission native, CORE004B/contrats partagés/transport/identités et arbitre global exigeraient leurs validations propres. Aucun changement de ces éléments n'est implicitement autorisé par 003D.
+À valider avant raccordement CORE : adaptateur du port structuré avec tokenizer exact pour tous les historiques/documents, limites demandées plus restrictives, liaison des callbacks au modèle d'états, traduction exhaustive des erreurs et application des autorisations de session. UnUnavailableNativeP2Port reste fermé par défaut. Le chemin LanguageModel configurable existe sans prétendre qu'une intégration CORE est opérationnelle.
+
+À vérifier physiquement : template/génération JNI ARM64 sur chaque appareil, mémoire réelle et thermique, arrêt pendant chargement et génération, retour au repos. La compilation ARM64 et les tests Linux ne remplacent pas ces essais. Aucune installation automatique ni benchmark intensif.

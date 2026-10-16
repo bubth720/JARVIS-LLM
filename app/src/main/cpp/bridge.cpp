@@ -33,7 +33,37 @@ static void check(Engine & e) { if(e.cancel.stopped()) throw std::runtime_error(
 static void error(JNIEnv * env, const std::exception & ex) {
     env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), ex.what());
 }
+// Strict UTF-8 and controls: never let a C-string terminator hide trailing instructions.
+static void validate_p2(const std::string & s, bool system = false) {
+    for (size_t i = 0; i < s.size();) {
+        const auto first = static_cast<unsigned char>(s[i++]);
+        if (first < 0x80) {
+            if ((first < 32 && first != 9 && first != 10 && first != 13) || first == 127)
+                throw std::runtime_error("Contrôle P2 interdit");
+            continue;
+        }
+        int count; unsigned value, minimum;
+        if (first >= 0xc2 && first <= 0xdf) { count = 1; value = first & 31; minimum = 0x80; }
+        else if (first >= 0xe0 && first <= 0xef) { count = 2; value = first & 15; minimum = 0x800; }
+        else if (first >= 0xf0 && first <= 0xf4) { count = 3; value = first & 7; minimum = 0x10000; }
+        else throw std::runtime_error("UTF-8 P2 invalide");
+        while (count--) {
+            if (i >= s.size()) throw std::runtime_error("UTF-8 P2 tronqué");
+            const auto next = static_cast<unsigned char>(s[i++]);
+            if ((next & 0xc0) != 0x80) throw std::runtime_error("UTF-8 P2 invalide");
+            value = (value << 6) | (next & 63);
+        }
+        if (value < minimum || value > 0x10ffff || (value >= 0xd800 && value <= 0xdfff))
+            throw std::runtime_error("UTF-8 P2 non canonique");
+    }
+    for (const auto * token : {"/think", "[INST]", "[/INST]", "<<SYS>>"})
+        if (s.find(token) != std::string::npos) throw std::runtime_error("Délimiteur P2 interdit");
+    if (!system && s.find("/no_think") != std::string::npos) throw std::runtime_error("Directive système hors rôle");
+    if (s.find("<|") != std::string::npos || s.find("<think>") != std::string::npos || s.find("</think>") != std::string::npos)
+        throw std::runtime_error("Délimiteur P2 interdit");
+}
 static std::string bytes(JNIEnv * env, jbyteArray array) {
+    if (!array) throw std::runtime_error("Entrée absente");
     const auto size = env->GetArrayLength(array);
     if(size > 128 * 1024) throw std::runtime_error("Entrée trop longue");
     std::string s(size, '\0');
@@ -85,9 +115,10 @@ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
         e.max_output = maximum_output_tokens(small, context); check(e);
     } catch (const std::exception & ex) { if (h) engine(h).unload(); error(env, ex); }
 }
-static std::string format(Engine & e, const std::vector<std::string> & roles, const std::vector<std::string> & texts, size_t start) {
+static std::string format(Engine & e, const std::vector<std::string> & roles, const std::vector<std::string> & texts, size_t start, const std::string * custom = nullptr) {
     const std::string system = "Tu es JARVIS, un assistant local. Réponds en français, brièvement. Admets tes incertitudes. Tu ne peux exécuter aucune action. /no_think";
-    std::vector<llama_chat_message> msgs{{"system", system.c_str()}};
+    const std::string effective = custom ? system + "\nInstructions supplémentaires (subordonnées aux règles fixes) :\n" + *custom : system;
+    std::vector<llama_chat_message> msgs{{"system", effective.c_str()}};
     for (size_t i = start; i < roles.size(); ++i) msgs.push_back({roles[i].c_str(), texts[i].c_str()});
     const char * tmpl = llama_model_chat_template(e.model, nullptr);
     if (!tmpl) throw std::runtime_error("Template officiel absent du GGUF");
@@ -104,11 +135,11 @@ static std::string format(Engine & e, const std::vector<std::string> & roles, co
     result += "<think>\n\n</think>\n\n";
     return result;
 }
-extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generate(
-    JNIEnv * env, jobject, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens) {
+static jbyteArray generate(JNIEnv * env, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens, const std::string * custom) {
     try {
         auto & e = engine(h); check(e);
         if (!e.ctx || maxTokens < 1 || maxTokens > e.max_output) throw std::runtime_error("Moteur non prêt ou sortie hors budget");
+        if (!roleArray || !textArray) throw std::runtime_error("Historique absent");
         const int size = env->GetArrayLength(roleArray);
         if (size < 1 || size > 8 || size != env->GetArrayLength(textArray)) throw std::runtime_error("Historique invalide");
         std::vector<std::string> roles, texts;
@@ -117,6 +148,10 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_g
             auto text = static_cast<jbyteArray>(env->GetObjectArrayElement(textArray, i));
             roles.push_back(bytes(env, role)); texts.push_back(bytes(env, text));
             // A user message must not inject ChatML role delimiters into the formatted prompt.
+            if (custom) validate_p2(texts.back());
+            if (custom && (texts.back().find("<|") != std::string::npos || texts.back().find("<think>") != std::string::npos || texts.back().find("</think>") != std::string::npos || texts.back().find('\0') != std::string::npos))
+                throw std::runtime_error("Délimiteur P2 interdit");
+            if (custom && (roles.back() != (i % 2 == 0 ? "user" : "assistant"))) throw std::runtime_error("Alternance P2 invalide");
             size_t position = 0;
             while ((position = texts.back().find("<|", position)) != std::string::npos) {
                 texts.back().replace(position, 2, "< |"); position += 3;
@@ -131,9 +166,10 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_g
         size_t start = 0;
         while (true) {
             check(e);
-            const auto prompt = format(e, roles, texts, start);
+            const auto prompt = format(e, roles, texts, start, custom);
             n = llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), tokens.size(), true, true);
             if (n > 0 && n + maxTokens + 8 <= e.context) break;
+            if (custom) throw std::runtime_error("P2_CONTEXT_EXCEEDED");
             if (start + 2 < roles.size()) start += 2;
             else throw std::runtime_error("Question trop longue pour le contexte : raccourcis-la");
         }
@@ -165,6 +201,35 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_g
         return result;
     } catch (const std::exception & ex) { error(env, ex); return nullptr; }
 }
+// Separate entry point: legacy ABI and its history policy remain unchanged.
+extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generate(
+    JNIEnv * env, jobject, jlong h, jobjectArray roles, jobjectArray texts, jint maxTokens) {
+    return generate(env, h, roles, texts, maxTokens, nullptr);
+}
+extern "C" JNIEXPORT jint JNICALL Java_fr_jarvis_llm_engine_NativeBridge_countP2Tokens(
+    JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question) {
+    try {
+        auto & e = engine(h); check(e);
+        if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+        const auto custom = bytes(env, system), user = bytes(env, question);
+        validate_p2(custom, true); validate_p2(user);
+        if (custom.size() > 8192 || custom.find("<|") != std::string::npos || user.find("<|") != std::string::npos || custom.find('\0') != std::string::npos || user.find('\0') != std::string::npos)
+            throw std::runtime_error("Prompt P2 invalide");
+        const auto prompt = format(e, {"user"}, {user}, 0, &custom);
+        const int n = llama_tokenize(llama_model_get_vocab(e.model), prompt.data(), prompt.size(), nullptr, 0, true, true);
+        return n < 0 ? -n : n;
+    } catch (const std::exception & ex) { error(env, ex); return -1; }
+}
+extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generateP2(
+    JNIEnv * env, jobject, jlong h, jobjectArray roles, jobjectArray texts, jint maxTokens, jbyteArray system) {
+    try {
+        const auto prompt = bytes(env, system);
+        validate_p2(prompt, true);
+        if (prompt.size() > 8192 || prompt.find("<|") != std::string::npos || prompt.find("<think>") != std::string::npos || prompt.find("</think>") != std::string::npos || prompt.find('\0') != std::string::npos)
+            throw std::runtime_error("Prompt système P2 invalide");
+        return generate(env, h, roles, texts, maxTokens, &prompt);
+    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
+}
 extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_unload(JNIEnv * env, jobject, jlong h) {
     try { engine(h).unload(); } catch (const std::exception & ex) { error(env, ex); }
 }
@@ -186,3 +251,20 @@ extern "C" JNIEXPORT jlongArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_a
         return result;
     } catch (const std::exception & ex) { error(env, ex); return nullptr; }
 }
+
+#ifdef JARVIS_HOST_TESTS
+// Not compiled into Android. Inspect the actual shared formatter, using a loaded real GGUF.
+extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_renderForTest(
+    JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question) {
+    try {
+        auto & e = engine(h);
+        if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+        const auto custom = bytes(env, system), user = bytes(env, question);
+        validate_p2(custom, true); validate_p2(user);
+        const auto prompt = format(e, {"user"}, {user}, 0, &custom);
+        auto result = env->NewByteArray(prompt.size());
+        env->SetByteArrayRegion(result, 0, prompt.size(), reinterpret_cast<const jbyte *>(prompt.data()));
+        return result;
+    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
+}
+#endif

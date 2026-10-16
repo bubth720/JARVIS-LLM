@@ -1,48 +1,37 @@
-# JARVIS LLM — Mission 003D
+# Mission 003D — P2 natif et contrat local pour CORE
 
-## Livraison et niveau de preuve
+Branche : `mission-003d-p2-core-contract`. Base : `43503f59f530f2bb48955bce9d7d71e2470fb668` (003C). Aucun changement de CORE, UNIFIED ou main. Aucun transport, installation ou déploiement.
 
-Module JARVIS LLM, branche `mission-003d-core-generation-contract`, base exacte **43503f59f530f2bb48955bce9d7d71e2470fb668** de 003C. Contrats et tests P2 locaux implémentés, **aucune intégration CORE–LLM opérationnelle**, aucun transport/service IPC, aucune activation ou installation sur appareil, aucun autre dépôt modifié.
+## Périmètre livré
 
-O1/O2-P2/O4 sont appliquées dans ce périmètre autorisé. O3/identités/transport et modification de contrats partagés restent à valider séparément. Les contrats UNIFIED sont seulement lus ; leur namespace/version n'est pas réutilisé automatiquement.
+Les contrats typés versionnés, le planificateur, le mapping conservateur CORE 004B et le modèle de cycle de vie de la première livraison 003D sont repris. Leurs documents historiques, désormais dépassés sur la disponibilité de P2 natif, sont conservés dans `reference-contract-only/`.
 
-## Livrables
+`GenerationRequest.systemPrompt` est facultatif. Sa présence sélectionne `NativeBridge.generateP2` dans le moteur llama.cpp existant. Le système personnalisé reste un message SYSTEM, ajouté sous les règles fixes natives. Son absence sélectionne exactement l'ancien JNI `generate` et conserve sa politique historique de réduction d'historique.
 
-- [Audit moteur et préservation](AUDIT.md) : 38 fichiers existants inchangés, dont Conversation.kt, backend, JNI, ProcessResources, politique et catalogue.
-- [Contrat P2 typé/versionné](CONTRAT-P2.md) : validation fermée, UTF-8/octets/rôles, système distinct, autorisation par défaut refusée, documents non fiables, mapping Qwen sémantique, budget tokens complet sans troncature.
-- [États, erreurs et cycle de vie](CYCLE-DE-VIE.md) : arrêt demandé/fin réelle/nettoyage/déchargement distincts, retard et replays refusés, baux retenus sur erreur, preuve future requise.
-- [Matrice CORE004B ↔ LLM003D](COMPATIBILITE-CORE-004B.md) : CORE004B `07cd282` lu ; projection texte sans contexte/sources implémentée et testée. Versions/IDs, budget, contexte aplati, erreurs et fin/libération ont des divergences explicites, aucune compatibilité complète déclarée.
-- [Adaptations natives à autoriser séparément](ADAPTATIONS-NATIVES.md) et [sources UNIFIED lues](SOURCES.json).
+P2 refuse les délimiteurs, UTF-8 malformé, contrôles, tailles incompatibles, rôles incorrects et alternances incorrectes. Il compte le système fixe, le système configurable, l'historique, la question, le template officiel GGUF et le préremplissage de raisonnement vide. Admission : tokens d'entrée + sortie demandée + 8 <= contexte réellement chargé. Aucun retrait silencieux de tour P2. Le budget n'est pas une estimation en caractères.
 
-## Ce qui est implémenté / ce qui ne l'est pas
+Le backend refuse une deuxième génération concurrente avant sa mise en file. Les opérations natives restent sur le worker unique. Une demande d'arrêt n'est pas un déchargement. Un échec de nettoyage après chargement conserve le bail MODEL et interdit réarmement/chargement/génération jusqu'à confirmation du déchargement.
 
-Les DTO/validateurs, planner avec compteur injecté, machine d'états opt-in et mapping d'erreurs sont du code exécutable testé. Le port natif P2 actuel est explicitement **indisponible**, sans repli silencieux vers l'ancienne API. L'application autonome garde ses comportements et son catalogue.
+## Préservation
 
-Les fixtures de comptage/lifecycle ne chargent pas un vrai GGUF. Aucun tokenizer officiel Qwen P2, JNI P2, authentification CORE, serializer UNIFIED, callback natif de contrôle ou arbitre global n'est implémenté. `CoreAuthorizationGate` refuse par défaut ; son autorisation explicite de fixture ne prouve aucune identité ou permission sur appareil. Ne pas présenter ce contrat comme un endpoint sûr déjà disponible.
+`tools/check-preservation-003d.py` compare au commit 003C tous les fichiers applicatifs, domaine, scripts de validation et configurations. Les seules exceptions explicites sont Conversation.kt, LlamaBackend.kt, bridge.cpp, CMakeLists.txt et test-native.sh, ainsi que les nouveaux tests JNI et contrats. Tous les tests de référence restent inchangés.
 
-## Validations et comparaison à 003C
+SafetyPolicy, ResourceCoordinator, ProcessResources, native_configuration.h, cancellation.h, model_check.h, vérification GGUF/SHA, pipeline d'importation, catalogue SQLite, modes et surveillance Android restent identiques. Aucun budget RAM, contexte de profil, nombre de threads, seuil batterie/thermique ou réserve système modifié. PLEINE PUISSANCE reste refusée sur Android non qualifié.
 
-Les 56 tests domaine et 21 simulations Android de référence sont conservés intégralement (fichiers de tests de base comparés octet pour octet, aucun retrait/édition). Nouveaux tests : système/role/document séparés, correspondance de la règle native fixe **dans la source**, refus des champs/versions/rôles/délimiteurs/UTF-8, limite UTF-8 différente des tokens, minimum de budgets, frontière exacte prompt+sortie+8, question et historique intacts, gate refusé par défaut, registre de rejeu borné, mapping des vrais champs CORE004B et refus du contexte/sources non représentables, port natif indisponible sans dégradation, stop idempotent y compris pendant le comptage, bornes du message après composition, retour tardif, epoch/génération/rejeu, deadline locale, baux maintenus, cleanup_failed bloquant, retry explicite et sortie malformée.
+## Niveaux de preuve
 
-Commandes exécutées :
+- Tests domaine : contrats, mapping, défauts historiques, validation, états, refus de concurrence, conservation des baux, annulation répétée, résultat tardif et nettoyage en échec.
+- Tests Android simulés : catalogue, importation, hors ligne et fonctionnement existant ; ce ne sont pas des tests physiques.
+- CTest : protections et interruption du graphe CPU réel existantes.
+- Nouveau harnais Java : charge la bibliothèque JNI issue du **même bridge.cpp**, avec un GGUF Qwen3 0.6B Q4_K_M public vérifié par SHA-256. Vérifie format SYSTEM/USER effectif, règles fixes, tokenisation, génération historique/P2, refus de dépassement, annulation, déchargement et échec de chargement. Inspection du prompt disponible uniquement dans la compilation hôte, absente d'Android.
+- ARM64, Lint et contrôle APK : compilation et inspection statique de l'application, sans installation.
 
-```sh
-python3 tools/check-preservation-003d.py
-./tools/cloud-env.sh ./gradlew :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug --no-daemon
-./tools/cloud-env.sh ./tools/test-native.sh
-./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
-python3 tools/publish-validation-003b.py --mission 003D
-```
+Les résultats exacts de cette branche seront consignés dans `VALIDATION.md` après exécution. Les anciennes exécutions ne sont pas des preuves de ce nouveau chemin JNI.
 
-Les contrôles locaux passent : **83 tests domaine (56 de base +27 nouveaux), 21 simulations Android**, zéro échec/erreur/ignoré ; CTest1/1, ARM64, Lint local 0 erreur/32 avertissements, contrôle APK et préservation. Résultats CI et lien à consigner après vérification de l’exécution. Le CTest historique vérifie configuration et annulation d'un graphe CPU, **pas P2**. Les tests Android sont Robolectric, pas du JNI ARM64 exécuté sur téléphone. Les preuves du package 003D restent des contrats/fixtures ; **parité native P2 non démontrée** et qualification physique en attente.
+## Limites et prochaine étape
 
-La CI construit et contrôle l'APK (signature/permissions/alignement) pour non-régression, enregistre son identité, mais **ne publie pas d'APK d'installation pour cette mission**. Les rapports de validation sont publiés. Le job GGUF Linux historique ne passe pas par P2 et ne prouve ni parité ni gain matériel.
+Le modèle `P2Lifecycle` décrit un protocole de preuves ; ses callbacks ne sont pas automatiquement alimentés par le backend Android. `UnavailableNativeP2Port` reste le refus par défaut pour le futur port CORE structuré. Le nouveau chemin bas niveau accepte le système via LanguageModel, mais il n'existe pas encore de session CORE authentifiée, de gestionnaire de baux interprocessus ou d'adaptateur qui raccorde les preuves JNI au protocole complet. Le mapping texte seul refuse le contexte aplati et les sources CORE non représentables fidèlement.
 
-## Blocages et prochaine action
+Le système transmis ne confère aucune permission ; les protections contre les délimiteurs ne prouvent pas une résistance sémantique universelle aux injections. Aucun appel d'outil n'est introduit.
 
-1. Valider avec CORE la matrice désormais confrontée à `07cd282` : mapping texte limité testé, mais aucun adaptateur réel et pas de compatibilité complète. La référence initialement absente a été trouvée pendant la mission ; la question de localisation est résolue.
-2. Valider le contrat local P2, ses limites plus strictes et son mapping avant toute modification partagée. Un contenu CORE aplati impossible à séparer fidèlement doit être refusé, pas heuristiquement reconstruit.
-3. Autoriser une mission native opt-in et tests template/tokenizer/JNI effectifs selon ADAPTATIONS-NATIVES ; aucun branchement du lifecycle de fixture en double sur les baux du backend.
-4. Plus tard seulement : décision O3/authentification/contrôle et arbitrage interprocessus, missions par dépôt, puis installations et essais physiques autorisés distinctement. Aucun fallback automatique sur un second moteur après timeout ou cleanup_failed.
-
-Aucun seuil mémoire/thermique/batterie abaissé ; PLEINE PUISSANCE reste désactivée sur Android non qualifié. Aucun modèle privé, donnée personnelle ou profil VOICE publié. Aucun main modifié ou fusionné.
+Le test JNI Linux ne qualifie ni la thermique ni la mémoire ni les délais d'arrêt des POCO/Redmi. Leur qualification physique reste en attente utilisateur. Aucune parité Android P2 physique annoncée. Prochaine mission recommandée : validation du raccordement local des preuves d'état et de l'adaptateur CORE, puis qualification physique courte autorisée ; toute évolution de contrat partagé ou IPC exige une validation distincte.
