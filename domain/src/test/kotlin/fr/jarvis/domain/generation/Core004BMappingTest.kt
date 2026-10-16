@@ -29,4 +29,14 @@ class Core004BMappingTest {
         assertEquals(P2Error.STALE_OPERATION,assertThrows(P2Exception::class.java) { map(input(requestId="legacy")) }.code)
         assertEquals(P2Error.INVALID_LIMIT,assertThrows(P2Exception::class.java) { map(input(contextSize=1000)) }.code)
     }
+    @Test fun actualCoreDefaultNoThinkDirectiveIsPreservedOnlyInAuthorizedSystem() {
+        // Exact public default inspected in CORE Models.kt at 07cd282, not a user profile.
+        val system="Tu es JARVIS, un assistant personnel local. Réponds en français sauf demande contraire. Sois précis, concis et utile. Utilise les DOCUMENTS LOCAUX et la MÉMOIRE quand ils sont pertinents. N'invente pas leur contenu. /no_think"
+        val core=Core004BRequestView(1,ID,ID,system,"Question CORE exacte.","",false,512,64)
+        val r=map(core)
+        assertEquals(system,r.system);assertTrue(prepared(r).prompt.messages.first().text.contains(system))
+        assertEquals(P2Error.INVALID_INPUT,assertThrows(P2Exception::class.java) { request(question="/no_think") }.code)
+        assertEquals(P2Error.INVALID_INPUT,assertThrows(P2Exception::class.java) { request(system="/think") }.code)
+    }
+
 }

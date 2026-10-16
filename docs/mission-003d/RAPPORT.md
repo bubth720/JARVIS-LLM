@@ -34,7 +34,7 @@ python3 tools/check-preservation-003d.py
 python3 tools/publish-validation-003b.py --mission 003D
 ```
 
-Les contrôles locaux passent : **82 tests domaine (56 de base +26 nouveaux), 21 simulations Android**, zéro échec/erreur/ignoré ; CTest1/1, ARM64, Lint local 0 erreur/32 avertissements, contrôle APK et préservation. Résultats CI et lien à consigner après vérification de l’exécution. Le CTest historique vérifie configuration et annulation d'un graphe CPU, **pas P2**. Les tests Android sont Robolectric, pas du JNI ARM64 exécuté sur téléphone. Les preuves du package 003D restent des contrats/fixtures ; **parité native P2 non démontrée** et qualification physique en attente.
+Les contrôles locaux passent : **83 tests domaine (56 de base +27 nouveaux), 21 simulations Android**, zéro échec/erreur/ignoré ; CTest1/1, ARM64, Lint local 0 erreur/32 avertissements, contrôle APK et préservation. Résultats CI et lien à consigner après vérification de l’exécution. Le CTest historique vérifie configuration et annulation d'un graphe CPU, **pas P2**. Les tests Android sont Robolectric, pas du JNI ARM64 exécuté sur téléphone. Les preuves du package 003D restent des contrats/fixtures ; **parité native P2 non démontrée** et qualification physique en attente.
 
 La CI construit et contrôle l'APK (signature/permissions/alignement) pour non-régression, enregistre son identité, mais **ne publie pas d'APK d'installation pour cette mission**. Les rapports de validation sont publiés. Le job GGUF Linux historique ne passe pas par P2 et ne prouve ni parité ni gain matériel.
 

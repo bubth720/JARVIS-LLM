@@ -12,7 +12,7 @@ CORE `mission-004b-inference-contract` est apparue pendant cette mission. Révis
 |---|---|---|
 | contractVersion:Int=1 | version locale `jarvis.llm.p2/1.0` | Conversion explicite pour version CORE1 seulement ; aucune équivalence avec UNIFIED1.0.0 |
 | sessionId:String, requestId:String | key.sessionId / key.operationId | Égalité exacte avec binding fourni par l'hôte ; UUID canoniques requis par P2, CORE n'impose que non-vide (les chaînes legacy/prepare et fixtures s1/r1 ne sont pas des IDs intermodules acceptés) |
-| systemPrompt | system → rôle SYSTEM | Conservé distinct, jamais injecté dans USER ; règles fixes LLM restent prioritaires |
+| systemPrompt | system → rôle SYSTEM | Conservé distinct, jamais injecté dans USER ; `/no_think` du défaut CORE est accepté dans le système autorisé et conservé, `/think` refusé ; règles fixes LLM restent prioritaires |
 | question | question intégrale en dernier USER | Jamais transformée en `renderPrompt()` ni tronquée |
 | context:String | history/documents typés | **Refus de tout contexte non vide, même espaces**, dans le mapping texte initial : CORE concatène mémoire/documents/historique, séparation fidèle impossible sans nouvelles données structurées |
 | sources:List<InferenceSource> | documents avec référence opaque/révision | **Refus de sources non vides** dans ce pilote ; IDs numériques documentId/chunkId, nom/index CORE ne valent pas UUID/révision P2. Aucun RAG/citation/mémoire déplacé |
