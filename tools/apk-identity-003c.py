@@ -13,7 +13,7 @@ apk = Path(sys.argv[1])
 tools = Path(os.environ['ANDROID_HOME']) / 'build-tools/36.0.0'
 cert = subprocess.check_output([str(tools / 'apksigner'), 'verify', '--print-certs', str(apk)], text=True)
 info = subprocess.check_output([str(tools / 'aapt'), 'dump', 'badging', str(apk)], text=True)
-fields = dict(re.findall(r"(name|versionCode|versionName)='([^']*)'", info.splitlines()[0]))
+fields = dict(re.findall(r"\b(name|versionCode|versionName)='([^']*)'", info.splitlines()[0]))
 fingerprint = re.findall(r'Signer #\d+ certificate SHA-256 digest: ([a-fA-F0-9]{64})', cert)
 if len(fingerprint) != 1 or fields.get('name') != 'fr.jarvis.llm':
     raise SystemExit('Unexpected APK/signature identity')
