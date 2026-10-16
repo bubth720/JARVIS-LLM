@@ -3,7 +3,7 @@ package fr.jarvis.domain.generation
 import fr.jarvis.domain.*
 import fr.jarvis.domain.resources.*
 
-enum class P2State { IDLE, PREPARED, LOADING, READY, RUNNING, STOP_REQUESTED, NATIVE_DONE, UNLOADING, UNLOADED, CLEANUP_FAILED, UNKNOWN, CLOSED }
+enum class P2State { IDLE, PREPARED, LOADING, READY, TOKENIZING, PROMPT_READY, RUNNING, STOP_REQUESTED, NATIVE_DONE, UNLOADING, UNLOADED, CLEANUP_FAILED, UNKNOWN, CLOSED }
 data class P2Snapshot(val state: P2State, val key: OperationKey?, val stopRequested: Boolean,
     val nativeCallActive: Boolean, val nativeEverStarted: Boolean, val effectiveEnd: Boolean, val unloadConfirmed: Boolean,
     val heavyHeld: Boolean, val modelHeld: Boolean)
@@ -68,13 +68,30 @@ class P2Lifecycle(private val broker: ResourceCoordinator, private val owner: St
         else state = P2State.READY
         return true
     }
-    @Synchronized fun beginGeneration(key: OperationKey, prepared: PreparedP2) {
+    @Synchronized fun beginPromptPreparation(key: OperationKey) {
         requireKey(key); checkP2(state == P2State.READY && !stopped, P2Error.BUSY)
-        checkDeadline(key)
+        checkDeadline(key); callActive = true; state = P2State.TOKENIZING
+    }
+    @Synchronized fun promptPrepared(key: OperationKey, prepared: PreparedP2): Boolean {
+        if (!matches(key)) return false
+        checkP2(callActive && state in setOf(P2State.TOKENIZING, P2State.STOP_REQUESTED), P2Error.BUSY)
         val r = checkNotNull(activeRequest); val c = checkNotNull(config)
         checkP2(prepared.request === r && prepared.config == c.copy(maxTokens = minOf(c.maxTokens, r.limits.outputTokens)) &&
             prepared.effectiveContextLimit == minOf(c.context, r.limits.contextTokens), P2Error.STALE_OPERATION)
-        callActive = true; state = P2State.RUNNING
+        callActive = false
+        if (!stopped && clockMillis() >= deadline) { stopped = true; stopCause = P2Error.EXPIRED }
+        if (stopped) { end = true; pending = P2Result.Failure(key, stopCause ?: P2Error.CANCELLED); state = P2State.NATIVE_DONE }
+        else state = P2State.PROMPT_READY
+        return true
+    }
+    @Synchronized fun beginGeneration(key: OperationKey) {
+        requireKey(key); checkP2(state == P2State.PROMPT_READY && !stopped, P2Error.BUSY)
+        checkDeadline(key); callActive = true; state = P2State.RUNNING
+    }
+    /** An actual call has not started (or previous load returned): reject without pretending active native work ended. */
+    @Synchronized fun rejectBeforeNativeCall(key: OperationKey, code: P2Error) {
+        requireKey(key); checkP2(!callActive && state in setOf(P2State.PREPARED, P2State.READY, P2State.PROMPT_READY), P2Error.BUSY)
+        pending = P2Result.Failure(key, code); end = true; state = P2State.NATIVE_DONE
     }
     /** Return true only for the first stop that needs signalling an actual native call. Never releases a lease. */
     @Synchronized fun requestStop(key: OperationKey): Boolean = stopFor(key, P2Error.CANCELLED)
@@ -93,7 +110,7 @@ class P2Lifecycle(private val broker: ResourceCoordinator, private val owner: St
     /** A stale/late callback can never finish or free a newer operation. No result accepted after cancellation. */
     @Synchronized fun nativeReturned(key: OperationKey, text: String? = null, failure: P2Error? = null): Boolean {
         if (!matches(key) || !callActive) return false
-        checkP2(state in setOf(P2State.LOADING, P2State.RUNNING, P2State.STOP_REQUESTED, P2State.UNKNOWN), P2Error.BUSY)
+        checkP2(state in setOf(P2State.LOADING, P2State.TOKENIZING, P2State.RUNNING, P2State.STOP_REQUESTED, P2State.UNKNOWN), P2Error.BUSY)
         checkP2(text == null || failure == null, P2Error.INVALID_INPUT)
         if (!stopped && clockMillis() >= deadline) { stopped = true; stopCause = P2Error.EXPIRED }
         val result = if(stopped) P2Result.Failure(key, stopCause ?: P2Error.CANCELLED)

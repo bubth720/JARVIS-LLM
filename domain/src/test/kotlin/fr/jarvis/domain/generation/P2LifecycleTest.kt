@@ -11,7 +11,7 @@ class P2LifecycleTest {
     private val life=P2Lifecycle(broker,"p2-fixture",ID) { now }
     private val requests=mutableMapOf<OperationKey,P2Request>()
     private fun arm(k:OperationKey=key()) { val r=request(key=k); requests[k]=r; life.prepare(r,SafetyDecision(RuntimeConfig(ModelKind.SMALL,512,64,1),"synthetic"),CoreAuthorizationGate { true }) }
-    private fun running(k: OperationKey=key()) { arm(k);life.beginLoad(k);life.modelReady(k);life.beginGeneration(k,prepared(checkNotNull(requests[k]))) }
+    private fun running(k: OperationKey=key()) { arm(k);life.beginLoad(k);life.modelReady(k);life.beginPromptPreparation(k);life.promptPrepared(k,prepared(checkNotNull(requests[k])));life.beginGeneration(k) }
     private fun finish(k:OperationKey=key()) { life.beginCleanup(k);life.confirmUnloaded(k) }
     @Test fun stopIsIdempotentLateOutputIsDiscardedAndLeasesSurviveUntilUnload() {
         running(); assertTrue(life.requestStop(key()));assertFalse(life.requestStop(key()))
@@ -85,8 +85,9 @@ class P2LifecycleTest {
     }
     @Test fun preparedPromptMustBeForTheSameImmutableRequestAndOperationCannotBeReplayed() {
         arm();life.beginLoad(key());life.modelReady(key())
-        assertThrows(P2Exception::class.java) { life.beginGeneration(key(),prepared(request())) }
-        life.beginGeneration(key(),prepared(checkNotNull(requests[key()])))
+        life.beginPromptPreparation(key())
+        assertThrows(P2Exception::class.java) { life.promptPrepared(key(),prepared(request())) }
+        life.promptPrepared(key(),prepared(checkNotNull(requests[key()])));life.beginGeneration(key())
         life.nativeReturned(key(),"result");finish()
         val replay=key().copy(generation=2)
         assertEquals(P2Error.STALE_OPERATION,assertThrows(P2Exception::class.java) { arm(replay) }.code)
@@ -109,6 +110,22 @@ class P2LifecycleTest {
         assertEquals(P2Error.BUSY,assertThrows(P2Exception::class.java) { arm(key(257)) }.code)
         assertNull(broker.snapshot().model);assertNull(broker.snapshot().heavy)
         life.close()
+    }
+
+    @Test fun cancellationDuringTokenizationWaitsForItsReturnAndContextRefusalCanUnload() {
+        arm();life.beginLoad(key());life.modelReady(key());life.beginPromptPreparation(key())
+        assertTrue(life.requestStop(key()));assertFalse(life.snapshot().effectiveEnd)
+        assertThrows(P2Exception::class.java) { life.beginCleanup(key()) }
+        life.promptPrepared(key(),prepared(checkNotNull(requests[key()])))
+        assertThrows(P2Exception::class.java) { life.beginGeneration(key()) }
+        finish();assertEquals(P2Error.CANCELLED,(life.takeResult(key()) as P2Result.Failure).code)
+        arm(key(2));life.beginLoad(key(2));life.modelReady(key(2))
+        life.beginPromptPreparation(key(2));life.nativeReturned(key(2),failure=P2Error.CONTEXT_EXCEEDED)
+        assertNotNull(broker.snapshot().model);finish(key(2))
+        assertEquals(P2Error.CONTEXT_EXCEEDED,(life.takeResult(key(2)) as P2Result.Failure).code)
+        arm(key(3));life.rejectBeforeNativeCall(key(3),P2Error.INVALID_INPUT)
+        assertFalse(life.snapshot().nativeEverStarted);finish(key(3))
+        assertEquals(P2Error.INVALID_INPUT,(life.takeResult(key(3)) as P2Result.Failure).code)
     }
 
 }
