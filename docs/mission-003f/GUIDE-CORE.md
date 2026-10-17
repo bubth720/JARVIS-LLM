@@ -23,6 +23,21 @@ révision, authentifier UID/certificat/permission à chaque entrée/callback et 
 UNKNOWN_TRANSACTION, mauvais digest et capacités absentes, sans tester submit et
 sans retomber sur /1. Les epochs CORE ne peuvent être générés par LLM.
 
+## Diff ABI vérifié
+
+Les numéros ci-dessous sont ceux de Binder FIRST_CALL_TRANSACTION=1, AIDL Android :
+
+| Interface | /1 conservé | Ajout /2 |
+|---|---|---|
+| IP2Endpoint | hello=1, submit=2, status=3, cancel=4 | recovery=5 |
+| IP2Arbiter (oneway) | authorize=1 | recovery=2 |
+| IP2AuthorizationCallback (oneway) | complete=1, inchangé | aucun |
+| IRecoveryCallback (oneway) | absent | complete=1, nouveau descripteur |
+
+Les packages/descripteurs et paramètres précédents restent identiques ; le contrôle
+statique compare leurs préfixes aux AIDL /1 exacts. Les transactions /1 ne deviennent
+jamais des preuves /2. Aucun service n'est ajouté à l'application historique.
+
 ## Identité et provisionnement (spécification de revue, non exécutée)
 
 Packages/components fixes :

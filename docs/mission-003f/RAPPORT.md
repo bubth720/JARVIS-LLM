@@ -13,6 +13,10 @@ Branche : `fixture/003f-bootstrap-attestation`.
 Base vérifiée : `fixture/003e-p2-secure-endpoint`,
 `030152a5f3d888017ad7a7fe8026f2e2c48e8fd5` (code `5751646acd4a7bb13caaea4b96a4ab3a68ec6adb`).
 Les commits et résultats effectivement exécutés figurent dans `PREUVES.md`.
+CI [39031742868](https://github.com/bubth720/JARVIS-LLM/actions/runs/39031742868)
+**réussie** sur `b2f6bc052871a2e4f604d9170f385b71c241837b` : 157 JUnit, CTest,
+JNI P2 Linux/GGUF public vérifié, ARM64, Lint et contrôles APK. Cela ne lève aucun
+des blocages fonctionnels F1/F2/F3 ci-dessous.
 
 ## Références intégralement lues
 

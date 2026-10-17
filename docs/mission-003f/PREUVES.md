@@ -77,13 +77,41 @@ Le rapport APK de chaque CI enregistre ses empreintes réelles distinctes.
   et Hugging Face sont refusés par le proxy local ; aucun contournement tenté.
 - Aucun arbitre CORE ni mission CORE 004D.
 
-Le workflow conserve le harnais Linux existant dans son job `model-probe` avec
-modèles publics vérifiés ; un résultat CI doit être rapporté séparément lorsqu'il
-est effectivement disponible. Il ne démontre ni le bootstrap /2 ni une qualification
-Android physique. Aucun benchmark intensif sur appareil n'est lancé.
+## GitHub Actions effectivement réussie
+
+[Exécution 39031742868](https://github.com/bubth720/JARVIS-LLM/actions/runs/39031742868),
+statut global **Success**, commit source
+`b2f6bc052871a2e4f604d9170f385b71c241837b`.
+
+- [verify](https://github.com/bubth720/JARVIS-LLM/actions/runs/39031742868/job/117393460505) :
+  préservation, vérificateur hors ligne, CTest, tests JVM/Robolectric, ARM64, Lint,
+  APK/signatures/permissions/alignements, rapports et artefact du contrat réussis.
+- [model-probe](https://github.com/bubth720/JARVIS-LLM/actions/runs/39031742868/job/117393460634) :
+  modèle public vérifié, harnais JNI P2 Linux réel et publication des preuves réussis.
+  Ce job conserve le script historique sans modification ; il ne teste pas le bootstrap /2.
+- [memory-result](https://github.com/bubth720/JARVIS-LLM/actions/runs/39031742868/job/117394097385) :
+  réussi, résultat Linux uniquement, aucune qualification physique Android.
+
+Artefacts sur la page de cette exécution : `jarvis-llm-validation`,
+`jarvis-llm-model-memory`, `jarvis-llm-003f-contract-candidate`.
+Les JSON contiennent les empreintes APK/certificats propres à cette exécution,
+ainsi que la provenance du modèle public Linux. Aucune clé, aucun GGUF ni donnée
+personnelle n'est publié. Aucun APK n'est installé sur un appareil.
+
+Le premier run `39031584293` de `ac678de` a été annulé par le mécanisme de
+concurrence après le correctif `b2f6bc0` ; il est remplacé par le run réussi ci-dessus.
+Une CI verte ne vaut pas acceptation 003F : F1/F2 et les preuves F3 restent bloquants.
 
 ## Publication
 
-Branche dédiée uniquement, sans fusion. Les identifiants définitifs des commits et
-l'état CI sont ajoutés après publication. Une CI verte ne vaut pas acceptation
-003F : F1/F2 et les preuves F3 restent bloquants.
+Branche : `fixture/003f-bootstrap-attestation`, sans fusion.
+
+- `ac678de9b8c04f913b117d2d6bda034108523756` : contrat candidat, codec, autorité,
+  registre de naissance, journal durable, contrôles et tests.
+- `b2f6bc052871a2e4f604d9170f385b71c241837b` : refus des compteurs backend
+  inconnus/multiples et propriétaires contradictoires, deux tests supplémentaires.
+- Clôture documentaire sur la même branche, message `[skip ci]` : aucune modification
+  du code testé ni du bundle normatif ; les preuves exécutées restent celles de b2f6bc0.
+
+La branche main distante est restée à `917e3351f9b525857b6aa019e98d07872d8f6e76`.
+Aucune branche n'a été fusionnée et CORE 004D n'a pas été lancé.
