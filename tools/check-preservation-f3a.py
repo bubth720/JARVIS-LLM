@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """F3A is additive only: freeze the entire historical implementation and both wire bundles."""
 from pathlib import Path
-import json, subprocess
+import json, subprocess, sys
 BASE = '1ce24405b04a50f97cf30078b9716c7d00c593fc'
 paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', BASE, '--',
                                  'app', 'domain', 'fixtures'], text=True).splitlines()
@@ -16,6 +16,9 @@ allowed = ['fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/f3/',
            'fixtures/p2-endpoint/src/test/java/fr/jarvis/llm/engine/F3WorkerTest.kt',
            'docs/mission-003f-f3a/', 'tools/check-preservation-f3a.py',
            'tools/publish-validation-f3a.py', '.github/workflows/android.yml']
+if '--successor-f3b' in sys.argv:
+    # Explicit review-only successor. All original app/domain/fixture bytes remain frozen.
+    allowed.append('docs/mission-003f-f3b/')
 changed = subprocess.check_output(['git', 'diff', '--name-only', BASE], text=True).splitlines()
 added = subprocess.check_output(['git', 'ls-files', '--others', '--exclude-standard'], text=True).splitlines()
 for path in set(changed + added):

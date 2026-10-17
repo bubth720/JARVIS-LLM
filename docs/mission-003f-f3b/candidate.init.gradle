@@ -1,0 +1,14 @@
+// Isolated review sources enter TEST compilation only. No main sourceSet changes.
+gradle.projectsEvaluated {
+    def fixture = gradle.rootProject.project(':p2-endpoint')
+    def output = new File(fixture.buildDir, 'f3b-review-sources')
+    def prepare = fixture.tasks.register('prepareF3bReviewSources', Sync) {
+        from(new File(gradle.rootProject.rootDir, 'docs/mission-003f-f3b/candidate')) {
+            include 'F3Trace.kt', 'F3NativeApi.kt'
+        }
+        into output
+    }
+    fixture.android.sourceSets.getByName('test').java.srcDirs(output,
+        new File(gradle.rootProject.rootDir, 'docs/mission-003f-f3b/tests'))
+    fixture.tasks.matching { it.name.contains('UnitTest') || it.name.contains('Lint') || it.name.startsWith('lint') }.configureEach { dependsOn prepare }
+}

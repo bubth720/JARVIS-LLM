@@ -1,0 +1,401 @@
+diff --git a/app/src/main/cpp/bridge.cpp b/app/src/main/cpp/bridge.cpp
+--- a/app/src/main/cpp/bridge.cpp
++++ b/app/src/main/cpp/bridge.cpp
+@@ -272,6 +272,19 @@
+         return result;
+     } catch (const std::exception & ex) { error(env, ex); return nullptr; }
+ }
++// F3 read-only ABI v1. Caller: same existing worker, handleLock, live handle only.
++// No pointer/address leaks, model/context allocations, loading or cleanup.
++extern "C" JNIEXPORT jlongArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_observeOwned(
++    JNIEnv * env, jobject, jlong h) {
++    try {
++        const auto & e = engine(h);
++        const jlong flags[4] = {1, 1, e.model ? 1 : 0, e.ctx ? 1 : 0};
++        auto result = env->NewLongArray(4);
++        if (!result) return nullptr;
++        env->SetLongArrayRegion(result, 0, 4, flags);
++        return result;
++    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
++}
+ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_unload(JNIEnv * env, jobject, jlong h) {
+     try { engine(h).unload(); } catch (const std::exception & ex) { error(env, ex); }
+ }
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/F3BackendObservation.kt b/app/src/main/java/fr/jarvis/llm/engine/F3BackendObservation.kt
+new file mode 100644
+--- /dev/null
++++ b/app/src/main/java/fr/jarvis/llm/engine/F3BackendObservation.kt
+@@ -0,0 +1,9 @@
++package fr.jarvis.llm.engine
++
++import fr.jarvis.domain.resources.ResourceObservation
++
++/** Raw process-local read, never an ATTEST/terminal receipt or grant.
++ * The caller must freeze the full participant registry before interpreting it.
++ */
++data class F3BackendObservation(val trace: F3Trace.Snapshot, val resources: ResourceObservation,
++    val coherent: Boolean)
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/F3NativeApi.kt b/app/src/main/java/fr/jarvis/llm/engine/F3NativeApi.kt
+new file mode 100644
+--- /dev/null
++++ b/app/src/main/java/fr/jarvis/llm/engine/F3NativeApi.kt
+@@ -0,0 +1,38 @@
++package fr.jarvis.llm.engine
++
++/** Proposed decorator of the existing API, NOT another backend or resource owner.
++ * Tests compile this in the test source set only, with explicitly fake JNI.
++ */
++internal class F3NativeApi(private val delegate: NativeApi, private val trace: F3Trace): NativeApi by delegate {
++    private fun completed(token: F3Trace.Token, success: Boolean, flags: LongArray? = null) {
++        try { trace.returned(token,success,flags) } catch (_: Throwable) { trace.quarantine() }
++    }
++    private inline fun <T> call(kind: F3Trace.Call, block: () -> T): T {
++        val token=trace.entered(kind)
++        val result=try { block() } catch (failure: Throwable) { completed(token,false); throw failure }
++        completed(token,true)
++        return result
++    }
++    override fun create(): Long = call(F3Trace.Call.CREATE) { delegate.create().also { check(it != 0L) { "INVALID_NATIVE_HANDLE" } } }
++    override fun begin(handle: Long) = call(F3Trace.Call.BEGIN) { delegate.begin(handle) }
++    override fun cancel(handle: Long) = call(F3Trace.Call.CANCEL) { delegate.cancel(handle) }
++    override fun load(handle: Long,path: ByteArray,context: Int,threads: Int,small: Boolean) =
++        call(F3Trace.Call.LOAD) { delegate.load(handle,path,context,threads,small) }
++    override fun generate(handle: Long,roles: Array<ByteArray>,texts: Array<ByteArray>,maxTokens: Int) =
++        call(F3Trace.Call.GENERATE) { delegate.generate(handle,roles,texts,maxTokens) }
++    override fun generateP2(handle: Long,roles: Array<ByteArray>,texts: Array<ByteArray>,maxTokens: Int,system: ByteArray) =
++        call(F3Trace.Call.GENERATE) { delegate.generateP2(handle,roles,texts,maxTokens,system) }
++    override fun measureFixtureP2(handle: Long,system: ByteArray,question: ByteArray) =
++        call(F3Trace.Call.MEASURE) { delegate.measureFixtureP2(handle,system,question) }
++    override fun generateFixtureP2(handle: Long,system: ByteArray,question: ByteArray,maxTokens: Int,contextLimit: Int) =
++        call(F3Trace.Call.GENERATE) { delegate.generateFixtureP2(handle,system,question,maxTokens,contextLimit) }
++    override fun allocations(handle: Long) = call(F3Trace.Call.ALLOCATIONS) { delegate.allocations(handle) }
++    override fun unload(handle: Long) = call(F3Trace.Call.UNLOAD) { delegate.unload(handle) }
++    override fun destroy(handle: Long) = call(F3Trace.Call.DESTROY) { delegate.destroy(handle) }
++    fun probeExisting(handle: Long, reader: (Long) -> LongArray): LongArray {
++        val token=trace.entered(F3Trace.Call.PROBE)
++        val result=try { reader(handle) } catch (failure: Throwable) { completed(token,false); throw failure }
++        completed(token,true,result)
++        return result
++    }
++}
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/F3Trace.kt b/app/src/main/java/fr/jarvis/llm/engine/F3Trace.kt
+new file mode 100644
+--- /dev/null
++++ b/app/src/main/java/fr/jarvis/llm/engine/F3Trace.kt
+@@ -0,0 +1,104 @@
++package fr.jarvis.llm.engine
++
++/** PROPOSED INTERNAL SOURCE, compiled only by the isolated review tests in F3B.
++ * Does not own/free resources. Default production backend has no tracer.
++ * Events are not durable terminal receipts and cannot grant /2 admission.
++ */
++class F3Trace(val processEpoch: String, val operationKeyDigest: String) {
++    enum class Call { CREATE, BEGIN, CANCEL, LOAD, GENERATE, MEASURE, ALLOCATIONS, PROBE, UNLOAD, DESTROY }
++    enum class Task { LOAD, GENERATE, UNLOAD, CLOSE, INSPECT }
++    enum class State { STOP_REQUESTED, RUNNING, DRAINED, UNLOADED, CLEANUP_FAILED, UNKNOWN }
++    class Token internal constructor(val id: Long)
++    data class Snapshot(val process: String, val keyDigest: String, val owner: String?, val worker: String,
++        val revision: Long, val queued: Int, val tasks: Int, val imports: Int, val calls: Int,
++        val callEndSequence: Long, val unloadSequence: Long, val destroyed: Boolean,
++        val pointerFlags: List<Long>?, val cleanupFailed: Boolean, val uncertain: Boolean, val stop: Boolean)
++    private val workerId = java.util.UUID.randomUUID().toString()
++    private var owner: String? = null
++    private var workerThread: Thread? = null
++    private var next = 0L; private var revision = 0L; private var end = 0L; private var unload = 0L
++    private var uncertain = false; private var cleanupFailed = false; private var stopped = false
++    private var destroyed = false; private var created = false
++    private var pointers: List<Long>? = null
++    private val calls = mutableMapOf<Token, Call>()
++    private val tasks = mutableMapOf<Token, Pair<Task, Boolean>>()
++    private val imports = mutableSetOf<Token>()
++    init {
++        require(java.util.UUID.fromString(processEpoch).toString() == processEpoch)
++        require(operationKeyDigest.matches(Regex("[a-f0-9]{64}")))
++    }
++    @Synchronized fun bindOwner(value: String) { check(owner == null && value.isNotBlank()); owner = value; revision++ }
++    @Synchronized fun quarantine() { uncertain = true; revision++ }
++    @Synchronized fun requireKey(value: String) { check(value == operationKeyDigest) { "STALE_OPERATION" } }
++    @Synchronized fun queued(kind: Task): Token {
++        check(tasks.size < 128); val t = Token(++next); tasks[t] = kind to false; revision++; return t
++    }
++    @Synchronized fun started(t: Token) {
++        val entry = tasks[t] ?: error("STALE_TASK")
++        check(!entry.second)
++        val thread = Thread.currentThread()
++        if (workerThread == null) workerThread = thread else if (workerThread !== thread) uncertain = true
++        tasks[t] = entry.first to true; revision++
++    }
++    /** Called inside the synchronous worker body, never in the caller coroutine's finally. */
++    @Synchronized fun taskReturned(t: Token) { check(tasks[t]?.second == true); tasks.remove(t); revision++ }
++    @Synchronized fun dispatchAbandoned(t: Token) {
++        // Cancel before worker entry cannot prove a task ran/returned. Retain ticket, quarantine.
++        if (tasks.containsKey(t)) { uncertain = true; revision++ }
++    }
++    @Synchronized fun importEntered(): Token { check(imports.size < 128); val t=Token(++next); imports.add(t); pointers = null; revision++; return t }
++    @Synchronized fun importReturned(t: Token) { check(imports.remove(t)); revision++ }
++    @Synchronized fun entered(kind: Call): Token {
++        check(calls.size < 128)
++        val t=Token(++next); calls[t]=kind
++        if (kind == Call.CANCEL) stopped = true
++        // No mutation/probe may retain an old pointer observation across a failed call.
++        pointers = null; revision++; return t
++    }
++    /** Only directly after synchronous NativeApi call returns or throws to Java. */
++    @Synchronized fun returned(t: Token, success: Boolean, flags: LongArray? = null) {
++        val kind=calls.remove(t) ?: error("STALE_NATIVE_CALL")
++        end++; revision++
++        if (!success) {
++            pointers = null
++            if (kind == Call.UNLOAD || kind == Call.DESTROY) cleanupFailed = true
++            if (kind == Call.CREATE) uncertain = true
++            return
++        }
++        when (kind) {
++            Call.CREATE -> { created = true; destroyed = false }
++            Call.BEGIN -> stopped = false
++            Call.UNLOAD -> { unload++; cleanupFailed = false }
++            Call.DESTROY -> { unload++; destroyed = true; cleanupFailed = false }
++            Call.PROBE -> {
++                if (flags == null || flags.size != 4 || flags[0] != 1L || flags[1] != 1L ||
++                    flags[2] !in 0L..1L || flags[3] !in 0L..1L) pointers = null
++                else pointers = flags.toList()
++            }
++            else -> Unit
++        }
++    }
++    @Synchronized fun snapshot(): Snapshot {
++        val work=tasks.values.filter { it.first != Task.INSPECT }
++        return Snapshot(processEpoch, operationKeyDigest, owner, workerId, revision,
++            work.count { !it.second }, work.count { it.second }, imports.size, calls.size, end, unload,
++            destroyed, pointers?.toList(), cleanupFailed,
++            uncertain || !created || workerThread == null || owner == null, stopped)
++    }
++    companion object {
++        /** Consistency classifier only. Caller must additionally verify frozen census and exact lease identities.
++         * A fresh empty tracer, PID, death, elapsed time or resource count alone never proves UNLOADED.
++         */
++        fun classify(s: Snapshot, coherent: Boolean, modelLeases: Int?, heavyLeases: Int?): State {
++            if (!coherent || s.uncertain || modelLeases == null || heavyLeases == null || modelLeases < 0 || heavyLeases < 0)
++                return State.UNKNOWN
++            if (s.cleanupFailed) return State.CLEANUP_FAILED
++            if (s.calls != 0 || s.tasks != 0 || s.imports != 0 || s.queued != 0)
++                return if (s.stop) State.STOP_REQUESTED else State.RUNNING
++            if (s.callEndSequence == 0L || (!s.destroyed && s.pointerFlags == null)) return State.UNKNOWN
++            if (s.unloadSequence > 0 && modelLeases == 0 && heavyLeases == 0 &&
++                (s.destroyed || s.pointerFlags?.let { it[2] == 0L && it[3] == 0L } == true)) return State.UNLOADED
++            return State.DRAINED
++        }
++    }
++}
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt b/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
+--- a/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
++++ b/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
+@@ -15,6 +15,7 @@
+     fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
+     fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray> = error("fixture measure unsupported")
+     fun generateFixtureP2(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int): ByteArray = error("fixture generate unsupported")
++    fun observeOwned(handle: Long): LongArray = error("F3 read unsupported")
+     fun allocations(handle: Long): LongArray
+     fun unload(handle: Long)
+     fun destroy(handle: Long)
+@@ -30,16 +31,19 @@
+     external override fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
+     external override fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray>
+     external override fun generateFixtureP2(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int): ByteArray
++    external override fun observeOwned(handle: Long): LongArray
+     external override fun allocations(handle: Long): LongArray
+     external override fun unload(handle: Long)
+     external override fun destroy(handle: Long)
+ }
+
+ /** All resource operations use one worker. Only the atomic stop flag is changed concurrently. */
+-class LlamaBackend internal constructor(private val native: NativeApi) : LanguageModel {
++class LlamaBackend internal constructor(nativeApi: NativeApi, private val f3: F3Trace? = null) : LanguageModel {
+     constructor() : this(NativeBridge)
+     override val capabilities = EngineCapabilities(separateSystemPrompt = true, nativeCancellation = true)
+     private val owner = "llm-" + java.util.UUID.randomUUID().toString()
++    private val observedNative = f3?.let { it.bindOwner(owner); F3NativeApi(nativeApi,it) }
++    private val native: NativeApi = observedNative ?: nativeApi
+     private var modelLease: ResourceLease? = null
+     @Volatile override var allocations: NativeAllocations? = null
+         private set
+@@ -51,9 +55,39 @@
+         private set
+     @Volatile private var cleanupFailed = false
+     private var loaded: Pair<String, RuntimeConfig>? = null
++    private suspend fun <T> onWorker(kind: F3Trace.Task, body: () -> T): T {
++        val token=f3?.queued(kind)
++        try { return kotlinx.coroutines.withContext(worker) {
++            if (token!=null) f3!!.started(token)
++            try { body() } finally { if (token!=null) {
++                try { f3!!.taskReturned(token) } catch (_: Throwable) { f3!!.quarantine() }
++            } }
++        } } catch (failure: Throwable) {
++            if (token!=null) {
++                try { f3!!.dispatchAbandoned(token) } catch (_: Throwable) { f3!!.quarantine() }
++            }
++            throw failure
++        }
++    }
++    /** Read existing ownership only. No create/load/unload, no acquisition or close of leases.
++     * UNKNOWN remains mandatory unless the fixture has frozen an exhaustive participant census.
++     */
++    suspend fun observeF3(): F3BackendObservation? {
++        val trace=f3 ?: return null
++        return onWorker(F3Trace.Task.INSPECT) {
++            synchronized(handleLock) {
++                val before=ProcessResources.coordinator.observation()
++                if (handle!=0L) runCatching { observedNative!!.probeExisting(handle) { native.observeOwned(it) } }
++                val first=trace.snapshot()
++                val after=ProcessResources.coordinator.observation()
++                val last=trace.snapshot()
++                F3BackendObservation(last,after,before==after && first.revision==last.revision)
++            }
++        }
++    }
+     override fun prepareOperation() = synchronized(handleLock) { check(handle != 0L && !generating.get() && !cleanupFailed) { "BUSY ou moteur fermé" }; native.begin(handle) }
+     override fun requestStop() = synchronized(handleLock) { if (handle != 0L) native.cancel(handle) }
+-    override suspend fun load(path: String, config: RuntimeConfig) = withContext(worker) {
++    override suspend fun load(path: String, config: RuntimeConfig) = onWorker(F3Trace.Task.LOAD) {
+         check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
+         if (loaded != (path to config)) {
+             ProcessResources.requireHeavy(owner, Module.LLM, "chargement natif").use {
+@@ -87,7 +121,7 @@
+     override suspend fun generate(request: GenerationRequest): String {
+         check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
+         check(generating.compareAndSet(false, true)) { "BUSY : génération concurrente refusée" }
+-        try { return withContext(worker) {
++        try { return onWorker(F3Trace.Task.GENERATE) {
+         ProcessResources.requireHeavy(owner, Module.LLM, "génération native").use {
+             check(loaded?.second == request.config) { "Configuration du modèle résident différente de la demande" }
+             try {
+@@ -111,7 +145,7 @@
+         require(contextLimit in 512..request.config.context && contextLimit % 256 == 0)
+         if (request.config.model == ModelKind.MAIN) require(contextLimit >= 768)
+         check(!cleanupFailed && generating.compareAndSet(false, true)) { "BUSY or CLEANUP_FAILED" }
+-        try { return withContext(worker) {
++        try { return onWorker(F3Trace.Task.GENERATE) {
+             ProcessResources.requireHeavy(owner, Module.LLM, "fixture comptage et génération P2").use {
+                 check(loaded?.second == request.config)
+                 val system = customSystem.toByteArray(Charsets.UTF_8)
+@@ -127,10 +161,10 @@
+             }
+         } } finally { generating.set(false) }
+     }
+-    override suspend fun unload() = withContext(worker) { try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }; cleanupFailed = false; loaded = null; allocations = null; modelLease?.close(); modelLease = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
++    override suspend fun unload() = onWorker(F3Trace.Task.UNLOAD) { try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }; cleanupFailed = false; loaded = null; allocations = null; modelLease?.close(); modelLease = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
+     override suspend fun close() {
+         requestStop()
+-        withContext(worker) {
++        onWorker(F3Trace.Task.CLOSE) {
+             synchronized(handleLock) { if (handle != 0L) {
+                 try { native.destroy(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }
+                 handle = 0
+diff --git a/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt b/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt
+--- a/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt
++++ b/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt
+@@ -9,6 +9,10 @@
+         require(kind != ResourceClass.MODEL || !modelKey.isNullOrBlank()) }
+ }
+ data class ResourceState(val heavy: ResourceRequest?, val model: ResourceRequest?)
++/** Read-only exact identities. Epoch is process-local, not an OS attestation. */
++data class ObservedLease(val coordinatorEpoch: String, val id: Long, val request: ResourceRequest)
++data class ResourceObservation(val coordinatorEpoch: String, val revision: Long,
++                               val heavy: ObservedLease?, val model: ObservedLease?)
+ sealed interface ResourceGrant {
+     data class Granted(val lease: ResourceLease) : ResourceGrant
+     data class Refused(val reason: String) : ResourceGrant
+@@ -18,6 +22,8 @@
+     @Synchronized override fun close() = release()
+ }
+ class ResourceCoordinator {
++    private val epoch=java.util.UUID.randomUUID().toString()
++    private var revision=0L
+     private var nextId = 0L
+     private var heavy: Pair<Long, ResourceRequest>? = null
+     private var model: Pair<Long, ResourceRequest>? = null
+@@ -36,12 +42,15 @@
+         }
+         if (reason != null) return ResourceGrant.Refused(reason)
+         val id = ++nextId
++        revision++
+         if (request.kind == ResourceClass.HEAVY) heavy = id to request else model = id to request
+         return ResourceGrant.Granted(ResourceLease { release(request.kind, id) })
+     }
+     @Synchronized private fun release(kind: ResourceClass, id: Long) {
+-        if (kind == ResourceClass.HEAVY && heavy?.first == id) heavy = null
+-        if (kind == ResourceClass.MODEL && model?.first == id) model = null
++        if (kind == ResourceClass.HEAVY && heavy?.first == id) { heavy = null; revision++ }
++        if (kind == ResourceClass.MODEL && model?.first == id) { model = null; revision++ }
+     }
++    @Synchronized fun observation() = ResourceObservation(epoch,revision,
++        heavy?.let { ObservedLease(epoch,it.first,it.second) },model?.let { ObservedLease(epoch,it.first,it.second) })
+     @Synchronized fun snapshot() = ResourceState(heavy?.second, model?.second)
+ }
+diff --git a/fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/AndroidRuntime.kt b/fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/AndroidRuntime.kt
+--- a/fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/AndroidRuntime.kt
++++ b/fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/AndroidRuntime.kt
+@@ -9,9 +9,30 @@
+     init { app.bootstrapRegistry.register(this) }
+     private val nativeLock=Any()
+     @Volatile private var backend: LlamaBackend? = null
++    private var f3Trace: F3Trace? = null
+     private val importOwner="fixture-model-import-"+java.util.UUID.randomUUID()
+     private var baseline=0L; private var resident: Residency? = null
+     @Volatile private var stop=false
++    // Internal-only review hook. No Binder entry, no grant, no creation while observing.
++    // A new key cannot reuse this backend owner. Registration must precede all native/import work.
++    private fun traceFor(request: Request): F3Trace = synchronized(nativeLock) {
++        val pilot=app.recoveryPlatform.pins?.pilot ?: throw Refusal("ENROLMENT_REQUIRED")
++        val digest=Wire.digest(request.keyFields+mapOf("request_digest" to request.digest,"pilot_id" to pilot))
++        val trace=f3Trace ?: F3Trace(recovery.processEpoch,digest).also { f3Trace=it }
++        trace.requireKey(digest)
++        trace
++    }
++    internal suspend fun observeExistingF3(): F3BackendObservation? {
++        val existing=synchronized(nativeLock) { backend }
++        if (existing!=null) return existing.observeF3()
++        // Positive destroy event from the SAME retained trace, never from backend==null.
++        val trace=f3Trace ?: return null
++        val before=trace.snapshot()
++        if (!before.destroyed) return null
++        val resources=ProcessResources.coordinator.observation()
++        val after=trace.snapshot()
++        return F3BackendObservation(after,resources,before.revision==after.revision)
++    }
+     private fun decision(r: Request) = SafetyPolicy().decide(r.profile,app.monitor.snapshot(),setOf(r.p2.model),resident)
+     override suspend fun admit(request: Request): RuntimeConfig {
+         recovery.requireNativeAdmission()
+@@ -29,19 +50,21 @@
+     override suspend fun load(request: Request,config: RuntimeConfig,nativeDispatched: () -> Unit) {
+         recovery.requireNativeAdmission()
+         app.bootstrapRegistry.beforeNativeOrImport(this)
+-        val path=ProcessResources.requireHeavy(importOwner,Module.MODEL_IMPORT,"fixture import et SHA",128L*1024*1024).use {
++        val trace=traceFor(request)
++        val importing=trace.importEntered()
++        val path=try { ProcessResources.requireHeavy(importOwner,Module.MODEL_IMPORT,"fixture import et SHA",128L*1024*1024).use {
+             if (app.models.expectedDigest(request.p2.model) != request.p2.modelSha256 || request.p2.model !in app.models.available()) {
+                 val staged=app.staged(request.p2.model) ?: throw Refusal("MODEL_UNAVAILABLE")
+                 demand(staged.second == request.p2.modelSha256,"MODEL_MISMATCH")
+                 app.models.import(staged.first,request.p2.model,staged.second) { stop }
+             }
+             app.models.verify(request.p2.model) { stop }
+-        }
++        } } finally { trace.importReturned(importing) }
+         demand(!stop && decision(request).config != null,"SAFETY_REFUSAL")
+         baseline=app.monitor.snapshot().pssBytes // exclude the completed import/hash phase from residency credit
+         val b=synchronized(nativeLock) {
+             demand(!stop,"CANCELLED")
+-            (backend ?: LlamaBackend().also { backend=it }).also { it.prepareOperation() }
++            (backend ?: LlamaBackend(NativeBridge,trace).also { backend=it }).also { it.prepareOperation() }
+         }
+         nativeDispatched() // create() has really returned; no controller lock held while acquiring nativeLock
+         b.load(path,config)
+@@ -49,6 +72,7 @@
+     }
+     override suspend fun generate(request: Request,config: RuntimeConfig): FixtureGeneration {
+         recovery.requireNativeAdmission()
++        traceFor(request)
+         demand(!stop && safe(request),"SAFETY_REFUSAL")
+         val input=GenerationRequest(listOf(Message("user",request.p2.question)),config,request.p2.system)
+         return backend!!.generateFixtureP2(input,minOf(config.context,request.p2.limits.contextTokens))

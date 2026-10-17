@@ -20,7 +20,8 @@ jobs:
           python3 tools/check-preservation-003f.py
           python3 tools/check-recovery-contract.py
           python3 tools/check-preservation-d4e.py
-          python3 tools/check-preservation-f3a.py
+          python3 tools/check-preservation-f3a.py --successor-f3b
+          python3 docs/mission-003f-f3b/verify.py
           python3 tools/recovery-vectors.py
           python3 docs/mission-003f-correction/reference/verify_vectors.py
       - name: Test offline APK hash verifier (not Android hardware)
@@ -30,7 +31,7 @@ jobs:
       - name: Native cancellation and model admission tests
         run: ./tools/cloud-env.sh ./tools/test-native.sh
       - name: JVM and simulated Android tests, Lint, ARM64 APK
-        run: ./tools/cloud-env.sh ./gradlew :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon
+        run: ./tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
       - name: Check isolated fixture APKs, signatures, shared engine and contract digest
@@ -39,6 +40,7 @@ jobs:
         run: |
           python3 tools/publish-validation-003f.py
           python3 tools/publish-validation-f3a.py
+          python3 docs/mission-003f-f3b/verify.py --results
       - name: Publish cloud validation with hardware limitations
         run: python3 tools/publish-validation-003b.py --mission 003D
       - name: Publish actual catalogue scale evidence
@@ -80,6 +82,7 @@ jobs:
             docs/mission-003f/
             docs/mission-003f-correction/
             docs/mission-003f-f3a/
+            docs/mission-003f-f3b/
           if-no-files-found: error
 
   model-probe:

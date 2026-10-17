@@ -1,0 +1,25 @@
+{
+  "request": "Mission 003F-F3B (instruction utilisateur)",
+  "base": "aa85ad4b506bb655dbe5b50ec4b125d19b48e81e",
+  "f3aRead": [
+    "AUDIT.md",
+    "PORT-ET-RECUS.md",
+    "ADAPTATION-SENSIBLE.md"
+  ],
+  "COORD001": {
+    "status": "NOT_FOUND_IN_CONSULTED_LOCATIONS",
+    "userReferenceRequested": true,
+    "unifiedMainCommit": "e4435f4bd60c5fdc5595c411cc8cab9da7ef020b",
+    "unifiedHeadCount": 18,
+    "headListingSha256": "eebd8e6a4ea19a4574f36b2d90b840f24358f821e39323bafb1974b551a6024e",
+    "searched": [
+      "local checkout paths",
+      "UNIFIED branch names containing coord (case-insensitive)",
+      "all files under 1MB in UNIFIED main archive for COORD-001/COORD001"
+    ],
+    "conclusionsAssumed": false
+  },
+  "noOtherRepositoryModified": true,
+  "nativeReleaseProven": false,
+  "CORE004DStarted": false
+}
