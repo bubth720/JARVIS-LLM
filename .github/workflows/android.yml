@@ -20,6 +20,7 @@ jobs:
           python3 tools/check-preservation-003f.py
           python3 tools/check-recovery-contract.py
           python3 tools/check-preservation-d4e.py
+          python3 tools/check-preservation-f3a.py
           python3 tools/recovery-vectors.py
           python3 docs/mission-003f-correction/reference/verify_vectors.py
       - name: Test offline APK hash verifier (not Android hardware)
@@ -35,7 +36,9 @@ jobs:
       - name: Check isolated fixture APKs, signatures, shared engine and contract digest
         run: ./tools/cloud-env.sh python3 tools/check-fixtures.py
       - name: Publish fixture test and failure evidence
-        run: python3 tools/publish-validation-003f.py
+        run: |
+          python3 tools/publish-validation-003f.py
+          python3 tools/publish-validation-f3a.py
       - name: Publish cloud validation with hardware limitations
         run: python3 tools/publish-validation-003b.py --mission 003D
       - name: Publish actual catalogue scale evidence
@@ -76,6 +79,7 @@ jobs:
             fixtures/p2-contract/src/main/aidl/
             docs/mission-003f/
             docs/mission-003f-correction/
+            docs/mission-003f-f3a/
           if-no-files-found: error
 
   model-probe:

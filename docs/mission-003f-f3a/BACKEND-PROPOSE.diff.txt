@@ -1,0 +1,56 @@
+DIFF CONCEPTUEL SEULEMENT — NON APPLICABLE, NON COMPILE, NON AUTORISE A EXECUTER.
+Aucun fichier cité ci-dessous n'est modifié par F3A.
+Les noms F3Hooks/NativeOwnedSnapshot sont des propositions, pas des APIs livrées.
+La revue doit décider notamment de la cohérence multi-verrous et des entrées legacy.
+
+--- LlamaBackend.kt (base 1ce2440)
++++ LlamaBackend.kt (proposition sous gate)
+@@ constructeur / avant native.create()
++ // Enregistrer owner, worker, clé complète, admission et instance avant allocation.
++ // Hook fixture facultatif inactif par défaut ; pas de second backend/coordinator.
++ private val f3: F3Hooks? // type et injection à valider
+- private var handle = native.create()
++ private var handle = trackedCreate(native, f3) // inclure échec sans retour connu
+@@ load / generate / generateFixtureP2 / unload / close
+- withContext(worker) { ... }
++ // Marquer queued AVANT dispatch, entered sur worker, returned APRÈS retour JNI.
++ // Ne pas déduire la fin de la sortie/finally d'une coroutine suspendue annulée.
++ // Conserver les baux existants et tous les try/catch de nettoyage.
++ withTrackedExistingWorker(f3, exactKey) { ... }
+@@ prepareOperation / requestStop
++ // Compter aussi begin/cancel synchrones sous handleLock ; pas seulement le worker.
++ // STOP_REQUESTED séparé de call-end/unload ; aucune remise à zéro par sonde.
+@@ observation lecture seule proposée
++ suspend fun observeExistingExact(expected: ExactOwnerKey): NativeOwnedSnapshot =
++     onExistingWorker { coherentSnapshotOfExistingHandleAndLeases(expected) }
++ // UNKNOWN si source incomplète/clé différente. Aucun prepare/load/create ici.
+
+--- NativeApi / bridge.cpp (base 1ce2440)
++++ NativeApi / bridge.cpp (proposition sous gate)
+@@ interface
++ // Sonde worker-only, handle existant, sans allocation de modèle/contexte.
++ // ABI/format borné UNKNOWN/EMPTY/OWNED à revoir, pas un booléen isLoaded.
++ observeOwnedExisting(handle) -> native pointers state + provenance/sequence
+@@ Engine / JNI observation proposée
++ // Lire model/ctx sur le même worker après fin connue des appels.
++ // Ne jamais déréférencer un handle fermé/détruit ; distinguer un Engine vide.
++ // La sonde ne fait ni e.unload, ni delete, ni llama_model_load_from_file.
++ // Instrumenter retours réels/échecs et non le callback Binder.
+
+--- ProcessResources.kt / ResourceCoordinator.kt (base 1ce2440)
++++ ProcessResources.kt / ResourceCoordinator.kt (proposition sous gate)
+@@ snapshot
++ // Exposer lecture atomique des vrais IDs de baux + générations/owner.
++ // Ne pas acquérir un bail pour observer ; close reste au backend propriétaire.
+
+--- AndroidRuntime.kt (base 1ce2440)
++++ AndroidRuntime.kt (proposition sous gate)
+@@ avant import/verify/factory et chaque admission
++ // Réserver ticket d'activité (pas ResourceLease), lier à la clé autorisée réelle.
++ // Garder ticket jusqu'à retour réel/fermeture flux ; freeze bloque nouveaux travaux.
+@@ bootstrapInventory
++ // Garder NOT_STARTED birth-only ; branche post-native uniquement après port réel
++ // et reçu durable vérifié. Aucun null/coordinator vide -> UNLOADED automatique.
+@@ unload/close
++ // Retry explicite exact key/owner/leaseGeneration, après drain réel confirmé.
++ // Aucune publication avant fsync du reçu terminal authentique ; sinon UNKNOWN.
