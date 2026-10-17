@@ -7,6 +7,19 @@ import java.io.FileOutputStream
 
 /** Operator-provisioned laboratory pins only. No enrollment from DISCOVER/hello or default preferences. */
 class RecoveryPlatform(private val context: Context) {
+    companion object {
+        /** Presence/configuration of both pinned components; this is not proof of the caller's Activity/Service identity. */
+        fun requireComponents(pm: PackageManager,coreUid: Int,llmUid: Int) {
+            for((pkg,name,uid) in listOf(Triple(Wire.CLIENT,Wire.CLIENT+".P2ArbiterService",coreUid),Triple(Wire.ENDPOINT,Wire.ENDPOINT+".P2EndpointService",llmUid))) {
+                val component=android.content.ComponentName(pkg,name)
+                val service=try { pm.getServiceInfo(component,0) } catch(_: Exception) { throw Refusal("ENROLMENT_CONFLICT") }
+                val setting=pm.getComponentEnabledSetting(component)
+                demand(service.packageName==pkg && service.name==name && service.applicationInfo.uid==uid &&
+                    service.enabled && service.applicationInfo.enabled && service.exported && service.permission==Wire.PERMISSION &&
+                    setting in setOf(PackageManager.COMPONENT_ENABLED_STATE_DEFAULT,PackageManager.COMPONENT_ENABLED_STATE_ENABLED),"ENROLMENT_CONFLICT")
+            }
+        }
+    }
     val journal=RecoveryJournal(File(context.noBackupFilesDir,"recovery-v2"))
     var code="ENROLMENT_REQUIRED"; private set
     var pins: RecoveryPins?=null; private set
@@ -28,6 +41,7 @@ class RecoveryPlatform(private val context: Context) {
                 val own=context.packageManager.getPackageInfo(context.packageName,PackageManager.GET_SIGNING_CERTIFICATES)
                 demand(core.applicationInfo!!.splitSourceDirs.isNullOrEmpty() && own.applicationInfo!!.splitSourceDirs.isNullOrEmpty(),"ENROLMENT_CONFLICT")
                 val uid=core.applicationInfo!!.uid; Identity(context).requireClient(uid)
+                requireComponents(context.packageManager,uid,own.applicationInfo!!.uid)
                 val permission=context.packageManager.getPermissionInfo(Wire.PERMISSION,0)
                 demand(permission.packageName==Wire.ENDPOINT && permission.protectionLevel and 15 == 2,"ENROLMENT_CONFLICT")
                 val coreCert=Wire.hash(core.signingInfo!!.apkContentsSigners.single().toByteArray())
@@ -59,6 +73,7 @@ class RecoveryPlatform(private val context: Context) {
         demand(code=="NONE" && pins!=null,code)
         demand(uid.toString()==pins!!.coreUid && context.applicationInfo.uid.toString()==pins!!.llmUid,"ENROLMENT_CONFLICT")
         val pm=context.packageManager
+        requireComponents(pm,pins!!.coreUid.toInt(),pins!!.llmUid.toInt())
         val permission=pm.getPermissionInfo(Wire.PERMISSION,0)
         demand(permission.packageName==Wire.ENDPOINT && permission.protectionLevel and 15 == 2,"ENROLMENT_CONFLICT")
         demand(pm.getPackageInfo(Wire.CLIENT,0).lastUpdateTime==coreUpdate && pm.getPackageInfo(context.packageName,0).lastUpdateTime==ownUpdate,"ENROLMENT_CONFLICT")

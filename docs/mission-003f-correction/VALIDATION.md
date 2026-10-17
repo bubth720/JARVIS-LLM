@@ -5,8 +5,8 @@ publication et le statut GitHub Actions sont consignés après le push.
 
 ## Vérifications locales dans l'environnement cloud
 
-- Domaine :87 tests JVM ; application :27 tests ; fixture :68 tests, dont25 nouveaux.
-  Total182 JUnit vérifié par les rapports, aucun test supprimé/ignoré.
+- Domaine :87 tests JVM ; application :27 tests ; fixture :71 tests, dont28 nouveaux.
+  Total185 JUnit vérifié par les rapports, aucun test supprimé/ignoré.
 - CTest Linux :1/1 ; aucun modèle chargé pour ces tests.
 - Build app/endpoint ARM64 et clients de sonde ; Lint sans erreur.
 - Inspection APK : signatures/certificats distincts, permissions, alignements ELF/ZIP16Kio,
