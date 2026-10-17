@@ -19,6 +19,9 @@ jobs:
           python3 tools/check-preservation-003e.py
           python3 tools/check-preservation-003f.py
           python3 tools/check-recovery-contract.py
+          python3 tools/check-preservation-d4e.py
+          python3 tools/recovery-vectors.py
+          python3 docs/mission-003f-correction/reference/verify_vectors.py
       - name: Test offline APK hash verifier (not Android hardware)
         run: node tools/test-apk-verifier.cjs
       - name: Install verified JDK, SDK, NDK and native sources
@@ -72,6 +75,7 @@ jobs:
             fixtures/p2-contract/TABLES.json
             fixtures/p2-contract/src/main/aidl/
             docs/mission-003f/
+            docs/mission-003f-correction/
           if-no-files-found: error
 
   model-probe:

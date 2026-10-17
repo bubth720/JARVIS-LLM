@@ -23,16 +23,19 @@ for k,v in data['fields'].items():
  match=re.search('"'+k+'" to setOf\\(([^)]*)\\)',source);assert match and re.findall('"([^"]+)"',match[1])==v
 for k,v in data['enums'].items():
  match=re.search('"'+k+'" to setOf\\(([^)]*)\\)',source);assert match and re.findall('"([^"]+)"',match[1])==v
-for name,values in [('prior',data['prior_fields_when_PRESENT']),('codes',data['codes'])]:
+for name,values in [('prior',data['prior_fields_when_PRESENT']),('codes',data['codes']),('journalStates',data['journal_states'])]:
  match=re.search('val '+name+'=setOf\\(([^)]*)\\)',source);assert re.findall('"([^"]+)"',match[1])==values
+assert hashlib.sha256((root/'TABLES.json').read_bytes()).hexdigest()=='0bca700a2a926b841896c999f89edc7e1b82fdbbd0ced3f5923e5f4cfbbfbe44','Approved table bytes changed'
+assert (root/'TABLES.json').read_bytes()==Path('docs/mission-003f-correction/reference/TABLES_PROPOSEES.json').read_bytes()
+subprocess.run([sys.executable,'tools/generate-recovery-tables.py','--check'],check=True)
 sha=bundle(root,True)
-f=dict(version=data['version'],contract=sha,kind='DISCOVER',pilot_id='00000000-0000-0000-0000-000000000001',session_id='00000000-0000-0000-0000-000000000002',round_id='00000000-0000-0000-0000-000000000003',nonce='A'*43)
+f=dict(version=data['version'],contract=sha,kind='DISCOVER',core_process_epoch='00000000-0000-0000-0000-000000000004',broker_epoch='00000000-0000-0000-0000-000000000005',issued_elapsed_ms='100',expires_elapsed_ms='5000',pilot_id='00000000-0000-0000-0000-000000000001',session_id='00000000-0000-0000-0000-000000000002',round_id='00000000-0000-0000-0000-000000000003',nonce='A'*43)
 body=struct.pack('>I',len(f))
 for k,v in sorted(f.items()):
  for s in (k,v):b=s.encode();body+=struct.pack('>I',len(b))+b
-outputs={root/'CONTRACT.sha256':sha+'\n',Path('docs/mission-003f/examples/discover.json'):json.dumps(f,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n',Path('docs/mission-003f/examples/discover.sha256'):hashlib.sha256(body).hexdigest()+'\n'}
-outputs[Path('fixtures/p2-endpoint/src/test/resources/discover-003f.json')]=outputs[Path('docs/mission-003f/examples/discover.json')]
-outputs[Path('fixtures/p2-endpoint/src/test/resources/discover-003f.sha256')]=outputs[Path('docs/mission-003f/examples/discover.sha256')]
+outputs={root/'CONTRACT.sha256':sha+'\n',Path('docs/mission-003f-correction/examples/discover.json'):json.dumps(f,ensure_ascii=False,sort_keys=True,separators=(',',':'))+'\n',Path('docs/mission-003f-correction/examples/discover.sha256'):hashlib.sha256(body).hexdigest()+'\n'}
+outputs[Path('fixtures/p2-endpoint/src/test/resources/discover-003f.json')]=outputs[Path('docs/mission-003f-correction/examples/discover.json')]
+outputs[Path('fixtures/p2-endpoint/src/test/resources/discover-003f.sha256')]=outputs[Path('docs/mission-003f-correction/examples/discover.sha256')]
 for path,content in outputs.items():
  if '--write' in sys.argv:path.parent.mkdir(parents=True,exist_ok=True);path.write_text(content)
  else:assert path.read_text()==content,str(path)+' is stale'

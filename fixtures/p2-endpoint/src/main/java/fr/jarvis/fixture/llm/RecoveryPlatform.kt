@@ -57,6 +57,7 @@ class RecoveryPlatform(private val context: Context) {
     fun requireCurrent(uid: Int) {
         Identity(context).requireClient(uid)
         demand(code=="NONE" && pins!=null,code)
+        demand(uid.toString()==pins!!.coreUid && context.applicationInfo.uid.toString()==pins!!.llmUid,"ENROLMENT_CONFLICT")
         val pm=context.packageManager
         val permission=pm.getPermissionInfo(Wire.PERMISSION,0)
         demand(permission.packageName==Wire.ENDPOINT && permission.protectionLevel and 15 == 2,"ENROLMENT_CONFLICT")

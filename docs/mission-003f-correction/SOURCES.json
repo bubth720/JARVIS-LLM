@@ -1,0 +1,68 @@
+{
+  "issue": "https://github.com/bubth720/JARVIS-LLM/issues/1",
+  "baseCommit": "111be993e970051686bd5c27b3115320513a4be7",
+  "references": [
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/COMMIT_CANONIQUE.md",
+      "sha256": "538d0b77b68376e04c9ceff853d43ba47f9ab763e36f82102b32f1d2eaba70a8"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/CONTRAT_DIFF_PROPOSE.md",
+      "sha256": "924e51564763ab54b32bb8d7fecb2c3a4c10d99594e5b8d1ecb9d64fdee3f0b6"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/DECISIONS_F1_F2.md",
+      "sha256": "dd688f06c7ebb4d18ecb042c470e10da0f3783977e23f6bc30e98a263a289d19"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/MISSIONS_CORRECTION_003F.md",
+      "sha256": "d842d1e036d11f69ba1a2c169a181466c1a020e2fafe1d487d5f586d9081f16d"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/RAPPORT.md",
+      "sha256": "aec464e16ae8f9f4927a0c5a43301e1a125608abb65338fefe72674c1fe9c004"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/TABLES_DIFF.json",
+      "sha256": "3312800a87e3ef04ca80756d3b5e07950ff014b9ea14cd89c6b1169b0651674b"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/TABLES_PROPOSEES.json",
+      "sha256": "0bca700a2a926b841896c999f89edc7e1b82fdbbd0ced3f5923e5f4cfbbfbe44"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/vectors.json",
+      "sha256": "e5378226dfd8b8df5be22ecd069e41f84960485cd7097ea42abccb569f8073d1"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "49dd4027d2ccb54bf330f591d3ee17f5dc577132",
+      "path": "docs/D4-02E/verify_vectors.py",
+      "sha256": "c1c63e087644f2d9d4d0015efa6c72fbde617c6b6c6cf85d315068209ea7a664"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "275eca892c20b6dae3bfa20b241099542fd4ced6",
+      "path": "docs/DECISIONS/VALIDATION-IDENTITY-001B-D4-02E-2026-10-17.md",
+      "sha256": "893bef8b3da928a9954be1345e5e43f0dede22a7192c823809f88baa65d11acc"
+    }
+  ],
+  "core004DStarted": false,
+  "nativeAdmissionEnabled": false
+}
