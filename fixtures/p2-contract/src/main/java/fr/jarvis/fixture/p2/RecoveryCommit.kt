@@ -59,8 +59,10 @@ object RecoveryCommit {
         demand(core==localCore && llm==localLlm,"PROOF_SET_MISMATCH")
         val c=hash("core_prepare",core); val l=hash("llm_attest",llm)
         demand(llm["core_prepare_sha256"]==c && commit["core_prepare_sha256"]==c && commit["llm_attest_sha256"]==l,"PROOF_SET_MISMATCH")
-        val shared=core.keys.intersect(llm.keys).intersect(commit.keys)-setOf("kind","prepared_journal_seq","prepared_journal_sha256","predecessor_journal_sha256")
-        demand(shared.all { core[it]==llm[it] && llm[it]==commit[it] },"PROOF_SET_MISMATCH")
+        for(member in listOf(core,llm)) {
+            val shared=member.keys.intersect(commit.keys)-setOf("kind","prepared_journal_seq","prepared_journal_sha256","predecessor_journal_sha256")
+            demand(shared.all { member[it]==commit[it] },"PROOF_SET_MISMATCH")
+        }
         demand(commit["prepare_set_sha256"]==hash("prepare_set",mapOf("core_prepare_sha256" to c,"llm_attest_sha256" to l)),"PROOF_SET_MISMATCH")
         demand(commit["decision_sha256"]==hash("decision",commit-"decision_sha256"),"DECISION_MISMATCH")
     }

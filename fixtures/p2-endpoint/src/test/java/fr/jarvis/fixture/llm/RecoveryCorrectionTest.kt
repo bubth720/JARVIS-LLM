@@ -186,4 +186,10 @@ class RecoveryCorrectionTest {
         refused(l.send(l.discover+mapOf("round_id" to uuid())),"STALE_INCARNATION")
         assertEquals(1L,l.journal.snapshot().sequence);denied { l.authority.requireNativeAdmission() }
     }
+    @Test fun commitChecksLlmOwnedJournalFieldsEvenWithoutTheirPresenceInCoreProof() {
+        val v=resource("/d4e-actual.json");val c=map(v.getJSONObject("core_prepare"));val a=map(v.getJSONObject("llm_attest"));val m=map(v.getJSONObject("commit"))
+        val forged=a+mapOf("llm_journal_sha256" to "e".repeat(64));val l=RecoveryCommit.hash("llm_attest",forged)
+        val changed=(m-"decision_sha256")+mapOf("llm_attest_b64" to RecoveryCommit.b64(forged),"llm_attest_sha256" to l,"prepare_set_sha256" to RecoveryCommit.hash("prepare_set",mapOf("core_prepare_sha256" to m.getValue("core_prepare_sha256"),"llm_attest_sha256" to l)))
+        assertEquals("PROOF_SET_MISMATCH",denied { RecoveryCommit.verify(changed+mapOf("decision_sha256" to RecoveryCommit.hash("decision",changed)),c,forged) })
+    }
 }

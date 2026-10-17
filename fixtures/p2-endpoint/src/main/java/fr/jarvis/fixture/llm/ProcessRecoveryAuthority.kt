@@ -149,6 +149,11 @@ class ProcessRecoveryAuthority(private val pins: RecoveryPins?,private val journ
         val challenge=RecoveryCommit.unb64(prepared.payload.getValue("challenge_b64"),18000)
         val core=RecoveryCommit.proof(challenge.getValue("core_prepare_b64"),"CORE_PREPARE")
         val local=RecoveryCommit.proof(outbox.payload.getValue("llm_attest_b64"),"ATTEST")
+        val predecessor=history.singleOrNull { it.sequence==prepared.sequence-1 } ?: throw Refusal("JOURNAL_BLOCKED")
+        demand(prepared.phase=="PREPARED" && outbox.sequence==prepared.sequence+1 &&
+            local["prepared_journal_seq"]==prepared.sequence.toString() && local["prepared_journal_sha256"]==prepared.sha256 &&
+            local["predecessor_journal_sha256"]==predecessor.sha256,"JOURNAL_BLOCKED")
+        demand((challenge-setOf("kind","core_prepare_b64")).all { local[it.key]==it.value },"PROOF_SET_MISMATCH")
         demand((challenge-setOf("kind","core_prepare_b64")).all { f[it.key]==it.value },"PRECONDITION_CHANGED")
         RecoveryCommit.verify(f,core,local)
         val inventory=inventoryNow()
