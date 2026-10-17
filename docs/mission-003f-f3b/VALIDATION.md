@@ -77,3 +77,33 @@ race import/stop/close, faute du capteur JNI et durée de vie des pointeurs,
 JNI Linux avec GGUF public vérifié si disponible, puis laboratoire Android autorisé.
 La CI actuelle peut rejouer le script JNI historique, mais ne peut pas prouver la
 sonde inexistante dans son code compilé. Aucun essai physique n'est exécuté.
+
+## Clôture GitHub Actions
+
+Code de préparation testé et publié : `99b946e56fdc5b53ccea2c6ef86efcdd301aa5ce`.
+[Run39077934892](https://github.com/bubth720/JARVIS-LLM/actions/runs/39077934892)
+: **SUCCESS**, conclusions publiques des étapes vérifiées. Voir [CI.json](CI.json).
+
+- verify117528861858 : préservation, vérification sèche du patch, tests historiques
+  et candidats, compilation ARM64, Lint, contrôles APK, vérification des17 tests F3B
+  et absence de F3Trace dans les APK, génération et upload des rapports : succès.
+- model-probe117528862115 : tests/sondes Linux historiques et JNI P2/GGUF public
+  vérifié : succès. Ce job n'a pas la nouvelle sonde JNI proposée dans son source.
+- memory-result117529349955 : succès, résultats Linux uniquement.
+
+Les232 JUnit sont décomptés dans les XML locaux, zéro échec/erreur/saut. La CI froide
+rejoue les suites ; les scripts imposent les minimums historiques et exactement17
+nouveaux tests sans échec/erreur/saut. Le contenu des artefacts GitHub n'est pas
+prétendument téléchargé ici : il est fourni par jarvis-llm-validation (XML et JSON)
+et jarvis-llm-003f-contract-candidate (documents/diff, sans adoption CORE).
+
+Le code testé est celui de99b946e ; le commit de clôture suivant ne change que cette
+documentation et utilise [skip ci]. SHA final du patch :
+`be4bcce5ec7066851a09e2e372edca562a45dad3a3a88e35b6a7d5792c07b374`.
+Les lignes de contexte vides du fichier diff ont été normalisées avant publication ;
+les empreintes des sources proposées sont inchangées et git apply --check réussit.
+
+**Cette CI ne valide pas le backend patché ni la sonde nouvelle : ils n'ont été
+ni appliqués, ni compilés, ni exécutés.** Les108 fichiers historiques sont conservés.
+L'admission /2, les preuves terminales natives et CORE004D restent bloquées.
+Aucune installation, fusion ou modification de budgets Android.

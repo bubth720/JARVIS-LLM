@@ -72,3 +72,16 @@ Le bundle /2 conserve `3deeaf3565f00c6b0b5380877bcf2ccf79ab495895a5bc627371ea774
 Le coordinateur reste local au processus. Les données privées, clés et GGUF ne sont
 pas ajoutés à Git ni aux artefacts. Le rapport de clôture donne les commits et CI
 exacts sans transformer une CI verte en validation du patch sensible non exécuté.
+
+## Publication et décision suivante
+
+Préparation testée/publiée : `99b946e56fdc5b53ccea2c6ef86efcdd301aa5ce`.
+[CI39077934892](https://github.com/bubth720/JARVIS-LLM/actions/runs/39077934892)
+entièrement réussie ; [preuves et limites](VALIDATION.md), [détail des étapes](CI.json).
+Le commit suivant clôt uniquement la documentation, sans changement au patch.
+
+**Arrêt avant application du diff sensible.** Validation explicite attendue pour
+appliquer le patch `be4bcce5ec7066851a09e2e372edca562a45dad3a3a88e35b6a7d5792c07b374`
+et compiler/tester les sept fichiers concernés, en conservant /2 fermé et CORE004D
+bloquée. La recherche COORD-001 a été revérifiée avant clôture : références UNIFIED
+inchangées, aucun résultat nouveau retrouvé dans les emplacements consultés.

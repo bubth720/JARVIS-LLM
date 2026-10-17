@@ -1,0 +1,50 @@
+{
+  "run": 39077934892,
+  "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/39077934892",
+  "sourceCommit": "99b946e56fdc5b53ccea2c6ef86efcdd301aa5ce",
+  "patchSha256": "be4bcce5ec7066851a09e2e372edca562a45dad3a3a88e35b6a7d5792c07b374",
+  "evidence": "Public Actions HTML step conclusions; XML counts checked locally and required by CI scripts, not downloaded here",
+  "jobs": {
+    "117528861858": {
+      "Set up job": "success",
+      "Checkout": "success",
+      "Verify unchanged safety policies, catalogue and baseline tests": "success",
+      "Test offline APK hash verifier (not Android hardware)": "success",
+      "Install verified JDK, SDK, NDK and native sources": "success",
+      "Native cancellation and model admission tests": "success",
+      "JVM and simulated Android tests, Lint, ARM64 APK": "success",
+      "Check APK permissions, signature and 16 KiB compatibility": "success",
+      "Check isolated fixture APKs, signatures, shared engine and contract digest": "success",
+      "Publish fixture test and failure evidence": "success",
+      "Publish cloud validation with hardware limitations": "success",
+      "Publish actual catalogue scale evidence": "success",
+      "Record verified build identity (no installation)": "success",
+      "Upload validation reports even on failure": "success",
+      "Upload candidate contract for review only (CORE consumption blocked)": "success",
+      "Post Checkout": "success",
+      "Complete job": "success"
+    },
+    "117528862115": {
+      "Set up job": "success",
+      "Checkout": "success",
+      "Install verified toolchain": "success",
+      "Native tests and pinned sources": "success",
+      "Build bounded cloud model probe": "success",
+      "Short real-GGUF cloud comparison (not Android PSS)": "success",
+      "Upload cloud memory evidence": "success",
+      "Post Checkout": "success",
+      "Complete job": "success"
+    },
+    "117529349955": {
+      "Set up job": "success",
+      "Run echo &#39;Cloud Linux measurements only. Android PSS and tablet admission remain unqualified.&#39;": "success",
+      "Complete job": "success"
+    }
+  },
+  "sensitivePatchApplied": false,
+  "patchedBackendCompiled": false,
+  "newJniProbeExecuted": false,
+  "nativeReleaseProven": false,
+  "admission2Enabled": false,
+  "CORE004DStarted": false
+}
