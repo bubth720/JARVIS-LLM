@@ -22,7 +22,7 @@ class P2EndpointService : Service() {
         override fun onTransact(code: Int,data: Parcel,reply: Parcel?,flags: Int): Boolean {
             if(code in IBinder.FIRST_CALL_TRANSACTION..IBinder.LAST_CALL_TRANSACTION) {
                 try { identity.requireClient(Binder.getCallingUid()); app.recoveryPlatform.requireCurrent(Binder.getCallingUid()); demand(data.dataSize()<=32768,"INPUT_TOO_LARGE") }
-                catch (_: Throwable) { throw SecurityException("P2 identity/size refused") }
+                catch (_: Throwable) { app.recovery.detachService(serviceEpoch); throw SecurityException("P2 identity/size refused") }
             }
             return super.onTransact(code,data,reply,flags)
         }
@@ -31,7 +31,9 @@ class P2EndpointService : Service() {
         override fun status(payload: ByteArray)=legacy()
         override fun cancel(payload: ByteArray)=legacy()
         override fun recovery(message: ByteArray,peerLiveness: IBinder,callback: IRecoveryCallback) {
-            val uid=Binder.getCallingUid(); identity.requireClient(uid); app.recoveryPlatform.requireCurrent(uid)
+            val uid=Binder.getCallingUid()
+            try { identity.requireClient(uid); app.recoveryPlatform.requireCurrent(uid) }
+            catch(e: Throwable) { app.recovery.detachService(serviceEpoch); throw e }
             val f=RecoveryProtocol.envelope(message)
             synchronized(this@P2EndpointService) {
                 demand(peer==null || peer==peerLiveness,"BUSY")
