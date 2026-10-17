@@ -10,7 +10,7 @@ revision=subprocess.check_output(['git','rev-parse','HEAD'],text=True).strip()
 if subprocess.check_output(['git','status','--porcelain'],text=True).strip():revision+=' + working-tree'
 report={'mission':'003F','sourceCommit':revision,
  'domain':junit('domain/build/test-results/test',87),'app':junit('app/build/test-results/testDebugUnitTest',27),
- 'fixture':junit('fixtures/p2-endpoint/build/test-results/testDebugUnitTest',41),'lint':{},'androidCrossApkExecuted':False,'physicalQualification':False,'realArbiterAvailable':False,'bootstrapProductionReady':False,'core004DStarted':False,'pendingContractClarification':['DISCOVER_peer_epochs','INSPECT_CORE_journal'],'candidateContractSha256':Path('fixtures/p2-contract/CONTRACT.sha256').read_text().strip()}
+ 'fixture':junit('fixtures/p2-endpoint/build/test-results/testDebugUnitTest',43),'lint':{},'androidCrossApkExecuted':False,'physicalQualification':False,'realArbiterAvailable':False,'bootstrapProductionReady':False,'core004DStarted':False,'pendingContractClarification':['DISCOVER_peer_epochs','INSPECT_CORE_journal'],'candidateContractSha256':Path('fixtures/p2-contract/CONTRACT.sha256').read_text().strip()}
 for pattern in ['app/build/reports/lint-results-debug.xml','fixtures/p2-endpoint/build/reports/lint-results-debug.xml','fixtures/p2-client/build/reports/lint-results-*.xml']:
  paths=list(Path('.').glob(pattern));assert paths,pattern
  for p in paths:

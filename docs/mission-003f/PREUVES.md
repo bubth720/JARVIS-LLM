@@ -12,7 +12,7 @@ Résultats finaux sur l'arbre de travail livrable :
 |---|---|
 | Domaine JVM | 87 tests, 0 échec/erreur/ignoré |
 | App JVM/Robolectric historique | 27 tests, 0 échec/erreur/ignoré |
-| Fixture JVM/Robolectric | 41 tests : 19 conservés, 22 nouveaux ; 0 échec/erreur/ignoré |
+| Fixture JVM/Robolectric | 43 tests : 19 conservés, 24 nouveaux ; 0 échec/erreur/ignoré |
 | CTest natif Linux | 1/1 réussi |
 | Compilation Android ARM64 | App historique et endpoint réussis ; trois clients de sonde compilés |
 | Lint | 0 erreur ; app 32 avertissements, endpoint 10, client authorized 6 |
@@ -24,7 +24,7 @@ Résultats finaux sur l'arbre de travail livrable :
 | Catalogue | Tests historiques SQLite/import/variantes/échelle conservés et rejoués |
 | Vérificateur APK JS | Tous les cas hors ligne passent |
 
-Total JUnit : **155**, contre 133 dans la référence 003E ; cela compte des tests,
+Total JUnit : **157**, contre 133 dans la référence 003E ; cela compte des tests,
 **pas** un gain de mémoire, sécurité matérielle ou performance.
 
 ### Reproduction cloud

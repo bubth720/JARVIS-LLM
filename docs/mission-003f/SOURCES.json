@@ -1,0 +1,38 @@
+{
+  "issue": "https://github.com/bubth720/JARVIS-LLM/issues/1",
+  "baseCommit": "030152a5f3d888017ad7a7fe8026f2e2c48e8fd5",
+  "references": [
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "27e674057a348f8074a86851f4e2c11a933162e9",
+      "path": "docs/D4-02D/BOOTSTRAP_RECOVERY.md",
+      "sha256": "d6ac6a911deccc8a6448c1b466456af8464ef130a4d38fce18449c7fcd9a62b1"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "27e674057a348f8074a86851f4e2c11a933162e9",
+      "path": "docs/D4-02D/MISSIONS_003F_004D.md",
+      "sha256": "bd2fb518304edc81721e35ae4e7763246e87f16cc888cb9b5c0138ef2d96f83d"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "27e674057a348f8074a86851f4e2c11a933162e9",
+      "path": "docs/D4-02D/PROTOCOLE_PROPOSE.md",
+      "sha256": "87b542a95af745f7b2fe0cebea1ec1d9feb2e3f571279282b86b39c7def9e3fb"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "27e674057a348f8074a86851f4e2c11a933162e9",
+      "path": "docs/D4-02D/TESTS_ET_PREUVES.md",
+      "sha256": "cee3a4cb21130602df6cb93e8e0d6335894d4ae45d0b8721460c752ba92a2288"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "commit": "8ddac8fe8a1861a27d3abeca81eb4ab8f110c3a9",
+      "path": "docs/DECISIONS/VALIDATION-UTILISATEUR-D4-02D-2026-10-17.md",
+      "sha256": "2e16f0e193e5abfdb4600be03519d4ebfd1852422693032b05b551df7542430c"
+    }
+  ],
+  "core004DStarted": false,
+  "physicalQualification": false
+}

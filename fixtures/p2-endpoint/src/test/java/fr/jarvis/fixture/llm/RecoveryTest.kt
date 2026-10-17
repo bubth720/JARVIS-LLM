@@ -27,8 +27,8 @@ class RecoveryTest {
     private fun initialized(d: File=directory())=journal(d).also { it.initialize(pilot,hash,uuid()) }
     private val pins get()=RecoveryPins(pilot,hash,"123","124",hash,hash,hash)
     private fun discover()=mapOf("version" to RecoveryProtocol.VERSION,"contract" to RecoveryProtocol.contract,"kind" to "DISCOVER","pilot_id" to pilot,"session_id" to uuid(),"round_id" to uuid(),"nonce" to nonce)
-    private fun inventory(busy: Boolean=false)=object: RecoveryInventory {
-        override fun snapshot()=mapOf("backend_registry_state" to "COMPLETE","queue_state" to if(busy) "BUSY" else "EMPTY","native_state" to "NOT_STARTED","residency_state" to "NO_RESIDENCY_CONFIRMED","lease_state" to "NONE","backend_count" to "0","active_native_calls" to "0","queued_operations" to "0","active_imports" to "0","resident_models" to "0","heavy_leases" to "0")
+    private fun inventory(busy: Boolean=false,backends: String="0")=object: RecoveryInventory {
+        override fun snapshot()=mapOf("backend_registry_state" to "COMPLETE","queue_state" to if(busy) "BUSY" else "EMPTY","native_state" to "NOT_STARTED","residency_state" to "NO_RESIDENCY_CONFIRMED","lease_state" to "NONE","backend_count" to backends,"active_native_calls" to "0","queued_operations" to "0","active_imports" to "0","resident_models" to "0","heavy_leases" to "0")
     }
     private fun authority(j: RecoveryJournal,peerKnown: Boolean=true,busy: Boolean=false)=ProcessRecoveryAuthority(pins,j,{now},inventory(busy),{ if(peerKnown) peer else null },true)
     private fun request(a: ProcessRecoveryAuthority,service: String,j: RecoveryJournal,kind: String="CHALLENGE"): Map<String,String> {
@@ -161,6 +161,17 @@ class RecoveryTest {
             assertEquals("JOURNAL_BLOCKED",failing.failure); assertTrue(File(dir,"record-000001.json").exists())
             assertEquals("JOURNAL_BLOCKED",journal(dir).failure)
         }
+    }
+    @Test fun b09UnknownOrMultipleBackendsCannotAttestQuiescence() {
+        for(count in listOf("UNKNOWN","2")) {
+            val j=initialized(); val a=ProcessRecoveryAuthority(pins,j,{now},inventory(backends=count),{peer},true)
+            val service=a.attachService(); assertCode("NOT_QUIESCENT",a.handle(request(a,service,j),service))
+            assertEquals("INITIAL",j.snapshot().phase)
+        }
+    }
+    @Test fun b03ContradictoryOwnerCannotBecomeCleanRestart() {
+        val j=initialized(); j.append("COMMITTED",7,mapOf("owner" to "llm","prior_key_state" to "NONE"))
+        val a=authority(j); val service=a.attachService(); assertCode("NOT_QUIESCENT",a.handle(request(a,service,j),service))
     }
     companion object { private fun uuid()=UUID.randomUUID().toString() }
 }

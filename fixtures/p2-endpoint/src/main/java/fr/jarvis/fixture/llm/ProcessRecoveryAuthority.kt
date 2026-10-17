@@ -59,13 +59,13 @@ class ProcessRecoveryAuthority(private val pins: RecoveryPins?,private val journ
     private fun resolution(): String {
         val r=journal.snapshot()
         return when {
-            r.phase=="INITIAL" && r.generation==0L -> if(enrolledInThisProcess) "INITIAL" else "CLEAN_RESTART"
-            r.phase in setOf("COMMITTED","PREPARED") && r.payload["prior_key_state"]=="NONE" -> "CLEAN_RESTART"
+            r.phase=="INITIAL" && r.generation==0L && r.payload["owner"]=="NONE" && r.payload["prior_key_state"]=="NONE" -> if(enrolledInThisProcess) "INITIAL" else "CLEAN_RESTART"
+            r.phase in setOf("COMMITTED","PREPARED") && r.payload["prior_key_state"]=="NONE" && r.payload["owner"]=="NONE" -> "CLEAN_RESTART"
             // Real terminal-receipt/worker-drain observation is not wired in this blocked revision.
             else -> "UNKNOWN"
         }
     }
-    private fun quiescent(o: Map<String,String>) = o["backend_registry_state"]=="COMPLETE" && o["queue_state"]=="EMPTY" && o["native_state"] in setOf("NOT_STARTED","NATIVE_RETURNED") && o["residency_state"]=="NO_RESIDENCY_CONFIRMED" && o["lease_state"]=="NONE" && listOf("active_native_calls","queued_operations","active_imports","resident_models","heavy_leases").all { o[it]=="0" }
+    private fun quiescent(o: Map<String,String>) = o["backend_registry_state"]=="COMPLETE" && o["backend_count"] in setOf("0","1") && o["queue_state"]=="EMPTY" && o["native_state"] in setOf("NOT_STARTED","NATIVE_RETURNED") && o["residency_state"]=="NO_RESIDENCY_CONFIRMED" && o["lease_state"]=="NONE" && listOf("active_native_calls","queued_operations","active_imports","resident_models","heavy_leases").all { o[it]=="0" }
     private fun journalFields(f: Map<String,String>): Map<String,String> {
         val r=journal.snapshot()
         val local=mapOf("llm_journal_id" to r.id,"llm_journal_seq" to r.sequence.toString(),"llm_journal_state" to r.phase,"llm_journal_sha256" to r.sha256,"generation" to r.generation.toString(),"owner" to (r.payload["owner"] ?: throw Refusal("UNKNOWN")))
