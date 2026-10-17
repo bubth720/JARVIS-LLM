@@ -1,0 +1,583 @@
+{
+  "mission": "003E",
+  "codeCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+  "observedCi": {
+    "run": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38975009901",
+    "status": [
+      "success"
+    ],
+    "commits": [
+      "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb"
+    ],
+    "jobs": [
+      {
+        "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38975009901/job/117222315756",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install verified toolchain",
+            "conclusion": "success"
+          },
+          {
+            "name": "Native tests and pinned sources",
+            "conclusion": "success"
+          },
+          {
+            "name": "Build bounded cloud model probe",
+            "conclusion": "success"
+          },
+          {
+            "name": "Short real-GGUF cloud comparison (not Android PSS)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload cloud memory evidence",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ],
+        "annotations": [
+          {
+            "platform": "Linux x86_64 GitHub-hosted runner; NOT Android PSS",
+            "source_commit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+            "conditions": "one fresh process per model/context; CPU one thread; 24 output tokens maximum; 60 s native deadline; one French prompt; no quality benchmark",
+            "admission_budget_changed": false,
+            "results": [
+              {
+                "repo": "unsloth/Qwen3-0.6B-GGUF",
+                "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+                "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+                "file": "Qwen3-0.6B-Q4_K_M.gguf",
+                "sha256": "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a",
+                "file_bytes": 396705472,
+                "declared_license": "apache-2.0",
+                "quantization": "Q4_K_M",
+                "status": "measured_linux_x86_64",
+                "runs": [
+                  {
+                    "context": 768,
+                    "batch": 32,
+                    "micro_batch": 8,
+                    "model_buffer_bytes": 390753280,
+                    "context_buffer_bytes": 88080384,
+                    "compute_buffer_bytes": 784192,
+                    "linux_peak_rss_bytes": 541077504,
+                    "response": "Bonjour !"
+                  },
+                  {
+                    "context": 512,
+                    "batch": 16,
+                    "micro_batch": 4,
+                    "model_buffer_bytes": 390753280,
+                    "context_buffer_bytes": 58720256,
+                    "compute_buffer_bytes": 693984,
+                    "linux_peak_rss_bytes": 511639552,
+                    "response": "Bonjour !"
+                  }
+                ]
+              },
+              {
+                "repo": "unsloth/Qwen3-0.6B-GGUF",
+                "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+                "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+                "file": "Qwen3-0.6B-Q3_K_M.gguf",
+                "sha256": "30bb9f9222cf58c076277879881a24e7127a10be32076d76d8c70f8defc01f5d",
+                "file_bytes": 347127488,
+                "declared_license": "apache-2.0",
+                "quantization": "Q3_K_M",
+                "status": "measured_linux_x86_64",
+                "runs": [
+                  {
+                    "context": 768,
+                    "batch": 32,
+                    "micro_batch": 8,
+                    "model_buffer_bytes": 341175296,
+                    "context_buffer_bytes": 88080384,
+                    "compute_buffer_bytes": 784192,
+                    "linux_peak_rss_bytes": 491667456,
+                    "response": "Bonjour ! C'est un salutation courante en français."
+                  },
+                  {
+                    "context": 512,
+                    "batch": 16,
+                    "micro_batch": 4,
+                    "model_buffer_bytes": 341175296,
+                    "context_buffer_bytes": 58720256,
+                    "compute_buffer_bytes": 693984,
+                    "linux_peak_rss_bytes": 461950976,
+                    "response": "Bonjour ! C'est un salutation."
+                  }
+                ]
+              },
+              {
+                "repo": "unsloth/Qwen3-0.6B-GGUF",
+                "requested_repo": "Qwen/Qwen3-0.6B-GGUF",
+                "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+                "file": "Qwen3-0.6B-Q2_K.gguf",
+                "sha256": "26d035ea15c4a2853e8d20ffc56a76f6164e17dbb6c9e532c5766700c404519d",
+                "file_bytes": 296238784,
+                "declared_license": "apache-2.0",
+                "quantization": "Q2_K",
+                "status": "measured_linux_x86_64",
+                "runs": [
+                  {
+                    "context": 768,
+                    "batch": 32,
+                    "micro_batch": 8,
+                    "model_buffer_bytes": 290286592,
+                    "context_buffer_bytes": 88080384,
+                    "compute_buffer_bytes": 784192,
+                    "linux_peak_rss_bytes": 440655872,
+                    "response": "bonjour signifie que le personne est en conversation en français, généralement, en français, en ce cas,"
+                  },
+                  {
+                    "context": 512,
+                    "batch": 16,
+                    "micro_batch": 4,
+                    "model_buffer_bytes": 290286592,
+                    "context_buffer_bytes": 58720256,
+                    "compute_buffer_bytes": 693984,
+                    "linux_peak_rss_bytes": 411025408,
+                    "response": "bonjour signifie que le personne est en conversation en français, et le bonjour est un langage courant en"
+                  }
+                ]
+              },
+              {
+                "repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+                "requested_repo": "Qwen/Qwen2.5-0.5B-Instruct-GGUF",
+                "revision": "9217f5db79a29953eb74d5343926648285ec7e67",
+                "file": "qwen2.5-0.5b-instruct-q4_k_m.gguf",
+                "sha256": "74a4da8c9fdbcd15bd1f6d01d621410d31c6fc00986f5eb687824e7b93d7a9db",
+                "file_bytes": 491400032,
+                "declared_license": "apache-2.0",
+                "quantization": "Q4_K_M",
+                "status": "measured_linux_x86_64",
+                "runs": [
+                  {
+                    "context": 768,
+                    "batch": 32,
+                    "micro_batch": 8,
+                    "model_buffer_bytes": 485452288,
+                    "context_buffer_bytes": 9437184,
+                    "compute_buffer_bytes": 763712,
+                    "linux_peak_rss_bytes": 557142016,
+                    "response": "Bonjour signifie \"bonjour\" en français. C'est une phrase courante utilisée en France et en Allem"
+                  },
+                  {
+                    "context": 512,
+                    "batch": 16,
+                    "micro_batch": 4,
+                    "model_buffer_bytes": 485452288,
+                    "context_buffer_bytes": 6291456,
+                    "compute_buffer_bytes": 683744,
+                    "linux_peak_rss_bytes": 553615360,
+                    "response": "Bonjour est une expression courante en français, signifiant \"bonjour\" ou \"hello\". Elle est utilisée pour"
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38975009901/job/117222315563",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Verify unchanged safety policies, catalogue and baseline tests",
+            "conclusion": "success"
+          },
+          {
+            "name": "Test offline APK hash verifier (not Android hardware)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Install verified JDK, SDK, NDK and native sources",
+            "conclusion": "success"
+          },
+          {
+            "name": "Native cancellation and model admission tests",
+            "conclusion": "success"
+          },
+          {
+            "name": "JVM and simulated Android tests, Lint, ARM64 APK",
+            "conclusion": "success"
+          },
+          {
+            "name": "Check APK permissions, signature and 16 KiB compatibility",
+            "conclusion": "success"
+          },
+          {
+            "name": "Check isolated fixture APKs, signatures, shared engine and contract digest",
+            "conclusion": "success"
+          },
+          {
+            "name": "Publish fixture test and failure evidence",
+            "conclusion": "success"
+          },
+          {
+            "name": "Publish cloud validation with hardware limitations",
+            "conclusion": "success"
+          },
+          {
+            "name": "Publish actual catalogue scale evidence",
+            "conclusion": "success"
+          },
+          {
+            "name": "Record verified build identity (no installation)",
+            "conclusion": "success"
+          },
+          {
+            "name": "Upload validation reports even on failure",
+            "conclusion": "success"
+          },
+          {
+            "name": "Post Checkout",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ],
+        "annotations": [
+          {
+            "package": "fr.jarvis.llm",
+            "versionName": "0.3.1-mission003b",
+            "versionCode": "5",
+            "sourceCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+            "apkSha256": "c815dd6b670b8dafb0b826cd086397f64f59f05acabfa101a169ef83ac17323d",
+            "signerCertificateSha256": "7eef562820379a87c0f4695a68c4ffa609873ddf0aced336e1a264c7d2923056",
+            "signingPurpose": "ephemeral debug only, not production",
+            "physicalQualification": false
+          },
+          {
+            "platform": "Linux JVM / Robolectric API35 native SQLite; NOT physical Android PSS",
+            "records": 1508,
+            "synthetic_records": 1500,
+            "json_bytes": 580993,
+            "import_ms": 1371.108123,
+            "query_median_ms": 0.90475,
+            "query_max_ms": 1.998856,
+            "sampled_java_heap_baseline_bytes": 88146480,
+            "sampled_java_heap_peak_bytes": 124254712,
+            "sampled_java_heap_increase_bytes": 36108232,
+            "sqlite": "Catalogue : 1508 réponses actives ; 1508 révisions ; SQLite 1704 Kio ; cache pages cible 2 Mio. Embeddings désactivés.",
+            "llama_loaded": false,
+            "source_commit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb"
+          },
+          {
+            "mission": "003D",
+            "platform": "cloud-linux-jvm-robolectric-not-android-hardware",
+            "sourceCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+            "domain": {
+              "tests": 87,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0
+            },
+            "simulatedAndroid": {
+              "tests": 27,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0
+            },
+            "nativePassed": 1,
+            "lint": {
+              "Warning": 36
+            },
+            "safetyPolicySha256": "7fefc8ce65f80375666eefb8ea05d44ab5edee940d49c2d53183e675818f3999",
+            "tabletMemoryMeasurements": null,
+            "newAdmissionBudgetQualified": false
+          },
+          {
+            "mission": "003E",
+            "sourceCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+            "domain": {
+              "tests": 87,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0
+            },
+            "app": {
+              "tests": 27,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0
+            },
+            "fixture": {
+              "tests": 19,
+              "failures": 0,
+              "errors": 0,
+              "skipped": 0
+            },
+            "lint": {
+              "app/build/reports/lint-results-debug.xml": {
+                "Warning": 36
+              },
+              "fixtures/p2-endpoint/build/reports/lint-results-debug.xml": {
+                "Warning": 10
+              },
+              "fixtures/p2-client/build/reports/lint-results-authorizedDebug.xml": {
+                "Warning": 6
+              }
+            },
+            "androidCrossApkExecuted": false,
+            "physicalQualification": false,
+            "realArbiterAvailable": false
+          },
+          {
+            "mission": "003E",
+            "sourceCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+            "contractSha256": "fab6a66a6b99302884849cd1d8aef97cd761082dc20680a4b036d7bc99d5c3c9",
+            "apks": [
+              {
+                "package": "fr.jarvis.fixture.llm",
+                "apkSha256": "49b321293e7d14c0195fe1934d1c29687c3b38b6288728dc458197315b51fa48",
+                "signerCertificateSha256": "8d310c7616169a85fab59a7531f8bf2bcb54030f7e3b23e83c6494e5d1959103",
+                "permissions": [
+                  "fr.jarvis.fixture.llm.permission.BIND_P2"
+                ]
+              },
+              {
+                "package": "fr.jarvis.fixture.core",
+                "apkSha256": "90313758ce81d5159a083e0bc73c82079bf4c438176e9a343409e6b8c79ddc1a",
+                "signerCertificateSha256": "8d310c7616169a85fab59a7531f8bf2bcb54030f7e3b23e83c6494e5d1959103",
+                "permissions": [
+                  "fr.jarvis.fixture.llm.permission.BIND_P2"
+                ]
+              },
+              {
+                "package": "fr.jarvis.fixture.unknown",
+                "apkSha256": "befc37c3de96a12a1373bec9503780fab9e8e2d41d01c2059f8512a3a6d73358",
+                "signerCertificateSha256": "8d310c7616169a85fab59a7531f8bf2bcb54030f7e3b23e83c6494e5d1959103",
+                "permissions": [
+                  "fr.jarvis.fixture.llm.permission.BIND_P2"
+                ]
+              },
+              {
+                "package": "fr.jarvis.fixture.badclient",
+                "apkSha256": "82d04fbddc09e785d52ee707a918f840277fd31d7030dc63d1992156b00d1268",
+                "signerCertificateSha256": "35cee8a9ae2d5164dec37aa46c8cf943aa1af8985870e9ed266b7d86cd7d7f2c",
+                "permissions": [
+                  "fr.jarvis.fixture.llm.permission.BIND_P2"
+                ]
+              }
+            ],
+            "historicalSignerUnchangedAndDistinct": true,
+            "sharedRuntimeExact": true,
+            "androidCrossApkExecuted": false,
+            "physicalQualification": false
+          }
+        ]
+      },
+      {
+        "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38975009901/job/117223472473",
+        "steps": [
+          {
+            "name": "Set up job",
+            "conclusion": "success"
+          },
+          {
+            "name": "Run echo 'Cloud Linux measurements only. Android PSS and tablet admission remain unqualified.'",
+            "conclusion": "success"
+          },
+          {
+            "name": "Complete job",
+            "conclusion": "success"
+          }
+        ],
+        "annotations": []
+      }
+    ],
+    "artifacts": [
+      {
+        "id": "12078503192",
+        "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38975009901/artifacts/12078503192",
+        "description": "jarvis-llm-model-memory 2.17 KB sha256:19540f49bd394f450e9e3a37e743ef010bf740e92c26fab71c1b8fb4df511f2f"
+      },
+      {
+        "id": "12079350883",
+        "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/38975009901/artifacts/12079350883",
+        "description": "jarvis-llm-validation 78.3 KB sha256:98fbcbc3d407ae3f2c344118905a894b364b2a385732affe7f0f6e10a1729fa3"
+      }
+    ]
+  },
+  "local": {
+    "preservation": {
+      "mission": "003E",
+      "base": "daa46432e847ed9613dc403045498e27281eff42",
+      "sourceCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+      "unchanged": {
+        "app/build.gradle.kts": "7d0a2cb3bf904eb17b2aad81c6ac13a77ca3d5ec646920ea9e674110e0af45b4",
+        "app/src/main/AndroidManifest.xml": "9b293356b3d7d40d6fa2d8d3478725226bafad5e546f6c1c1727dc3d102864c9",
+        "app/src/main/assets/catalogue-demo.json": "132b2e850b39d2e7b3d45156e046db4a49ed4b072db56097e99fba28f0e4934c",
+        "app/src/main/cpp/CMakeLists.txt": "68ab765ba8b7c057f4a4521aedaf99dd04e9722f8db0d81d3c348a1e270ad0e8",
+        "app/src/main/cpp/cancellation.h": "78b6a43b84a08cf11d3c61e53dc2322c4c769998e7dc0817637cb61acdd6ef88",
+        "app/src/main/cpp/model_check.h": "b976d165a69be6840ff7cc5708345a5f90bcd569ade5f7cbbc9156b5dfa54b2d",
+        "app/src/main/cpp/native_configuration.h": "1ebc6680cd3fb30c105fe9df0fead7416af288e7b40d08a54278cfd612d2ca75",
+        "app/src/main/cpp/tests/model_memory_probe.cpp": "41b16f06e55aeb9fa7d6df90c784aa0fa617a09bcd0341a32621e06b5e2154b3",
+        "app/src/main/cpp/tests/native_safety_test.cpp": "76f0a3b9847333632abae193e1333caa777c0762fd075ca6649c0f25c1f10b49",
+        "app/src/main/java/fr/jarvis/llm/ChatViewModel.kt": "450d26f3b84187562e2229dc10e780bb47b1b6a5c76cb777e28b0de3a6707132",
+        "app/src/main/java/fr/jarvis/llm/DeviceMonitor.kt": "85f6993cc701564c65e93fa6fefc431d9034529690eda63f901e5cc921fafe86",
+        "app/src/main/java/fr/jarvis/llm/MainActivity.kt": "ec8285009d2eeb4d416383b86fa5dd0652002c17a2f5b7777fc6124ca0b2f548",
+        "app/src/main/java/fr/jarvis/llm/ModelStore.kt": "64109c362d90c19bc69d56ae41e1bcf7cee63f5dd7c0b474b535016d8cd6f656",
+        "app/src/main/java/fr/jarvis/llm/ProcessResources.kt": "cf1a2959c20ebfac5a0ba176cc9581ac28ee52f71cd6f3645680d1ca11451968",
+        "app/src/main/java/fr/jarvis/llm/catalogue/CatalogueActivity.kt": "7ac7e8b19758f17f0e82be02764aebdee84b9dcdbfa84fc8a121d63f1e56c534",
+        "app/src/main/java/fr/jarvis/llm/catalogue/CatalogueJson.kt": "5fa8ff186a83dbc0bdcdd79e0ea622ee6b435e0312ed62d496cc43a4da11de24",
+        "app/src/main/java/fr/jarvis/llm/catalogue/CatalogueStore.kt": "31e6e4ee5e999206f32e9a24be5860ba6a5347a3607c99d37054aee4f0645de8",
+        "app/src/main/java/fr/jarvis/llm/diagnostic/DiagnosticJson.kt": "b540cd05f500228b4ebd4ed3854b377dc262907cab514ca4e411dd51d1314b9c",
+        "app/src/main/res/xml/data_extraction_rules.xml": "5d687a6b5033bad5df93915af075a17825d0ac63f0299c539bf1642c5678a9a2",
+        "app/src/test/java/fr/jarvis/llm/CatalogueStoreTest.kt": "b31939205b8cb1f1ec512700f79285ade5622f1af12667e50b3f485c76b96985",
+        "app/src/test/java/fr/jarvis/llm/DiagnosticExportTest.kt": "69770c96176dfef173065424accd406041aec33ce1ab676b4d1a7a7e8c2adde0",
+        "app/src/test/java/fr/jarvis/llm/ModelIntegrityTest.kt": "b72cc775ebdc5e331aa30e678b521de413ca7e3d85dde1baa09b5422e4f16942",
+        "app/src/test/java/fr/jarvis/llm/NativeBackendLifecycleTest.kt": "a7f4cc5112e2edf1899a14923d19c2c2e498ede818e6c18136ffd0c901292dff",
+        "app/src/test/java/fr/jarvis/llm/OfflineStartupTest.kt": "39eb645c724c2957d9c72548ab469f02de7226da2a67b3c31e498a72b4142d59",
+        "app/src/test/java/fr/jarvis/llm/ResourceLifecycleTest.kt": "5c1789ba14ac929418c98dc3b9b5db1d4bc722e6efd25bcc6c26c51d623c9c32",
+        "domain/build.gradle.kts": "ddf1debf802a10dbe9178ad597268b39f938deb89c67b6e1ba6a9f5d7a27932c",
+        "domain/src/main/kotlin/fr/jarvis/domain/Conversation.kt": "2a8d59c53ce6b964f4345d608ad7bdc83f2a6f18d2e0e7406fed0f396baf52f6",
+        "domain/src/main/kotlin/fr/jarvis/domain/DiagnosticCapture.kt": "2a2877a6690921e8e6ccaad7a278d6656af73668666701024e26f83b05d6fb39",
+        "domain/src/main/kotlin/fr/jarvis/domain/MemoryTelemetry.kt": "c12553cccb2423634ffcfe331bd7521474e96149ffd939092cd8d6fc582c8fa4",
+        "domain/src/main/kotlin/fr/jarvis/domain/SafetyPolicy.kt": "7fefc8ce65f80375666eefb8ea05d44ab5edee940d49c2d53183e675818f3999",
+        "domain/src/main/kotlin/fr/jarvis/domain/VerifiedCopy.kt": "b3fffdeb98c60bea5c297def1172c0cc7af347467b2e88a2ff3d9bed434eb55b",
+        "domain/src/main/kotlin/fr/jarvis/domain/catalogue/Catalogue.kt": "0f083b8c093503e7b0446e51d850db2242fa586bc89300643dd56e475a459c6d",
+        "domain/src/main/kotlin/fr/jarvis/domain/generation/Core004BMapping.kt": "a64a818e7d4891db8ec30c28d9f93a6e6acd0e1f9dcd58d00acd49ad23c1c7b3",
+        "domain/src/main/kotlin/fr/jarvis/domain/generation/P2Contract.kt": "740441c8ee4a0001e91744ade5eb5f5343480c4d491979ec1019d38fbd20d696",
+        "domain/src/main/kotlin/fr/jarvis/domain/generation/P2Lifecycle.kt": "cf95695a5be8484aa6673143c8c13c7df9fb8bea67f4b9038a144f6ec16ef148",
+        "domain/src/main/kotlin/fr/jarvis/domain/generation/P2Prompt.kt": "1cf0784c6e4f83a4752fd4c981d79773aa5f2696795844149c230f824703a70f",
+        "domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt": "78a9d0362c0ce5e3bcfc043a97d5f198fa2d470a01b952ee7dddab78cdc59bb1",
+        "domain/src/test/kotlin/fr/jarvis/domain/ConversationTest.kt": "c8abe6a6c5e424f68dd81a91810ea8fbee2ae3d0e802addc0fed35c22200f75a",
+        "domain/src/test/kotlin/fr/jarvis/domain/DiagnosticCaptureTest.kt": "fd7bcf8f2a6edbfa3c6049e75aec06c1ff6d2f62919464d2ce05b057f5901a73",
+        "domain/src/test/kotlin/fr/jarvis/domain/IntentRouterTest.kt": "9b8ec96e2d9787cacd3d6090b028642a0ffac2c87a2c41691967152c6f58d607",
+        "domain/src/test/kotlin/fr/jarvis/domain/MemoryTelemetryTest.kt": "f0ed8fc3a7c7d7c33639ce831a2b3c5ee5541769f2c8293330abd5fb7c6f1b6f",
+        "domain/src/test/kotlin/fr/jarvis/domain/ResourceCoordinatorTest.kt": "7adfd3e5fc18fad44235811fa3f0926282970efb9ab914e98eb9420a6cc41ec7",
+        "domain/src/test/kotlin/fr/jarvis/domain/SafetyPolicyTest.kt": "13aeed560e82d01265a03a600574238386ace8771112669ed16a1cecfc0b8d89",
+        "domain/src/test/kotlin/fr/jarvis/domain/VerifiedCopyTest.kt": "cfa9ea641cd0ae29340ff8dea49f4839b693f6df885c63e3b1a630891413027e",
+        "domain/src/test/kotlin/fr/jarvis/domain/generation/Core004BMappingTest.kt": "a6771d5157bdc114ab1472b0170d67b0fb09a14660b1162b70eb52e6b3a780f1",
+        "domain/src/test/kotlin/fr/jarvis/domain/generation/NativeRequestTest.kt": "449762ea3d4fe945fd4caf1b2d5e0e8f0b939a9ca78f0b2c1dc94b0c349cb48c",
+        "domain/src/test/kotlin/fr/jarvis/domain/generation/P2ContractTest.kt": "9ac7475061b22b830b96f985d9c198ccf846e81b55e033fbcece90bb0908eb72",
+        "domain/src/test/kotlin/fr/jarvis/domain/generation/P2Fixtures.kt": "a509de3f54bc134d93df16f4d4b06473ddfed30ab20cc2547f31ba5546b6ec40",
+        "domain/src/test/kotlin/fr/jarvis/domain/generation/P2LifecycleTest.kt": "f88f1776f1df80b49fd41fa787b41c5ba62cffadc6aa616e9bc84b2090ca0aff",
+        "gradle.properties": "b33ca900eaff8413585ca2ffae955e198c2f8db8a7b080746d17e22a1098c595",
+        "gradle/wrapper/gradle-wrapper.jar": "2db75c40782f5e8ba1fc278a5574bab070adccb2d21ca5a6e5ed840888448046",
+        "gradle/wrapper/gradle-wrapper.properties": "fe90ff0d9944879f591a8c37b6dbaf5046d1051ccbb6b26b22081692c321f432",
+        "tools/check-apk.py": "0e8e83ac313131eaaaa8de6ed729fb48d5200ae8ebc195408bd6f59e16d77fc2",
+        "tools/prepare-native.sh": "d2b7e7d6d382fce7d203bfb4d2c3b3ec8bee56a59a9e1fbea2949ce111a0d302"
+      },
+      "reviewedRuntimeChanges": [
+        "app/src/main/cpp/bridge.cpp",
+        "app/src/main/cpp/tests/jni/NativeBridge.java",
+        "app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt"
+      ],
+      "historicalManifestUnchanged": true,
+      "canonicalFormatterUnchanged": true,
+      "safetyThresholdsUnchanged": true,
+      "physicalQualification": false
+    },
+    "validation": {
+      "mission": "003E",
+      "sourceCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+      "domain": {
+        "tests": 87,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "app": {
+        "tests": 27,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "fixture": {
+        "tests": 19,
+        "failures": 0,
+        "errors": 0,
+        "skipped": 0
+      },
+      "lint": {
+        "app/build/reports/lint-results-debug.xml": {
+          "Warning": 32
+        },
+        "fixtures/p2-endpoint/build/reports/lint-results-debug.xml": {
+          "Warning": 10
+        },
+        "fixtures/p2-client/build/reports/lint-results-authorizedDebug.xml": {
+          "Warning": 6
+        }
+      },
+      "androidCrossApkExecuted": false,
+      "physicalQualification": false,
+      "realArbiterAvailable": false
+    },
+    "apks": {
+      "mission": "003E",
+      "sourceCommit": "5751646acd4a7bb13caaea4b96a4ab3a68ec6adb",
+      "contractSha256": "fab6a66a6b99302884849cd1d8aef97cd761082dc20680a4b036d7bc99d5c3c9",
+      "apks": [
+        {
+          "package": "fr.jarvis.fixture.llm",
+          "apkSha256": "673e891caa8402635c1baa9f4bd5a9dc5daf3737cb7536d2b65c5eba3388f824",
+          "signerCertificateSha256": "09a13f588a35fd4a1d0ccafd6a0d9232383c1c23b77d3dca3ebd8f0e6127b9ed",
+          "permissions": [
+            "fr.jarvis.fixture.llm.permission.BIND_P2"
+          ]
+        },
+        {
+          "package": "fr.jarvis.fixture.core",
+          "apkSha256": "6c38c115772db76765c3fbb7c17f2467a94818f1a9771cdeb608bbbd0309a015",
+          "signerCertificateSha256": "09a13f588a35fd4a1d0ccafd6a0d9232383c1c23b77d3dca3ebd8f0e6127b9ed",
+          "permissions": [
+            "fr.jarvis.fixture.llm.permission.BIND_P2"
+          ]
+        },
+        {
+          "package": "fr.jarvis.fixture.unknown",
+          "apkSha256": "860dde1e36d972338fc01b4451c458c95f74b5a148e75292e73e15c170574f8f",
+          "signerCertificateSha256": "09a13f588a35fd4a1d0ccafd6a0d9232383c1c23b77d3dca3ebd8f0e6127b9ed",
+          "permissions": [
+            "fr.jarvis.fixture.llm.permission.BIND_P2"
+          ]
+        },
+        {
+          "package": "fr.jarvis.fixture.badclient",
+          "apkSha256": "453577908a073e9b4b382df5c7d31ac7f9512eaec9b91e48bc446ebbc8099179",
+          "signerCertificateSha256": "4a3807e476c5f5c34fe146afacf8f925c90fd7d6dba2c1a88330cce0b20836bd",
+          "permissions": [
+            "fr.jarvis.fixture.llm.permission.BIND_P2"
+          ]
+        }
+      ],
+      "historicalSignerUnchangedAndDistinct": true,
+      "sharedRuntimeExact": true,
+      "androidCrossApkExecuted": false,
+      "physicalQualification": false
+    }
+  },
+  "limitations": [
+    "Public GitHub job conclusions and annotations inspected; artifact ZIPs not downloaded.",
+    "Real GGUF JNI harness is required by the successful model-probe script, p2-jni.json is in its artifact.",
+    "No Android emulator, cross-APK Binder execution, real CORE arbiter, physical device test, installation or migration."
+  ]
+}
