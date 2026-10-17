@@ -3,6 +3,10 @@
 Branche : `fix/003f-d4-02e1-commit`.
 Base vérifiée locale/distante : `fixture/003f-bootstrap-attestation`,
 `111be993e970051686bd5c27b3115320513a4be7`. Aucun merge de branche divergente.
+Code validé : `9745599b3894619ae00d57b3aefab2b5ef2b5f35` ;
+[CI39058623037](https://github.com/bubth720/JARVIS-LLM/actions/runs/39058623037) entièrement réussie :
+185 JUnit, CTest1/1, JNI Linux historique avec GGUF public vérifié, ARM64, Lint et APK.
+Les commits et limites de chaque plateforme sont détaillés dans VALIDATION.md.
 
 Cible approuvée : [UNIFIED 49dd4027](https://github.com/bubth720/JARVIS-UNIFIED/tree/49dd4027d2ccb54bf330f591d3ee17f5dc577132/docs/D4-02E).
 Approbation [275eca892c20b6dae3bfa20b241099542fd4ced6](https://github.com/bubth720/JARVIS-UNIFIED/blob/275eca892c20b6dae3bfa20b241099542fd4ced6/docs/DECISIONS/VALIDATION-IDENTITY-001B-D4-02E-2026-10-17.md).
@@ -31,6 +35,10 @@ exact, sans dériver les UUID CORE de PID/UID ou les générer à sa place.
 
 Le Service capture l'UID dans le thread Binder, valide package/certificat/permission
 et pins avant décodage, puis revalide avant traitement et callback positif.
+Les deux services épinglés doivent être présents, activés, exportés, protégés par
+la permission exacte et associés aux bons UID. Cette vérification porte sur leur
+configuration ; Binder authentifie l’UID de l’APK appelante, pas son Activity ou
+Service interne. Tout rejet de confiance ferme la liaison de récupération.
 L'autorité lie offre entière, UID/certificat, session/tour/nonce et binding/token
 vivant au service courant. Rejeu exact vivant/frais : réponse identique sans écrit.
 Mutation, anciens tours/brokers retirés, autre liaison, service mort, certificat ou

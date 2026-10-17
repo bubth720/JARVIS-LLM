@@ -1,5 +1,8 @@
 # JARVIS LLM 003F — livraison partielle bloquée pour revue
 
+État historique au111be993. Pour le lot approuvé D4-02E.1 et le nouveau bundle, voir
+[la correction F1/F2/COMMIT](../mission-003f-correction/RAPPORT.md).
+
 ## Statut
 
 **CONTRAT CANDIDAT, NON CONSOMMABLE PAR CORE 004D.** Les composants indépendants
