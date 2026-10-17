@@ -9,7 +9,9 @@ Sous fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/f3/ :
   ObservationReview vérifie la cohérence d'un snapshot, sans authentifier sa source.
 - AdmissionBarrier : ledger synchronisé, registre explicite et scellé de participants,
   tickets d'activité par identité objet, limite128, freeze idempotent même tour,
-  rejet des nouvelles admissions et états de file/imports/appels. Ce ne sont pas des
+  rejet des nouvelles admissions et compteurs d’activités/file/imports. Le compteur
+  active inclut les tickets actifs, pas seulement JNI : ne jamais le publier comme
+  active_native_calls. Ce ne sont pas des
   baux et aucun appel à ProcessResources n'est ajouté. Aucun dégel automatique/API reset.
 - ReviewJournal : journal local borné64, schéma `f3a-review-only/0`, domaine de hash
   `jarvis.f3a.review-only\0` + encodage C existant. Initialisation de labo explicite,

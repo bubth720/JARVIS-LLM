@@ -14,7 +14,9 @@ conformément à l'issue2. L'admission native /2 et CORE004D restent bloquées.
 - Composants, barrière et futur reçu : [PORT-ET-RECUS.md](PORT-ET-RECUS.md).
 - Périmètre sensible suspendu : [ADAPTATION-SENSIBLE.md](ADAPTATION-SENSIBLE.md),
   [diff conceptuel non applicable](BACKEND-PROPOSE.diff.txt).
-- Exécution/CI : [VALIDATION.md](VALIDATION.md).
+- Exécution/CI : [VALIDATION.md](VALIDATION.md), run39072313347 entièrement réussi.
+- Code livré/testé : `1abf3264a7051cf4b8f25976b301938fa728af5a` ;
+  clôture documentaire dans le commit suivant, aucun code supplémentaire.
 
 ## Changements réellement implémentés
 

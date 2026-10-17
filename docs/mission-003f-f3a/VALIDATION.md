@@ -88,3 +88,30 @@ sans changer le bundle normatif.
 - Pas de nouveau modèle complet local disponible pour un test JNI/GGUF local ;
   la CI historique dispose de sa propre étape bornée Linux avec GGUF public vérifié.
 - Aucun benchmark intensif, déploiement, fusion, admission native /2 ou CORE004D.
+
+## Clôture CI et publication
+
+Code testé/publié : **`1abf3264a7051cf4b8f25976b301938fa728af5a`**.
+
+[GitHub Actions39072313347](https://github.com/bubth720/JARVIS-LLM/actions/runs/39072313347)
+: **SUCCESS**, statut et conclusions de chaque étape consultés sur GitHub.
+Détail machine conservé dans [CI.json](CI.json).
+
+- verify117512278835 : tous contrôles de préservation, CTest, Gradle/tests/ARM64/Lint,
+  APK historique/fixtures, génération des rapports et uploads réussis.
+- model-probe117512279005 : tests natifs, comparaison courte bornée GGUF public
+  vérifié et script JNI P2 Linux existant réussis. Le script exige p2-jni.json ;
+  cette preuve du chemin historique n'est pas une preuve F3 post-native.
+- memory-result117512782491 : succès ; mesure Linux uniquement, pas PSS Android.
+
+Les215 JUnit sont décomptés localement dans les XML (87+27+101), avec0 échec/erreur/saut.
+La CI froide réexécute les suites et les scripts vérifient les minimums et l'absence
+d'échecs/erreurs/sauts avant l'upload. Les étapes publiques sont observées ; les XML
+produits par GitHub sont dans jarvis-llm-validation, pas prétendument téléchargés ici.
+Les logs locaux sont ignorés sous /tmp/f3a-* et les résultats de build sous build/.
+
+Le commit de clôture suivant ne modifie que cette documentation et utilise [skip ci]
+pour conserver ce run comme preuve du code exact. Aucun changement applicatif n'est
+ajouté après la validation. La branche main distante est restée917e335.
+Les empreintes APK/certificats locales ne sont pas des pins universels de laboratoire ;
+aucune clé et aucun APK/GGUF ne sont ajoutés à Git ou aux artefacts de cette mission.
