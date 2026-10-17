@@ -5,7 +5,8 @@ import fr.jarvis.llm.engine.*
 import fr.jarvis.llm.ProcessResources
 import fr.jarvis.domain.resources.Module
 /** Same source-set backend and native library, instantiated lazily only after real authority and safety checks. */
-class AndroidRuntime(private val app: FixtureApplication) : RuntimePort {
+class AndroidRuntime(private val app: FixtureApplication,private val recovery: ProcessRecoveryAuthority) : RuntimePort {
+    init { app.bootstrapRegistry.register(this) }
     private val nativeLock=Any()
     @Volatile private var backend: LlamaBackend? = null
     private val importOwner="fixture-model-import-"+java.util.UUID.randomUUID()
@@ -13,6 +14,7 @@ class AndroidRuntime(private val app: FixtureApplication) : RuntimePort {
     @Volatile private var stop=false
     private fun decision(r: Request) = SafetyPolicy().decide(r.profile,app.monitor.snapshot(),setOf(r.p2.model),resident)
     override suspend fun admit(request: Request): RuntimeConfig {
+        recovery.requireNativeAdmission()
         stop=false
         val existing=request.p2.model in app.models.available() && app.models.expectedDigest(request.p2.model) == request.p2.modelSha256
         val staged=app.staged(request.p2.model)?.second == request.p2.modelSha256
@@ -25,6 +27,8 @@ class AndroidRuntime(private val app: FixtureApplication) : RuntimePort {
         return config.copy(maxTokens=minOf(config.maxTokens,request.p2.limits.outputTokens))
     }
     override suspend fun load(request: Request,config: RuntimeConfig,nativeDispatched: () -> Unit) {
+        recovery.requireNativeAdmission()
+        app.bootstrapRegistry.beforeNativeOrImport(this)
         val path=ProcessResources.requireHeavy(importOwner,Module.MODEL_IMPORT,"fixture import et SHA",128L*1024*1024).use {
             if (app.models.expectedDigest(request.p2.model) != request.p2.modelSha256 || request.p2.model !in app.models.available()) {
                 val staged=app.staged(request.p2.model) ?: throw Refusal("MODEL_UNAVAILABLE")
@@ -44,12 +48,23 @@ class AndroidRuntime(private val app: FixtureApplication) : RuntimePort {
         resident=Residency(config.model,(app.monitor.snapshot().pssBytes-baseline).coerceAtLeast(0))
     }
     override suspend fun generate(request: Request,config: RuntimeConfig): FixtureGeneration {
+        recovery.requireNativeAdmission()
         demand(!stop && safe(request),"SAFETY_REFUSAL")
         val input=GenerationRequest(listOf(Message("user",request.p2.question)),config,request.p2.system)
         return backend!!.generateFixtureP2(input,minOf(config.context,request.p2.limits.contextTokens))
     }
     override suspend fun unload() { backend?.unload(); resident=null }
     override fun stop() { synchronized(nativeLock) { stop=true; backend?.requestStop() } }
+    fun bootstrapInventory(): Map<String,String> {
+        val actual=ProcessResources.coordinator.snapshot()
+        val empty=app.bootstrapRegistry.provesNeverStarted(this) && backend==null && actual.heavy==null && actual.model==null
+        return mapOf("backend_registry_state" to if(empty) "COMPLETE" else "UNKNOWN","queue_state" to if(empty) "EMPTY" else "UNKNOWN",
+            "native_state" to if(empty) "NOT_STARTED" else "UNKNOWN","residency_state" to if(empty) "NO_RESIDENCY_CONFIRMED" else "UNKNOWN",
+            "lease_state" to if(actual.heavy==null && actual.model==null) "NONE" else "HELD","backend_count" to if(empty) "0" else "UNKNOWN",
+            "active_native_calls" to if(empty) "0" else "UNKNOWN","queued_operations" to if(empty) "0" else "UNKNOWN","active_imports" to if(empty) "0" else "UNKNOWN","resident_models" to if(empty) "0" else "UNKNOWN","heavy_leases" to if(actual.heavy==null) "0" else "1")
+    }
     override suspend fun close() { backend?.close(); backend=null }
     override fun safe(request: Request) = !stop && decision(request).config != null
 }
+
+// Inventory is deliberately conservative after any backend existence: no inferred unload from null booleans.

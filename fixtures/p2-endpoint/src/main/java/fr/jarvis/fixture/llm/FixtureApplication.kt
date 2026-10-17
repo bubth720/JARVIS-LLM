@@ -3,8 +3,12 @@ import android.app.*
 import android.os.Bundle
 import fr.jarvis.llm.*
 class FixtureApplication : Application(),Application.ActivityLifecycleCallbacks {
+    val bootstrapRegistry=BootstrapRegistry()
     lateinit var monitor: DeviceMonitor; private set
-    lateinit var models: ModelStore; private set
+    val models: ModelStore by lazy { ModelStore(this) }
+    lateinit var recovery: ProcessRecoveryAuthority; private set
+    lateinit var recoveryPlatform: RecoveryPlatform; private set
+    lateinit var runtime: AndroidRuntime; private set
     fun staged(model: fr.jarvis.domain.ModelKind): Pair<android.net.Uri,String>? {
         val prefs=getSharedPreferences("fixture-staged-public-model",MODE_PRIVATE)
         val uri=prefs.getString(model.name+".uri",null) ?: return null
@@ -12,7 +16,18 @@ class FixtureApplication : Application(),Application.ActivityLifecycleCallbacks 
         return android.net.Uri.parse(uri) to sha
     }
     var safetyChanged: (() -> Unit)? = null
-    override fun onCreate() { super.onCreate(); monitor=DeviceMonitor(this) { safetyChanged?.invoke() }; models=ModelStore(this); registerActivityLifecycleCallbacks(this) }
+    override fun onCreate() {
+        super.onCreate()
+        recoveryPlatform=RecoveryPlatform(this)
+        val inventory=object : RecoveryInventory {
+            override fun snapshot()=runtime.bootstrapInventory()
+        }
+        recovery=ProcessRecoveryAuthority(recoveryPlatform.pins,recoveryPlatform.journal,{ android.os.SystemClock.elapsedRealtime() },inventory,enrolledInThisProcess=recoveryPlatform.enrolledNow)
+        runtime=AndroidRuntime(this,recovery)
+        bootstrapRegistry.seal()
+        monitor=DeviceMonitor(this) { safetyChanged?.invoke() }
+        registerActivityLifecycleCallbacks(this)
+    }
     override fun onActivityResumed(a: Activity) { monitor.foreground=true }
     override fun onActivityPaused(a: Activity) { monitor.foreground=false; safetyChanged?.invoke() }
     override fun onActivityCreated(a: Activity,b: Bundle?) {} ; override fun onActivityStarted(a: Activity) {}

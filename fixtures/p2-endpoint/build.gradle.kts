@@ -10,7 +10,7 @@ val prepareFixtureKey by tasks.registering(Exec::class) {
 android {
     namespace = "fr.jarvis.fixture.llm"; compileSdk = 36; ndkVersion = "28.1.13356709"
     defaultConfig {
-        applicationId = "fr.jarvis.fixture.llm"; minSdk = 29; targetSdk = 36; versionCode = 1; versionName = "003e-experimental"
+        applicationId = "fr.jarvis.fixture.llm"; minSdk = 29; targetSdk = 36; versionCode = 2; versionName = "003f-bootstrap-blocked"
         ndk { abiFilters += "arm64-v8a" }
         externalNativeBuild { cmake { arguments += "-DLLAMA_SOURCE_DIR=${rootDir}/.deps/llama.cpp" } }
     }

@@ -17,7 +17,7 @@ object Wire {
     const val CLIENT = "fr.jarvis.fixture.core"
     const val ENDPOINT = "fr.jarvis.fixture.llm"
     const val PERMISSION = "fr.jarvis.fixture.llm.permission.BIND_P2"
-    val contract: String get() = BuildConfig.CONTRACT_SHA
+    val contract: String get() = BuildConfig.LEGACY_CONTRACT_SHA
     val keyNames = setOf("version","contract","epoch","session_id","operation_id","correlation_id","cancellation_id","authorization_ref","lease_id","generation")
     val requestNames = keyNames + setOf("system","question","model","model_sha256","profile","context_tokens","output_tokens","remaining_ms","synthetic")
     fun decode(bytes: ByteArray, names: Set<String>): Map<String,String> {

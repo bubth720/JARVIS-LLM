@@ -15,7 +15,10 @@ jobs:
         with:
           fetch-depth: 0
       - name: Verify unchanged safety policies, catalogue and baseline tests
-        run: python3 tools/check-preservation-003e.py
+        run: |
+          python3 tools/check-preservation-003e.py
+          python3 tools/check-preservation-003f.py
+          python3 tools/check-recovery-contract.py
       - name: Test offline APK hash verifier (not Android hardware)
         run: node tools/test-apk-verifier.cjs
       - name: Install verified JDK, SDK, NDK and native sources
@@ -29,7 +32,7 @@ jobs:
       - name: Check isolated fixture APKs, signatures, shared engine and contract digest
         run: ./tools/cloud-env.sh python3 tools/check-fixtures.py
       - name: Publish fixture test and failure evidence
-        run: python3 tools/publish-validation-003e.py
+        run: python3 tools/publish-validation-003f.py
       - name: Publish cloud validation with hardware limitations
         run: python3 tools/publish-validation-003b.py --mission 003D
       - name: Publish actual catalogue scale evidence
@@ -51,12 +54,25 @@ jobs:
             build/mission003e-preservation.json
             build/mission003e-apks.json
             build/mission003e-validation.json
+            build/mission003f-*.json
             fixtures/p2-endpoint/build/test-results/testDebugUnitTest/
             fixtures/p2-endpoint/build/reports/lint-results-debug.*
             fixtures/p2-client/build/reports/lint-results-*.xml
             build/mission003c-apk-identity.json
 
           if-no-files-found: warn
+
+      - name: Upload candidate contract for review only (CORE consumption blocked)
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: jarvis-llm-003f-contract-candidate
+          path: |
+            fixtures/p2-contract/CONTRACT.txt
+            fixtures/p2-contract/CONTRACT.sha256
+            fixtures/p2-contract/TABLES.json
+            fixtures/p2-contract/src/main/aidl/
+            docs/mission-003f/
+          if-no-files-found: error
 
   model-probe:
     runs-on: ubuntu-24.04

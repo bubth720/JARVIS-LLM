@@ -14,7 +14,7 @@ def inspect(path,package,native=False):
  subprocess.run([str(bt/'zipalign'),'-c','-P','16','4',str(path)],check=True)
  with zipfile.ZipFile(path) as z:
   dex=b''.join(z.read(n) for n in z.namelist() if n.endswith('.dex'))
-  assert digest.hexdigest().encode() in dex,'stale APK contract digest'
+  assert (digest.hexdigest() if native else legacy_contract).encode() in dex,'stale APK contract digest'
   libs=[n for n in z.namelist() if n.endswith('.so')]
   if native:
    assert libs and all(n.startswith('lib/arm64-v8a/') for n in libs)
@@ -27,8 +27,9 @@ def inspect(path,package,native=False):
    symbols=cmd(nm,'-D',out/'libjarvis_llm.so');assert 'generateFixtureP2' in symbols and 'measureFixtureP2' in symbols and 'renderForTest' not in symbols
   else:assert not libs,'Client must not package an LLM engine'
  return dict(package=package,apkSha256=hashlib.sha256(path.read_bytes()).hexdigest(),signerCertificateSha256=cert,permissions=used)
-root=Path('fixtures/p2-contract');files=sorted([root/'CONTRACT.txt',*root.glob('src/main/aidl/**/*.aidl')]);digest=hashlib.sha256()
+root=Path('fixtures/p2-contract');files=sorted([root/'CONTRACT.txt',root/'TABLES.json',*root.glob('src/main/aidl/**/*.aidl')]);digest=hashlib.sha256()
 for p in files:digest.update(p.relative_to(root).as_posix().encode()+b'\0'+p.read_bytes()+b'\0')
+legacy_contract='fab6a66a6b99302884849cd1d8aef97cd761082dc20680a4b036d7bc99d5c3c9'
 endpoint=Path('fixtures/p2-endpoint/build/outputs/apk/debug/p2-endpoint-debug.apk')
 results=[inspect(endpoint,'fr.jarvis.fixture.llm',True)]
 manifest=cmd(bt/'aapt','dump','xmltree',endpoint,'AndroidManifest.xml')
@@ -45,6 +46,6 @@ legacycert=re.search(r'Signer #1 certificate SHA-256 digest: ([a-f0-9]+)',cmd(bt
 assert legacycert!=results[0]['signerCertificateSha256']
 shared=Path('fixtures/p2-endpoint/build/generated/shared-runtime/fr/jarvis/llm')
 for p in shared.rglob('*.kt'):assert p.read_bytes()==(Path('app/src/main/java/fr/jarvis/llm')/p.relative_to(shared)).read_bytes(),'Shared runtime drift'
-report=dict(mission='003E',sourceCommit=('working-tree' if cmd('git','status','--porcelain').strip() else cmd('git','rev-parse','HEAD').strip()),contractSha256=digest.hexdigest(),apks=results,historicalSignerUnchangedAndDistinct=True,sharedRuntimeExact=True,androidCrossApkExecuted=False,physicalQualification=False)
-Path('build/mission003e-apks.json').write_text(json.dumps(report,indent=2)+'\n')
-print('::notice title=003E fixture APK verification::'+json.dumps(report,separators=(',',':')))
+report=dict(mission='003F',bootstrapProductionReady=False,sourceCommit=('working-tree' if cmd('git','status','--porcelain').strip() else cmd('git','rev-parse','HEAD').strip()),contractSha256=digest.hexdigest(),apks=results,historicalSignerUnchangedAndDistinct=True,sharedRuntimeExact=True,androidCrossApkExecuted=False,physicalQualification=False)
+Path('build/mission003f-apks.json').write_text(json.dumps(report,indent=2)+'\n')
+print('::notice title=003F fixture APK verification::'+json.dumps(report,separators=(',',':')))
