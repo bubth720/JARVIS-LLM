@@ -1,5 +1,13 @@
 name: Android prototype checks
-on: [push, pull_request, workflow_dispatch]
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      run_model_probe:
+        description: 'Explicitly permit the historical public-model cloud probe'
+        type: boolean
+        default: false
 concurrency:
   group: android-${{ github.ref }}
   cancel-in-progress: true
@@ -86,6 +94,7 @@ jobs:
           if-no-files-found: error
 
   model-probe:
+    if: github.event_name == 'workflow_dispatch' && inputs.run_model_probe
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     outputs:

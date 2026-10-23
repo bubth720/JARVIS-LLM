@@ -1,0 +1,28 @@
+name: Intensive LLM non-sensitive validation
+on:
+  push:
+    branches: ['feat/llm-01-runtime', 'feat/llm-02-runtime', 'feat/llm-03-runtime']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+        with: { fetch-depth: 0 }
+      - run: python3 tools/check-intensive-llm.py
+      - run: bash tools/setup-cloud.sh
+      - run: bash tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon --max-workers=2
+      - run: bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: intensive-llm-validation
+          path: |
+            domain/build/test-results/
+            app/build/test-results/
+            app/build/reports/lint-results-debug.*
+            fixtures/p2-endpoint/build/test-results/
+            fixtures/p2-endpoint/build/reports/lint-results-debug.*

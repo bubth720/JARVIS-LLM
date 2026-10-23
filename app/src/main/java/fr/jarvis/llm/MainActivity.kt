@@ -88,6 +88,13 @@ class MainActivity : ComponentActivity() {
         } }
         utility.addView(measurements, LinearLayout.LayoutParams(0, -2, 1f))
         root.addView(utility)
+        root.addView(Button(this).apply {
+            text = "Modèles locaux (catalogue expérimental)"
+            setOnClickListener { lifecycleScope.launch {
+                if (vm.releaseForCatalogue() && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+                    startActivity(Intent(this@MainActivity, fr.jarvis.llm.model.ModelSelectionActivity::class.java))
+            } }
+        })
         conversation = TextView(this).apply { textSize = 16f; setTextIsSelectable(true) }
         val scroll = ScrollView(this).apply { addView(conversation) }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
