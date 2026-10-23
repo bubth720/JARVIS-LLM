@@ -1,0 +1,70 @@
+{
+  "format": "jarvis.campaign-validation/1",
+  "mission": "LLM-02",
+  "base_commit": "8f1c2f5a936d6c01874d7be6bb987f4459b83374",
+  "qualification": "software_tested",
+  "status": "PARTIAL",
+  "capabilities": [
+    "llm.prompt.context_planning",
+    "llm.prompt.template_pins",
+    "llm.prompt.fail_closed_token_port"
+  ],
+  "blocking_limitations": [
+    "Exact native tokenizer is UNSUPPORTED; same-model/context/template/worker/lease binding and prepare/consume/discard are not implemented or qualified",
+    "Historical chat and fixtures /2 are not connected to the new planner"
+  ],
+  "checks": [
+    {
+      "command": [
+        "bash",
+        "tools/cloud-env.sh",
+        "./gradlew",
+        "-I",
+        "docs/mission-003f-f3b/candidate.init.gradle",
+        ":domain:test",
+        ":app:testDebugUnitTest",
+        ":app:lintDebug",
+        ":app:assembleDebug",
+        ":p2-endpoint:testDebugUnitTest",
+        "--no-daemon",
+        "--max-workers=2"
+      ],
+      "exit_code": 0,
+      "passed": 249,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": [
+        "python3",
+        "tools/check-intensive-llm.py"
+      ],
+      "exit_code": 0,
+      "passed": 75,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": [
+        "bash",
+        "tools/cloud-env.sh",
+        "python3",
+        "tools/check-apk.py",
+        "app/build/outputs/apk/debug/app-debug.apk"
+      ],
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "evidence_limits": [
+    "9 new domain tests use synthetic counters, never actual tokenization",
+    "No Android native inference, no physical device, no installation",
+    "Inherited Linux native_safety test from LLM-01 does not qualify native token counting"
+  ],
+  "app_lint": {
+    "errors": 0,
+    "warnings": 45
+  }
+}
