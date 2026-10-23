@@ -1,0 +1,78 @@
+{
+  "format": "jarvis.campaign-validation/1",
+  "mission": "LLM-01",
+  "base_commit": "8f1c2f5a936d6c01874d7be6bb987f4459b83374",
+  "qualification": "software_tested",
+  "status": "DELIVERED",
+  "capabilities": [
+    "llm.model_catalogue",
+    "llm.verified_model_import",
+    "llm.catalogue_selection"
+  ],
+  "blocking_limitations": [],
+  "limitations": [
+    "Catalogue selection is not connected to historical inference selection",
+    "No real GGUF inference or physical Android qualification",
+    "Historical frozen-scope F3A guard fails on the intentionally extended Manifest; unchanged assertions"
+  ],
+  "checks": [
+    {
+      "command": [
+        "bash",
+        "tools/cloud-env.sh",
+        "./gradlew",
+        "-I",
+        "docs/mission-003f-f3b/candidate.init.gradle",
+        ":domain:test",
+        ":app:testDebugUnitTest",
+        ":app:lintDebug",
+        ":app:assembleDebug",
+        ":p2-endpoint:testDebugUnitTest",
+        ":p2-endpoint:assembleDebug",
+        ":p2-endpoint:lintDebug",
+        ":p2-client:assembleDebug",
+        ":p2-client:lint",
+        "--no-daemon",
+        "--max-workers=2"
+      ],
+      "exit_code": 0,
+      "passed": 240,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": [
+        "bash",
+        "tools/cloud-env.sh",
+        "./tools/test-native.sh"
+      ],
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": [
+        "python3",
+        "tools/check-intensive-llm.py"
+      ],
+      "exit_code": 0,
+      "passed": 75,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": [
+        "bash",
+        "tools/cloud-env.sh",
+        "python3",
+        "tools/check-apk.py",
+        "app/build/outputs/apk/debug/app-debug.apk"
+      ],
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  ]
+}
