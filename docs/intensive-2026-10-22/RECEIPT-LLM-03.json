@@ -1,0 +1,92 @@
+{
+  "format": "jarvis.campaign-validation/1",
+  "mission": "LLM-03",
+  "base_commit": "8f1c2f5a936d6c01874d7be6bb987f4459b83374",
+  "initial_commit": "895a067ffc860d56a2dbb1ce22cb274096f8e3a2",
+  "qualification": "software_tested",
+  "status": "PARTIAL",
+  "capabilities": [
+    "llm.runtime.named_legacy_profiles",
+    "llm.runtime.passive_shared_broker_observation"
+  ],
+  "blocking_limitations": [
+    "LLM-02 exact native tokenizer UNSUPPORTED: prerequisite not fully delivered",
+    "F3B native worker patch not applied or authorized; no native handle registry, generation or unload receipts",
+    "Native Android worker recovery and CENTRAL runtime are not implemented or physically qualified"
+  ],
+  "checks": [
+    {
+      "command": [
+        "bash",
+        "tools/cloud-env.sh",
+        "./gradlew",
+        "-I",
+        "docs/mission-003f-f3b/candidate.init.gradle",
+        ":domain:test",
+        ":app:testDebugUnitTest",
+        ":app:lintDebug",
+        ":app:assembleDebug",
+        ":p2-endpoint:testDebugUnitTest",
+        "--no-daemon",
+        "--max-workers=2"
+      ],
+      "exit_code": 0,
+      "passed": 254,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": [
+        "python3",
+        "tools/check-intensive-llm.py"
+      ],
+      "exit_code": 0,
+      "passed": 75,
+      "failed": 0,
+      "skipped": 0
+    },
+    {
+      "command": [
+        "bash",
+        "tools/cloud-env.sh",
+        "python3",
+        "tools/check-apk.py",
+        "app/build/outputs/apk/debug/app-debug.apk"
+      ],
+      "exit_code": 0,
+      "passed": 1,
+      "failed": 0,
+      "skipped": 0
+    }
+  ],
+  "suites": {
+    "domain/build/test-results/test": {
+      "tests": 100,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "app/build/test-results/testDebugUnitTest": {
+      "tests": 36,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    },
+    "fixtures/p2-endpoint/build/test-results/testDebugUnitTest": {
+      "tests": 118,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0
+    }
+  },
+  "app_lint": {
+    "errors": 0,
+    "warnings": 45
+  },
+  "evidence_limits": [
+    "Native proof is always UNATTESTED; empty broker is not proof of native unload",
+    "Five new tests exercise software policy and broker state, not physical memory",
+    "No second broker/engine/worker is created in production code",
+    "Historical F3A all-files freeze still fails on the deliberately extended Manifest; its assertions are preserved"
+  ]
+}
