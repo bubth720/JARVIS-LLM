@@ -33,7 +33,7 @@
   "real_GGUF": "NOT_RUN",
   "runtime_catalogue_selection": "NOT_CONNECTED",
   "app_build": "SUCCESS",
-  "fixture_build": "RUNNING_NO_RESULT_AT_COMMIT",
+  "fixture_build": "SUCCESS endpoint + client assembleDebug",
   "apk_checks": "PASS signature ARM64 ELF/ZIP16KiB no-network",
   "legacy_scope_guard": {
     "result": "FAIL",
@@ -56,6 +56,18 @@
     "bash tools/cloud-env.sh ./tools/test-native.sh",
     "bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk",
     "python3 tools/check-intensive-llm.py",
-    "bash tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :p2-endpoint:testDebugUnitTest (executed in extended run; 118 passed)"
-  ]
+    "bash tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :p2-endpoint:testDebugUnitTest (executed in extended run; 118 passed)",
+    "bash tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon --max-workers=2"
+  ],
+  "extended_validation": "BUILD SUCCESSFUL in 3m52s; 272 tasks, 216 executed, 56 up-to-date",
+  "fixture_lint": {
+    "fixtures/p2-endpoint/build/reports/lint-results-debug.xml": {
+      "errors": 0,
+      "warnings": 10
+    },
+    "fixtures/p2-client/build/reports/lint-results-authorizedDebug.xml": {
+      "errors": 0,
+      "warnings": 6
+    }
+  }
 }

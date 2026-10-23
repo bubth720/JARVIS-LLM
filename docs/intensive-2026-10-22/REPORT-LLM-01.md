@@ -43,6 +43,10 @@ Les tests synthétiques importent une fausse signature GGUF et vérifient sélec
 SHA invalide, troncature, annulation, conservation de la copie précédente et suppression volontaire.
 Ces octets ne sont pas un modèle et ne prouvent aucune génération.
 
+Bilan exécuté : **240 tests JVM/Robolectric réussis, zéro échec/erreur/saut**, CTest Linux natif **1/1**,
+APK app et fixtures compilés, Lint sans erreur, contrôle APK signé ARM64/16KiB/sans réseau réussi.
+Les 8 nouveaux cas API29/35 ne constituent pas un test de modèle.
+
 Résultats et commandes réellement exécutés : `VALIDATION-LLM-01.json`.
 Prochaine mission : LLM-02 sur branche fille, après validation de cette livraison.
 LLM-03 dépend aussi d'UNI-01 et reste soumis aux autorisations natives distinctes.
