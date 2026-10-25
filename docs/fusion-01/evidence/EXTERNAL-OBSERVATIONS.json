@@ -1,0 +1,95 @@
+{
+  "observed_at": "2026-10-25T17:10:56.634787+00:00",
+  "ci": [
+    {
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/39917245806",
+      "labels": [
+        "failed: ",
+        "failed: ",
+        "failed: ",
+        "failed: "
+      ],
+      "observation": "historical, not rerun"
+    },
+    {
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/39917245876",
+      "labels": [
+        "failed: ",
+        "failed: ",
+        "failed: ",
+        "failed: "
+      ],
+      "observation": "historical, not rerun"
+    },
+    {
+      "repository": "JARVIS-INTERFACE",
+      "actions_html_sha256": "d6c7bad5ed5cc8cafdd582b119ccdf07bd490bd87a9a74fed0a04553791f1e01",
+      "visible_labels": [
+        "completed successfully: Run 21 of Android. ci: preserve explicit FINAL-01 integration scope",
+        "failed: Run 20 of Android. feat(interface): add offline customization studio and durable local p…"
+      ],
+      "qualification": "historical visibility only; no new test executed"
+    },
+    {
+      "repository": "JARVIS-LLM",
+      "actions_html_sha256": "5da999972c4da68ec5b8b553d0487164c14264c4271724582bdac87af6d78143",
+      "visible_labels": [
+        "failed: Run 33 of Android prototype checks. feat(llm): add legacy policy profiles and passive broker observations",
+        "failed: Run 5 of Intensive LLM non-sensitive validation. feat(llm): add legacy policy profiles and passive broker observations"
+      ],
+      "qualification": "historical visibility only; no new test executed"
+    },
+    {
+      "repository": "JARVIS-NEXUS",
+      "actions_html_sha256": "64032daf3c4e26124e074bf32443172e3f676d5d1a0db7cca2488978af69ebbb",
+      "visible_labels": [],
+      "qualification": "historical visibility only; no new test executed"
+    },
+    {
+      "repository": "JARVIS-SERVICES",
+      "actions_html_sha256": "debbb8f8745028c57803924d0f3737f180189958faadbdf05f4c16f5d5f09c0d",
+      "visible_labels": [
+        "completed successfully: Run 14 of SERVICES foundation. docs(services): deliver final qualification, reproducible files and A…",
+        "completed successfully: Run 13 of SERVICES foundation. test(android): scroll to visible SAF fixtures across repeated runs",
+        "cancelled: Run 12 of SERVICES foundation. feat(android): qualify standalone file workflows and controlled local…"
+      ],
+      "qualification": "historical visibility only; no new test executed"
+    },
+    {
+      "repository": "JARVIS-UNIFIED",
+      "actions_html_sha256": "0d592aab0a71f558deff96026398d0ff382a2b6969f5f75d958d1e2668f78815",
+      "visible_labels": [],
+      "qualification": "historical visibility only; no new test executed"
+    },
+    {
+      "repository": "JARVIS-VOICE",
+      "actions_html_sha256": "0e8790b0d08fa04cf72bab7452f321604a75dcebb60426faed709115e9e8a75a",
+      "visible_labels": [
+        "failed: Run 19 of VOICE-01 local SDK. VOICE-FINAL-01: studio indépendant, narration longue et profilage — mission partielle",
+        "failed: Run 21 of Voice Bridge 005K contracts only. VOICE-FINAL-01: studio indépendant, narration longue et profilage — mission partielle",
+        "failed: Run 18 of VOICE Binder V1 — isolated public fixtures. VOICE-FINAL-01: studio indépendant, narration longue et profilage — mission partielle",
+        "completed successfully: Run 160 of Android. VOICE-FINAL-01: studio indépendant, narration longue et profilage — mission partielle",
+        "completed successfully: Run 40 of Voice Quality 005G. VOICE-FINAL-01: studio indépendant, narration longue et profilage — mission partielle",
+        "completed successfully: Run 51 of Voice Prototype 005E. VOICE-FINAL-01: studio indépendant, narration longue et profilage — mission partielle"
+      ],
+      "qualification": "historical visibility only; no new test executed"
+    },
+    {
+      "repository": "JARVIS-VOLUTION-",
+      "actions_html_sha256": "869239df60930fd9d875c3b5265865f23d8efff917dd9dccad3c01acba2642f7",
+      "visible_labels": [
+        "completed successfully: Run 4 of Evolution local JVM. feat(evolution): validate inert patch proposals and keep trials blocked"
+      ],
+      "qualification": "historical visibility only; no new test executed"
+    },
+    {
+      "repository": "JAVIS-Local-v2",
+      "actions_html_sha256": "d71a768c2468c01e13f84ecb0b2d5e5db94823bd2f4b93b6f208564e25011a62",
+      "visible_labels": [
+        "completed successfully: Run 1 of CORE-03 pinned JVM integration laboratory. feat(core): add pinned JVM clients for Nexus and Services laboratory"
+      ],
+      "qualification": "historical visibility only; no new test executed"
+    }
+  ],
+  "voice_final_report_sha256": "0560885358b7f99935103c57bca82367be7ad62182e63f91f311e5b92d4a0706"
+}

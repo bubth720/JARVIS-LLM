@@ -1,0 +1,78 @@
+{
+  "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/40214822563/job/121233565167",
+  "observed_at": "2026-10-25T17:14:12.473788+00:00",
+  "source_commit": "378a1cf4c2ceaaf531ded60670dc9161dc269575",
+  "steps": [
+    {
+      "name": "Set up job",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:06:04Z",
+      "completed-at": "2026-10-25T17:06:06Z"
+    },
+    {
+      "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:06:06Z",
+      "completed-at": "2026-10-25T17:06:07Z"
+    },
+    {
+      "name": "Freeze existing runtime, models, catalogue, policy, JNI and wire contracts",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:06:07Z",
+      "completed-at": "2026-10-25T17:06:10Z"
+    },
+    {
+      "name": "Run bash tools/setup-cloud.sh",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:06:10Z",
+      "completed-at": "2026-10-25T17:07:03Z"
+    },
+    {
+      "name": "Historical native tests without model or device",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:07:03Z",
+      "completed-at": "2026-10-25T17:08:36Z"
+    },
+    {
+      "name": "JVM, simulated Android, ARM64 and Lint",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:08:36Z",
+      "completed-at": "2026-10-25T17:13:50Z"
+    },
+    {
+      "name": "Actual APK signatures, permissions and alignment",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:13:50Z",
+      "completed-at": "2026-10-25T17:13:51Z"
+    },
+    {
+      "name": "Collect real test results (no native readiness claim)",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:13:51Z",
+      "completed-at": "2026-10-25T17:13:51Z"
+    },
+    {
+      "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:13:51Z",
+      "completed-at": "2026-10-25T17:13:53Z"
+    },
+    {
+      "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:13:53Z",
+      "completed-at": "2026-10-25T17:13:53Z"
+    },
+    {
+      "name": "Complete job",
+      "conclusion": "success",
+      "started-at": "2026-10-25T17:13:53Z",
+      "completed-at": "2026-10-25T17:13:53Z"
+    }
+  ],
+  "run_url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/40214822563",
+  "job_success": true,
+  "artifacts": [],
+  "artifact_download_independently_verified": false,
+  "physical_qualification": false
+}

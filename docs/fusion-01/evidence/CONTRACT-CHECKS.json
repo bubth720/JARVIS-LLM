@@ -1,0 +1,38 @@
+[
+  {
+    "command": [
+      "python3",
+      "tools/check-recovery-contract.py"
+    ],
+    "exit_code": 0,
+    "stdout": "PASS /1 frozen, append-only ABI, closed tables. Candidate /2 SHA256: 3deeaf3565f00c6b0b5380877bcf2ccf79ab495895a5bc627371ea774db4e8ef (CORE REVIEW BLOCKED)\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python3",
+      "tools/recovery-vectors.py"
+    ],
+    "exit_code": 0,
+    "stdout": "PASS real bundle vectors 3deeaf3565f00c6b0b5380877bcf2ccf79ab495895a5bc627371ea774db4e8ef core 22d33630c291207b39ae9da2eefa7a8f04a8f85069dd1df04a77eb1407d2f019 llm ef7bb738af48efe6dd8e367dcee33ed79c2ecfeb49d030cc47e64ad64b4ea1f8 set 3e26231eb3bffb4c30e816de9e803bf212f8aac4c68c9b475169f7e499f5e77e decision a93c086ddbb1c87dd41efa159b661c28a39c4bb717b0343b87ef7b6927397ab6\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "python3",
+      "docs/mission-003f-correction/reference/verify_vectors.py"
+    ],
+    "exit_code": 0,
+    "stdout": "{\"checks\": 22, \"result\": \"OK\", \"android_or_native_proof\": false, \"hashes\": {\"core_prepare_sha256\": \"976523586c0fc605dc6abf6bbac79f19d0f610310396d1405633cad3e101a4e5\", \"llm_attest_sha256\": \"2f14ab451ad4f110276ea3e58df4316adcf6f80dc79fd2fb467e7b3e2489d799\", \"prepare_set_sha256\": \"99e5fb489ad145bc89495e923dd130d898def9733e86ecf9cdfcce120852623d\", \"decision_sha256\": \"f9620b639fabc5fda256f40afb80284962bb7e5975d76a6c60f68de0f111e933\"}}\n",
+    "stderr": ""
+  },
+  {
+    "command": [
+      "node",
+      "tools/test-apk-verifier.cjs"
+    ],
+    "exit_code": 0,
+    "stdout": "PASS: offline APK verifier: match, mismatch, invalid reference, unavailable crypto, size bound, read failure. Not an Android browser test.\n",
+    "stderr": ""
+  }
+]

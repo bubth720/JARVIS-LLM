@@ -1,0 +1,34 @@
+{
+  "source_commit": "378a1cf4c2ceaaf531ded60670dc9161dc269575",
+  "local_apk_sha256": "b72cfafd33aab18865801974c3bb96c8204bffefe9f8272e51d9198367bfd1b6",
+  "apk_size": 18107841,
+  "github_actions_apk": false,
+  "installed": false,
+  "physical_qualification": false,
+  "native_model_run": false,
+  "ctest": {
+    "tests": 1,
+    "failures": 0,
+    "gguf": false
+  },
+  "lint": [
+    {
+      "path": "app/build/reports/lint-results-debug.xml",
+      "sha256": "168a1af83f62883b31313b8985a653078c3f4f294c81c66ad5ef852f6736769a",
+      "errors": 0,
+      "warnings": 45
+    },
+    {
+      "path": "fixtures/p2-endpoint/build/reports/lint-results-debug.xml",
+      "sha256": "11a93898c014b2355076b68dc54a52358e1ae51dae264d149dde4322071cc5b0",
+      "errors": 0,
+      "warnings": 10
+    },
+    {
+      "path": "fixtures/p2-client/build/reports/lint-results-authorizedDebug.xml",
+      "sha256": "252413b9e98b81bdce92a2598c37c21d8968e8a103b244bd5712783d523b1942",
+      "errors": 0,
+      "warnings": 6
+    }
+  ]
+}

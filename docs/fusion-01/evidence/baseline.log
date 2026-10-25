@@ -1,0 +1,335 @@
+Starting a Gradle Daemon (subsequent builds will be faster)
+
+> Configure project :app
+Unable to initialize metrics, ensure /home/agent/.android is writable, details: /home/agent/.android/analytics.settings (No such file or directory)
+
+> Task :domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :domain:processResources NO-SOURCE
+> Task :domain:processTestResources NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig
+> Task :app:checkDebugAarMetadata
+> Task :app:generateDebugResValues
+> Task :app:mapDebugSourceSetPaths
+> Task :app:generateDebugResources
+> Task :app:mergeDebugResources
+> Task :app:packageDebugResources
+> Task :app:parseDebugLocalResources
+> Task :app:createDebugCompatibleScreenManifests
+> Task :app:extractDeepLinksDebug
+
+> Task :app:processDebugMainManifest
+/workspace/JARVIS-LLM/app/src/main/AndroidManifest.xml:2:5-87 Warning:
+	uses-permission#android.permission.INTERNET was tagged at AndroidManifest.xml:2 to remove other declarations but no other declaration present
+/workspace/JARVIS-LLM/app/src/main/AndroidManifest.xml:3:5-99 Warning:
+	uses-permission#android.permission.ACCESS_NETWORK_STATE was tagged at AndroidManifest.xml:3 to remove other declarations but no other declaration present
+
+> Task :app:processDebugManifest
+> Task :app:processDebugManifestForPackage
+> Task :app:processDebugResources
+> Task :app:javaPreCompileDebug
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest
+> Task :app:mergeDebugShaders
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets
+> Task :app:packageDebugUnitTestForUnitTest
+> Task :app:generateDebugUnitTestConfig
+> Task :p2-contract:preBuild UP-TO-DATE
+> Task :p2-contract:preDebugBuild UP-TO-DATE
+> Task :p2-contract:compileDebugAidl
+> Task :p2-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :p2-contract:generateDebugBuildConfig
+> Task :p2-contract:generateDebugResValues
+> Task :p2-contract:generateDebugResources
+> Task :p2-contract:packageDebugResources
+> Task :p2-contract:parseDebugLocalResources
+> Task :p2-contract:generateDebugRFile
+> Task :p2-contract:javaPreCompileDebug
+> Task :p2-endpoint:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :p2-contract:compileDebugLibraryResources
+> Task :p2-contract:writeDebugAarMetadata
+> Task :p2-endpoint:shareRuntime
+> Task :p2-endpoint:preBuild
+> Task :p2-endpoint:preDebugBuild
+> Task :p2-endpoint:checkDebugAarMetadata
+> Task :p2-endpoint:generateDebugResValues
+> Task :p2-endpoint:mapDebugSourceSetPaths
+> Task :p2-endpoint:generateDebugResources
+> Task :p2-endpoint:mergeDebugResources
+> Task :p2-endpoint:packageDebugResources
+> Task :p2-endpoint:parseDebugLocalResources
+> Task :p2-endpoint:createDebugCompatibleScreenManifests
+> Task :p2-contract:extractDeepLinksDebug
+> Task :p2-contract:processDebugManifest
+> Task :p2-endpoint:extractDeepLinksDebug
+> Task :p2-endpoint:processDebugMainManifest
+> Task :p2-endpoint:processDebugManifest
+> Task :p2-endpoint:processDebugManifestForPackage
+> Task :p2-endpoint:processDebugResources
+> Task :p2-endpoint:javaPreCompileDebug
+> Task :p2-endpoint:prepareF3bReviewSources
+> Task :p2-endpoint:preDebugUnitTestBuild
+> Task :p2-endpoint:javaPreCompileDebugUnitTest
+> Task :p2-contract:mergeDebugShaders
+> Task :p2-contract:compileDebugShaders NO-SOURCE
+> Task :p2-contract:generateDebugAssets UP-TO-DATE
+> Task :p2-contract:mergeDebugAssets
+> Task :p2-endpoint:mergeDebugShaders
+> Task :p2-endpoint:compileDebugShaders NO-SOURCE
+> Task :p2-endpoint:generateDebugAssets UP-TO-DATE
+> Task :p2-endpoint:mergeDebugAssets
+> Task :p2-endpoint:packageDebugUnitTestForUnitTest
+> Task :p2-endpoint:generateDebugUnitTestConfig
+> Task :domain:compileKotlin
+> Task :domain:compileJava NO-SOURCE
+> Task :domain:classes UP-TO-DATE
+> Task :domain:jar
+> Task :domain:compileTestKotlin
+> Task :domain:compileTestJava NO-SOURCE
+> Task :domain:testClasses UP-TO-DATE
+
+> Task :domain:test
+
+ConversationTest > limitsCannotBeBypassedByCaller PASSED
+
+ConversationTest > tabletRequestCannotExpandOutputOrUseMainAt512 PASSED
+
+ConversationTest > reducedContextRequiresAlignedNativeAndOutputLimits PASSED
+
+ConversationTest > generatedActionsCannotBeEncodedAsMessageRoles PASSED
+
+ConversationTest > requestNeedsAUserQuestion PASSED
+
+DiagnosticCaptureTest > captureIsBoundedAndDoesNotAutomaticallyChangePolicy PASSED
+
+DiagnosticCaptureTest > sessionResetDoesNotMixOldPeaksAndUnavailableMetricsAreNull PASSED
+
+DiagnosticCaptureTest > pssRssHighWaterAndBuffersRemainDistinct PASSED
+
+DiagnosticCaptureTest > lateCleanupCanBeRecordedButNeverKeepsSamplingInBackground PASSED
+
+IntentRouterTest > explicitOppositeVariantsCannotBeRotatedAsEquivalent PASSED
+
+IntentRouterTest > contradictoryEntriesAndExactPhraseCollisionAskForClarification PASSED
+
+IntentRouterTest > identicalVariantClaimsWithOppositeNumbersNeedReview PASSED
+
+IntentRouterTest > vagueRequestClarifiesInsteadOfGuessing PASSED
+
+IntentRouterTest > unseenParaphraseUsesPhraseGrammarAndSynonyms PASSED
+
+IntentRouterTest > changedNumericValueCannotBeIgnored PASSED
+
+IntentRouterTest > reversedRelationAndUncoveredQualifierDoNotMatch PASSED
+
+IntentRouterTest > oneVariantIsEnoughAndMultipleVariantsRotateWithinSameAnswer PASSED
+
+IntentRouterTest > reorderedFrenchQuestionCanMatchWithoutExactNormalizedSentence PASSED
+
+IntentRouterTest > negationAndDifferentQuestionTypeNeverMatchPositiveAnswer PASSED
+
+IntentRouterTest > overflowNeverProducesConfidentAnswer PASSED
+
+IntentRouterTest > invalidOrEmptyVariantsAreRejected PASSED
+
+IntentRouterTest > deletedAnswersAreNotUsed PASSED
+
+MemoryTelemetryTest > recordsSampledPeakAndMinimumAcrossPhases PASSED
+
+MemoryTelemetryTest > newOperationResetsPeakWithoutInventingSamples PASSED
+
+MemoryTelemetryTest > invalidMeasurementIsIgnored PASSED
+
+ResourceCoordinatorTest > modelNeedsAnExclusiveHeavyGrantFromSameOwner PASSED
+
+ResourceCoordinatorTest > failedLoadKeepsOwnershipUntilConfirmedCleanupThenAllowsRetry PASSED
+
+ResourceCoordinatorTest > duplicateModelsAndOtherModulesWaitForActualResidentRelease PASSED
+
+ResourceCoordinatorTest > brokerIsCoordinationNotPermissionToReduceMemoryBudget PASSED
+
+ResourceCoordinatorTest > onlyOneConcurrentHeavyTaskCanOwnTheBroker PASSED
+
+ResourceCoordinatorTest > lateDoubleReleaseCannotClearAnotherOperation PASSED
+
+SafetyPolicyTest > lowRamFallsBackInsteadOfUsingMemoryExtension PASSED
+
+SafetyPolicyTest > tabletEcoReducesWorkWithoutReducingSafetyEnvelope PASSED
+
+SafetyPolicyTest > fullPowerCannotBypassProtections PASSED
+
+SafetyPolicyTest > memoryReserveIsMaintainedForResidentModel PASSED
+
+SafetyPolicyTest > reportedTabletCannotUseHypotheticalSavingsAsCredit PASSED
+
+SafetyPolicyTest > normalPhoneUsesMainAndLimitsThreads PASSED
+
+SafetyPolicyTest > severeThermalAndLowBatteryStopEveryMobileProfile PASSED
+
+SafetyPolicyTest > observedResidencyNeverCreditsMoreThanMeasuredPss PASSED
+
+SafetyPolicyTest > reportedPocoStillRefusedWithoutMeasuredModelEvidence PASSED
+
+SafetyPolicyTest > heatWhileMainIsResidentRequiresStopBeforeFallback PASSED
+
+SafetyPolicyTest > unavailableHeadroomDoesNotDiscardWorkingThermalStatus PASSED
+
+SafetyPolicyTest > androidPressureThresholdOnlyRaisesReserve PASSED
+
+SafetyPolicyTest > strengthenedEcoSettingsDoNotChangeAdmissionBudget PASSED
+
+SafetyPolicyTest > powerSaveWarmBatteryAndForecastSelectEco PASSED
+
+SafetyPolicyTest > ecoNeverUsesMainEvenIfSmallMissing PASSED
+
+SafetyPolicyTest > resourcesMissingNeverTriggerLoad PASSED
+
+SafetyPolicyTest > smallResidencyCannotFundPromotionToMain PASSED
+
+VerifiedCopyTest > oversizedAndInsufficientSpaceRejected PASSED
+
+VerifiedCopyTest > wrongHashPreservesOldModelAndRemovesPartial PASSED
+
+VerifiedCopyTest > interruptedImportCleansPartial PASSED
+
+VerifiedCopyTest > malformedGgufRejectedEvenWithMatchingHash PASSED
+
+VerifiedCopyTest > cancellationImmediatelyBeforeActivationPreservesModel PASSED
+
+VerifiedCopyTest > invalidReferenceNeverCreatesFile PASSED
+
+VerifiedCopyTest > correctImportAtomicallyReplacesOldModel PASSED
+
+VerifiedCopyTest > storagePressureDuringCopyPreservesExistingModel PASSED
+
+Core004BMappingTest > flatContextSourcesAndWhitespaceAreNeverSilentlyDroppedOrReparsed PASSED
+
+Core004BMappingTest > inspectedCoreTextOnlyFieldsMapWithoutRenderingSystemAsUser PASSED
+
+Core004BMappingTest > actualCoreDefaultNoThinkDirectiveIsPreservedOnlyInAuthorizedSystem PASSED
+
+Core004BMappingTest > coreVersionIdsAndNonAlignedLimitsNeedExplicitCompatibility PASSED
+
+NativeRequestTest > refusesMalformedAndOversizedSystems PASSED
+
+NativeRequestTest > refusesUserDelimiterWithoutRewritingQuestion PASSED
+
+NativeRequestTest > historicalRequestHasNoCustomSystem PASSED
+
+NativeRequestTest > customSystemIsSeparateAndDefaultCoreDirectivePreserved PASSED
+
+P2ContractTest > existingNativeP2PortNeverDowngradesSystemOrCallsLegacyBackend PASSED
+
+P2ContractTest > tokenizerBudgetHasExactBoundaryAndNoTrimmingOfEssentialText PASSED
+
+P2ContractTest > modelAndHardwareLimitsCannotBePromotedByRequestOrDeclaredBudget PASSED
+
+P2ContractTest > snapshotsAndDiagnosticsCannotLeakOrMutatePromptContent PASSED
+
+P2ContractTest > closedDecoderRejectsUnknownDuplicateMissingAndWrongTypedFields PASSED
+
+P2ContractTest > malformedRolesAndControlDelimitersAreRejectedEverywhere PASSED
+
+P2ContractTest > utf8AndBoundedInputAreNotCharacterOrTokenEstimates PASSED
+
+P2ContractTest > renderedMessageCannotBypassLegacyCharacterAndNativeByteBounds PASSED
+
+P2ContractTest > authorizationReferenceAloneNeverAuthorizesPreparation PASSED
+
+P2ContractTest > systemAndUntrustedDocumentsNeverBecomeSystemUserConfusion PASSED
+
+P2ContractTest > fixedPolicyAndPrefillMatchExistingNativeSourceButNoTemplateParityIsClaimed PASSED
+
+P2LifecycleTest > cancellationBeforeNativeStartAndExpiryBeforeDeliveryRemainDistinct PASSED
+
+P2LifecycleTest > expiredBeforeLoadDoesNotEnterNativeAndCannotReleaseBeforeAcknowledgment PASSED
+
+P2LifecycleTest > unauthorizedRequestAndFullBoundedReplayLedgerNeverAcquireANewLease PASSED
+
+P2LifecycleTest > malformedOutputStillRecordsActualReturnAndCleanupErrorIsNotMaskedByTimeout PASSED
+
+P2LifecycleTest > loadFailureDrainsBeforeRetryAndNeverPretendsModelFreed PASSED
+
+P2LifecycleTest > cancellationDuringTokenizationWaitsForItsReturnAndContextRefusalCanUnload PASSED
+
+P2LifecycleTest > preparedPromptMustBeForTheSameImmutableRequestAndOperationCannotBeReplayed PASSED
+
+P2LifecycleTest > staleCallbacksAndOldLeaseGenerationCannotFreeOrCancelNewWork PASSED
+
+P2LifecycleTest > timeoutDoesNotReleaseAndAnUnknownOperationNeverAdmitsFallback PASSED
+
+P2LifecycleTest > stopIsIdempotentLateOutputIsDiscardedAndLeasesSurviveUntilUnload PASSED
+
+P2LifecycleTest > otherHeavyWorkOrModelCannotEnterWhileTheP2ContractIsResident PASSED
+
+P2LifecycleTest > cleanupFailureBlocksSecondOperationAndCloseUntilExplicitSuccessfulRetry PASSED
+
+ContextPlannerTest > refusesOverBudgetDefaultAndDoesNotTruncateSystemQuestionOrDocuments PASSED
+
+ContextPlannerTest > derivedRequestRequiresFreshExactHostAuthorization PASSED
+
+ContextPlannerTest > changedModelTemplateOrDeniedAuthorizationCannotBeHiddenByTrimming PASSED
+
+ContextPlannerTest > malformedUtf8AndTemplateControlInjectionAreRejectedByExistingContract PASSED
+
+ContextPlannerTest > simulationCannotPassProductionGate PASSED
+
+ContextPlannerTest > rolesUnicodeSystemAndSourceProvenanceRemainExact PASSED
+
+ContextPlannerTest > unavailableIsNotAnApproximateCounterAndNeverCallsEngine PASSED
+
+ContextPlannerTest > cancellationExpiryAndUnknownFromTrustedPortAreNotTurnedIntoBudgetRetries PASSED
+
+ContextPlannerTest > trimsOnlyWholeOldestPairsWhenExplicitAndReauthorizesDerivedRequest PASSED
+
+RuntimePolicyProfilesTest > residencyCreditAndTabletLimitsAreUnchanged PASSED
+
+RuntimePolicyProfilesTest > processBrokerLifecycleIsProjectedWithoutNativeProofOrNewAuthority PASSED
+
+RuntimePolicyProfilesTest > fullPowerCannotActivateAndCentralRemainsUnqualified PASSED
+
+RuntimePolicyProfilesTest > profilesDelegateExactlyToExistingPolicyIncludingRefusalsAndBudgets PASSED
+
+> Task :p2-contract:compileDebugKotlin
+
+> Task :app:compileDebugKotlin
+w: file:///workspace/JARVIS-LLM/app/src/main/java/fr/jarvis/llm/MainActivity.kt:47:37 'val systemWindowInsetTop: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/JARVIS-LLM/app/src/main/java/fr/jarvis/llm/MainActivity.kt:47:75 'val systemWindowInsetBottom: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/JARVIS-LLM/app/src/main/java/fr/jarvis/llm/catalogue/CatalogueActivity.kt:40:40 'val systemWindowInsetTop: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/JARVIS-LLM/app/src/main/java/fr/jarvis/llm/catalogue/CatalogueActivity.kt:40:78 'val systemWindowInsetBottom: Int' is deprecated. Deprecated in Java.
+
+> Task :p2-contract:compileDebugJavaWithJavac
+> Task :app:compileDebugJavaWithJavac
+> Task :app:bundleDebugClassesToRuntimeJar
+> Task :app:bundleDebugClassesToCompileJar
+> Task :app:processDebugJavaRes
+> Task :p2-contract:bundleLibRuntimeToJarDebug
+> Task :p2-contract:processDebugJavaRes
+> Task :p2-contract:bundleLibCompileToJarDebug
+
+> Task :app:compileDebugUnitTestKotlin
+w: file:///workspace/JARVIS-LLM/app/src/test/java/fr/jarvis/llm/NativeFixtureBudgetTest.kt:11:66 'val id: Long' is deprecated. Deprecated in Java.
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugUnitTestJavaRes
+
+> Task :p2-endpoint:compileDebugKotlin
+w: file:///workspace/JARVIS-LLM/fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/RecoveryPlatform.kt:46:76 'field protectionLevel: Int' is deprecated. Deprecated in Java.
+w: file:///workspace/JARVIS-LLM/fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/RecoveryPlatform.kt:78:68 'field protectionLevel: Int' is deprecated. Deprecated in Java.
+
+> Task :app:testDebugUnitTest
+> Task :p2-endpoint:compileDebugJavaWithJavac NO-SOURCE
+> Task :p2-endpoint:bundleDebugClassesToRuntimeJar
+> Task :p2-endpoint:bundleDebugClassesToCompileJar
+> Task :p2-endpoint:processDebugJavaRes
+> Task :p2-endpoint:compileDebugUnitTestKotlin
+> Task :p2-endpoint:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :p2-endpoint:processDebugUnitTestJavaRes
+> Task :p2-endpoint:testDebugUnitTest
+
+BUILD SUCCESSFUL in 1m 14s
+79 actionable tasks: 79 executed

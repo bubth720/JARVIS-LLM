@@ -1,0 +1,44 @@
+{
+  "mission": "003F",
+  "bootstrapProductionReady": false,
+  "sourceCommit": "working-tree",
+  "contractSha256": "3deeaf3565f00c6b0b5380877bcf2ccf79ab495895a5bc627371ea774db4e8ef",
+  "apks": [
+    {
+      "package": "fr.jarvis.fixture.llm",
+      "apkSha256": "b60aac88fca601df1c718e40f17e32305c265a9ba48cef848afc2c0f14bd5e3e",
+      "signerCertificateSha256": "09a13f588a35fd4a1d0ccafd6a0d9232383c1c23b77d3dca3ebd8f0e6127b9ed",
+      "permissions": [
+        "fr.jarvis.fixture.llm.permission.BIND_P2"
+      ]
+    },
+    {
+      "package": "fr.jarvis.fixture.core",
+      "apkSha256": "d38c06998d792a20a217c760e2a94fd15b8146aa0aa7ed72578c41e5e43e9178",
+      "signerCertificateSha256": "09a13f588a35fd4a1d0ccafd6a0d9232383c1c23b77d3dca3ebd8f0e6127b9ed",
+      "permissions": [
+        "fr.jarvis.fixture.llm.permission.BIND_P2"
+      ]
+    },
+    {
+      "package": "fr.jarvis.fixture.unknown",
+      "apkSha256": "8ccac496169e60c8b726e7879fbe3ff253ddb1dcf93dbf604887af1b847f5074",
+      "signerCertificateSha256": "09a13f588a35fd4a1d0ccafd6a0d9232383c1c23b77d3dca3ebd8f0e6127b9ed",
+      "permissions": [
+        "fr.jarvis.fixture.llm.permission.BIND_P2"
+      ]
+    },
+    {
+      "package": "fr.jarvis.fixture.badclient",
+      "apkSha256": "f7378d35f892ac9d40f2d160540612272f800dc78128faf7968f9648627ba80f",
+      "signerCertificateSha256": "4a3807e476c5f5c34fe146afacf8f925c90fd7d6dba2c1a88330cce0b20836bd",
+      "permissions": [
+        "fr.jarvis.fixture.llm.permission.BIND_P2"
+      ]
+    }
+  ],
+  "historicalSignerUnchangedAndDistinct": true,
+  "sharedRuntimeExact": true,
+  "androidCrossApkExecuted": false,
+  "physicalQualification": false
+}

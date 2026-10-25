@@ -1,0 +1,124 @@
+[
+  {
+    "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/39917245806/job/120293342428",
+    "steps": [
+      {
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run actions/checkout@v4",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run python3 tools/check-intensive-llm.py",
+        "conclusion": "success"
+      },
+      {
+        "name": "Run bash tools/setup-cloud.sh",
+        "conclusion": "failure"
+      },
+      {
+        "name": "Run bash tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon --max-workers=2",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Run bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Run actions/upload-artifact@v4",
+        "conclusion": "success"
+      },
+      {
+        "name": "Post Run actions/checkout@v4",
+        "conclusion": "success"
+      },
+      {
+        "name": "Complete job",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/39917245876/job/120293343034",
+    "steps": [
+      {
+        "name": "Set up job",
+        "conclusion": "success"
+      },
+      {
+        "name": "Checkout",
+        "conclusion": "success"
+      },
+      {
+        "name": "Verify unchanged safety policies, catalogue and baseline tests",
+        "conclusion": "failure"
+      },
+      {
+        "name": "Test offline APK hash verifier (not Android hardware)",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Install verified JDK, SDK, NDK and native sources",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Native cancellation and model admission tests",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "JVM and simulated Android tests, Lint, ARM64 APK",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Check APK permissions, signature and 16 KiB compatibility",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Check isolated fixture APKs, signatures, shared engine and contract digest",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Publish fixture test and failure evidence",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Publish cloud validation with hardware limitations",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Publish actual catalogue scale evidence",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Record verified build identity (no installation)",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Upload validation reports even on failure",
+        "conclusion": "success"
+      },
+      {
+        "name": "Upload candidate contract for review only (CORE consumption blocked)",
+        "conclusion": "skipped"
+      },
+      {
+        "name": "Post Checkout",
+        "conclusion": "success"
+      },
+      {
+        "name": "Complete job",
+        "conclusion": "success"
+      }
+    ]
+  },
+  {
+    "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/39917245876/job/120294367854",
+    "steps": []
+  },
+  {
+    "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/39917245876/job/120294662097",
+    "steps": []
+  }
+]

@@ -1,0 +1,183 @@
+{
+  "format": "jarvis.llm.fusion-01.validation/1",
+  "collected_at": "2026-10-25T17:05:59.395666+00:00",
+  "source_commit": "378a1cf4c2ceaaf531ded60670dc9161dc269575",
+  "working_tree_dirty": false,
+  "suites": {
+    "domain": {
+      "tests": 127,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "expected_minimum": 127,
+      "result_files": [
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.ConversationTest.xml",
+          "sha256": "ee9dcbd890e39fec8a94db2cd551004765cc7b3f863ab53d2d9e696cc4d454cc"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.DiagnosticCaptureTest.xml",
+          "sha256": "140df1a20d0111050c7e822b34cbf43ca906e2f1f635e7ec1d65d7c7fefda573"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.IntentRouterTest.xml",
+          "sha256": "ee6c70a679cad9ae4fefd85bf579243c3ddbb0b6791ee1c402d27346886689bd"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.MemoryTelemetryTest.xml",
+          "sha256": "298f61678bbafbea80aafc1a23e28823da1e31722685735fb5bee69026d5006b"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.ResourceCoordinatorTest.xml",
+          "sha256": "01ed5d22e2badab580c817980c1f0d4266872a755dd9d9f47759f86b9b47e964"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.SafetyPolicyTest.xml",
+          "sha256": "58ec287bf4f29920dae80a7b1c7ce882ca0e94814d8cf5ec1e811ae226d43484"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.VerifiedCopyTest.xml",
+          "sha256": "b86d1c72d8339ca5580510e78640f55380be822ba323be04eb2d8b7fe8ced60f"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.client.GenerationClientTest.xml",
+          "sha256": "a7dc99dbf827f464d74af7f0bae261bffb875965f9cb3c038c0c1d391ff02aec"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.generation.Core004BMappingTest.xml",
+          "sha256": "8ec9d8129cd325eb44d33c708c40c8a90149eedcb3ace9eb5243244e4ee89e58"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.generation.NativeRequestTest.xml",
+          "sha256": "176849a22d2f9838fbde0e9d19f335d69396fe978607d6c6bae2e8feb5012144"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.generation.P2ContractTest.xml",
+          "sha256": "79001d9ac066545b587616faf479091c0b923e3ea8b35613cef873f491f8fdd8"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.generation.P2LifecycleTest.xml",
+          "sha256": "6eace69e4d3d913b554bb57b148f17873aee8989218a4865b9de37c8cba8abb7"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.prompt.ContextPlannerTest.xml",
+          "sha256": "a02f6d91ebc597281b9b3ea5ec9a6e3c2bd6e4fb793e3c5aa1b5880eb02ae0d5"
+        },
+        {
+          "path": "domain/build/test-results/test/TEST-fr.jarvis.domain.runtime.RuntimePolicyProfilesTest.xml",
+          "sha256": "79d6d40fd3c93e338d256aa0c64ee925702f09c9ac1524e61679f55007103446"
+        }
+      ]
+    },
+    "android_simulated": {
+      "tests": 40,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "expected_minimum": 40,
+      "result_files": [
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.CatalogueStoreTest.xml",
+          "sha256": "17e89c984cb619a4000519a68ad464d0c315ce9b1f7fcda9319eddab74816bce"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.DiagnosticExportTest.xml",
+          "sha256": "1fc9a8c2239a1dbddb155f924ac330ad290f9fcfc9d27a7cb4a09af6e1226f9c"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.ModelIntegrityTest.xml",
+          "sha256": "acfb3f51e257453a279900c85c59b530aa395c74564ad9e8a4d7ede8980edb00"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.NativeBackendLifecycleTest.xml",
+          "sha256": "66cdde961874f8f32bf89f3c7694b97c853ee9a8198a376f6813f07c0b8f6f3e"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.NativeFixtureBudgetTest.xml",
+          "sha256": "fc7db9b3d22b88543990fd83848246c5c0d145ccca9cfee632c4bdbc0fc864c9"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.OfflineStartupTest.xml",
+          "sha256": "d9f8348a4bc1bdaba130244d011adb52021d75d315dac0539331486a5b42535e"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.ResourceLifecycleTest.xml",
+          "sha256": "d53464c8a77fc917c97c89d15e56a36112a3771740082e90c8c8bb33c7277eb2"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.client.LocalClientReadinessTest.xml",
+          "sha256": "ac9017b6d2f345ecd332f506c9c493751f36514c6621aca78157df400cc8fbfc"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.model.ModelSelectionActivityTest.xml",
+          "sha256": "0b0193d9b02079ed4618ff41ae61cc37440a576ea1c5e5767341e202a9c1e053"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.model.VerifiedModelCatalogTest.xml",
+          "sha256": "dde1ac425358768a8de098be51eed3989185d286dd5395e2bee53be44e0df868"
+        },
+        {
+          "path": "app/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.runtime.ProcessRuntimeObservationPortTest.xml",
+          "sha256": "3f1ec01c2bde002694719f3b9c7c34194f09fad207857be38e7fad12c1f4470b"
+        }
+      ]
+    },
+    "endpoint_simulated": {
+      "tests": 118,
+      "failures": 0,
+      "errors": 0,
+      "skipped": 0,
+      "expected_minimum": 118,
+      "result_files": [
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.AndroidIdentityTest.xml",
+          "sha256": "e3bdb0b6cd0a873e7feaf4e3a394ab3b5ca59576e3aafba965007bd99c98e531"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.BootstrapApplicationTest.xml",
+          "sha256": "a8d5c5cb33bcce3dd0382795184c500830a889f484d93cf1cc65b8c7e8f0f312"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.EndpointTest.xml",
+          "sha256": "bd544814230fa29a0d53f9ad22af3f190599d3f820dca69c94b5c1077d306598"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.RecoveryComponentTest.xml",
+          "sha256": "54c797cdf4c62ba7bbcfb9f3a92b724d9b637c83cca2165f88119d0b5d587453"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.RecoveryCorrectionTest.xml",
+          "sha256": "1de3dc48fd2cc8a4e002ebc3bce2b12a08596771156fa9d347568602d31a50b2"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.RecoveryTest.xml",
+          "sha256": "f2ed41d5209127430754991b1408b13480537ab1adab482695f98415fdb1e508"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.f3.BarrierTest.xml",
+          "sha256": "f6bd372454c78080e498697b7758e7678d4d10a90de604e32560f09794e7cf84"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.f3.ObservationTest.xml",
+          "sha256": "3f34a2a5790b321876039a4c3c145252d9889ecfef6ff576f26f038731862960"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.fixture.llm.f3.ReviewJournalTest.xml",
+          "sha256": "cfd441d6584f2b3b39f5b4d999d174e0dc698361b62293bcdf0c857ff8514c73"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.engine.F3CandidateTest.xml",
+          "sha256": "2e3899665ddbf444a6fa9bed547d34b07c809df9d6f346aec365f923dcc05bba"
+        },
+        {
+          "path": "fixtures/p2-endpoint/build/test-results/testDebugUnitTest/TEST-fr.jarvis.llm.engine.F3WorkerTest.xml",
+          "sha256": "5898b486ad3d910db8f7c091a7a54dc02eaf932e0f82f2b057156e4193cb5343"
+        }
+      ]
+    }
+  },
+  "native_ready": false,
+  "android_instrumented": "NOT_RUN",
+  "physical": "NOT_RUN",
+  "success": true
+}

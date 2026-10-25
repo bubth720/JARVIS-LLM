@@ -1,0 +1,604 @@
+> Task :domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :domain:processResources NO-SOURCE
+> Task :domain:processTestResources NO-SOURCE
+> Task :app:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :app:preBuild UP-TO-DATE
+> Task :app:preDebugBuild UP-TO-DATE
+> Task :app:generateDebugBuildConfig UP-TO-DATE
+> Task :app:checkDebugAarMetadata UP-TO-DATE
+> Task :app:generateDebugResValues UP-TO-DATE
+> Task :app:mapDebugSourceSetPaths UP-TO-DATE
+> Task :app:generateDebugResources UP-TO-DATE
+> Task :app:mergeDebugResources UP-TO-DATE
+> Task :app:packageDebugResources UP-TO-DATE
+> Task :app:parseDebugLocalResources UP-TO-DATE
+> Task :app:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :app:extractDeepLinksDebug UP-TO-DATE
+> Task :app:processDebugMainManifest UP-TO-DATE
+> Task :app:processDebugManifest UP-TO-DATE
+> Task :app:processDebugManifestForPackage UP-TO-DATE
+> Task :app:processDebugResources UP-TO-DATE
+> Task :app:javaPreCompileDebug UP-TO-DATE
+> Task :app:preDebugUnitTestBuild UP-TO-DATE
+> Task :app:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :app:mergeDebugShaders UP-TO-DATE
+> Task :app:compileDebugShaders NO-SOURCE
+> Task :app:generateDebugAssets UP-TO-DATE
+> Task :app:mergeDebugAssets UP-TO-DATE
+> Task :app:packageDebugUnitTestForUnitTest UP-TO-DATE
+> Task :app:generateDebugUnitTestConfig UP-TO-DATE
+> Task :app:preDebugAndroidTestBuild SKIPPED
+> Task :app:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :app:extractProguardFiles UP-TO-DATE
+> Task :app:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :app:compressDebugAssets UP-TO-DATE
+> Task :app:desugarDebugFileDependencies UP-TO-DATE
+> Task :app:checkDebugDuplicateClasses UP-TO-DATE
+> Task :domain:compileKotlin
+> Task :app:mergeExtDexDebug UP-TO-DATE
+> Task :domain:compileJava NO-SOURCE
+> Task :domain:classes UP-TO-DATE
+> Task :domain:jar
+> Task :app:compileDebugKotlin UP-TO-DATE
+> Task :app:compileDebugJavaWithJavac UP-TO-DATE
+> Task :app:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :app:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :domain:compileTestKotlin
+> Task :domain:compileTestJava NO-SOURCE
+> Task :domain:testClasses UP-TO-DATE
+> Task :app:compileDebugUnitTestKotlin
+
+> Task :domain:test
+
+ConversationTest > limitsCannotBeBypassedByCaller PASSED
+
+ConversationTest > tabletRequestCannotExpandOutputOrUseMainAt512 PASSED
+
+ConversationTest > reducedContextRequiresAlignedNativeAndOutputLimits PASSED
+
+ConversationTest > generatedActionsCannotBeEncodedAsMessageRoles PASSED
+
+ConversationTest > requestNeedsAUserQuestion PASSED
+
+DiagnosticCaptureTest > captureIsBoundedAndDoesNotAutomaticallyChangePolicy PASSED
+
+DiagnosticCaptureTest > sessionResetDoesNotMixOldPeaksAndUnavailableMetricsAreNull PASSED
+
+DiagnosticCaptureTest > pssRssHighWaterAndBuffersRemainDistinct PASSED
+
+DiagnosticCaptureTest > lateCleanupCanBeRecordedButNeverKeepsSamplingInBackground PASSED
+
+IntentRouterTest > explicitOppositeVariantsCannotBeRotatedAsEquivalent PASSED
+
+IntentRouterTest > contradictoryEntriesAndExactPhraseCollisionAskForClarification PASSED
+
+IntentRouterTest > identicalVariantClaimsWithOppositeNumbersNeedReview PASSED
+
+IntentRouterTest > vagueRequestClarifiesInsteadOfGuessing PASSED
+
+IntentRouterTest > unseenParaphraseUsesPhraseGrammarAndSynonyms PASSED
+
+IntentRouterTest > changedNumericValueCannotBeIgnored PASSED
+
+IntentRouterTest > reversedRelationAndUncoveredQualifierDoNotMatch PASSED
+
+IntentRouterTest > oneVariantIsEnoughAndMultipleVariantsRotateWithinSameAnswer PASSED
+
+IntentRouterTest > reorderedFrenchQuestionCanMatchWithoutExactNormalizedSentence PASSED
+
+IntentRouterTest > negationAndDifferentQuestionTypeNeverMatchPositiveAnswer PASSED
+
+IntentRouterTest > overflowNeverProducesConfidentAnswer PASSED
+
+IntentRouterTest > invalidOrEmptyVariantsAreRejected PASSED
+
+IntentRouterTest > deletedAnswersAreNotUsed PASSED
+
+MemoryTelemetryTest > recordsSampledPeakAndMinimumAcrossPhases PASSED
+
+MemoryTelemetryTest > newOperationResetsPeakWithoutInventingSamples PASSED
+
+MemoryTelemetryTest > invalidMeasurementIsIgnored PASSED
+
+ResourceCoordinatorTest > modelNeedsAnExclusiveHeavyGrantFromSameOwner PASSED
+
+ResourceCoordinatorTest > failedLoadKeepsOwnershipUntilConfirmedCleanupThenAllowsRetry PASSED
+
+ResourceCoordinatorTest > duplicateModelsAndOtherModulesWaitForActualResidentRelease PASSED
+
+ResourceCoordinatorTest > brokerIsCoordinationNotPermissionToReduceMemoryBudget PASSED
+
+ResourceCoordinatorTest > onlyOneConcurrentHeavyTaskCanOwnTheBroker PASSED
+
+ResourceCoordinatorTest > lateDoubleReleaseCannotClearAnotherOperation PASSED
+
+SafetyPolicyTest > lowRamFallsBackInsteadOfUsingMemoryExtension PASSED
+
+SafetyPolicyTest > tabletEcoReducesWorkWithoutReducingSafetyEnvelope PASSED
+
+SafetyPolicyTest > fullPowerCannotBypassProtections PASSED
+
+SafetyPolicyTest > memoryReserveIsMaintainedForResidentModel PASSED
+
+SafetyPolicyTest > reportedTabletCannotUseHypotheticalSavingsAsCredit PASSED
+
+SafetyPolicyTest > normalPhoneUsesMainAndLimitsThreads PASSED
+
+SafetyPolicyTest > severeThermalAndLowBatteryStopEveryMobileProfile PASSED
+
+SafetyPolicyTest > observedResidencyNeverCreditsMoreThanMeasuredPss PASSED
+
+SafetyPolicyTest > reportedPocoStillRefusedWithoutMeasuredModelEvidence PASSED
+
+SafetyPolicyTest > heatWhileMainIsResidentRequiresStopBeforeFallback PASSED
+
+SafetyPolicyTest > unavailableHeadroomDoesNotDiscardWorkingThermalStatus PASSED
+
+SafetyPolicyTest > androidPressureThresholdOnlyRaisesReserve PASSED
+
+SafetyPolicyTest > strengthenedEcoSettingsDoNotChangeAdmissionBudget PASSED
+
+SafetyPolicyTest > powerSaveWarmBatteryAndForecastSelectEco PASSED
+
+SafetyPolicyTest > ecoNeverUsesMainEvenIfSmallMissing PASSED
+
+SafetyPolicyTest > resourcesMissingNeverTriggerLoad PASSED
+
+SafetyPolicyTest > smallResidencyCannotFundPromotionToMain PASSED
+
+VerifiedCopyTest > oversizedAndInsufficientSpaceRejected PASSED
+
+VerifiedCopyTest > wrongHashPreservesOldModelAndRemovesPartial PASSED
+
+VerifiedCopyTest > interruptedImportCleansPartial PASSED
+
+VerifiedCopyTest > malformedGgufRejectedEvenWithMatchingHash PASSED
+
+VerifiedCopyTest > cancellationImmediatelyBeforeActivationPreservesModel PASSED
+
+VerifiedCopyTest > invalidReferenceNeverCreatesFile PASSED
+
+VerifiedCopyTest > correctImportAtomicallyReplacesOldModel PASSED
+
+VerifiedCopyTest > storagePressureDuringCopyPreservesExistingModel PASSED
+
+GenerationClientTest > isolatedFixtureProducesContentWithoutNativeProof PASSED
+
+GenerationClientTest > validClosedDtoDecodesWithoutDroppingSystemOrQuestion PASSED
+
+GenerationClientTest > repeatedCancelAndLateCompletionNeverUnload PASSED
+
+GenerationClientTest > oldGenerationCannotDisturbCurrentOperation PASSED
+
+GenerationClientTest > liveMonitorAcceptsOnlyExplicitRefusal PASSED
+
+GenerationClientTest > deadlineAfterStopBecomesUnknownNotReleased PASSED
+
+GenerationClientTest > systemDocumentsAndQuestionStaySeparateAndImmutable PASSED
+
+GenerationClientTest > fullPowerAndroidRefusedWithoutChangingAnyOtherMode PASSED
+
+GenerationClientTest > identicalChunkReplayIsIdempotent PASSED
+
+GenerationClientTest > deadlineBoundaryAndBackwardClockFailClosed PASSED
+
+GenerationClientTest > liveMonitorRejectsFixtureTextAndFakeAck PASSED
+
+GenerationClientTest > duplicateUnknownAndMissingFieldsAreRejected PASSED
+
+GenerationClientTest > diagnosticStringsRedactContentAndReferences PASSED
+
+GenerationClientTest > gapAndChunkBeforeAckAreRejected PASSED
+
+GenerationClientTest > eventQuotaAndNegativeSequencesAreRejected PASSED
+
+GenerationClientTest > authorizedRequestsStillCannotStartNativeOrLinux PASSED
+
+GenerationClientTest > brokerEmptyAndCancellationCannotProveNativeRelease PASSED
+
+GenerationClientTest > noOutputCanArriveAfterContentDoneOrRefusal PASSED
+
+GenerationClientTest > defaultAuthorizationDeniesEvenWithUuidReferences PASSED
+
+GenerationClientTest > conflictingReplayQuarantinesAndClearsText PASSED
+
+GenerationClientTest > malformedRolesDelimitersAndUnicodeAreRejectedByExistingP2 PASSED
+
+GenerationClientTest > fingerprintBindsPriorityProfileTargetHistoryAndLimits PASSED
+
+GenerationClientTest > authorizationExceptionsFailClosed PASSED
+
+GenerationClientTest > unsupportedVersionsAreRejected PASSED
+
+GenerationClientTest > changedRequestWithSameIdentifiersQuarantines PASSED
+
+GenerationClientTest > sizesAreNotTokenCountsAndCapabilitiesAreClosed PASSED
+
+GenerationClientTest > totalOutputAndIndividualChunkAreBounded PASSED
+
+Core004BMappingTest > flatContextSourcesAndWhitespaceAreNeverSilentlyDroppedOrReparsed PASSED
+
+Core004BMappingTest > inspectedCoreTextOnlyFieldsMapWithoutRenderingSystemAsUser PASSED
+
+Core004BMappingTest > actualCoreDefaultNoThinkDirectiveIsPreservedOnlyInAuthorizedSystem PASSED
+
+Core004BMappingTest > coreVersionIdsAndNonAlignedLimitsNeedExplicitCompatibility PASSED
+
+NativeRequestTest > refusesMalformedAndOversizedSystems PASSED
+
+NativeRequestTest > refusesUserDelimiterWithoutRewritingQuestion PASSED
+
+NativeRequestTest > historicalRequestHasNoCustomSystem PASSED
+
+NativeRequestTest > customSystemIsSeparateAndDefaultCoreDirectivePreserved PASSED
+
+P2ContractTest > existingNativeP2PortNeverDowngradesSystemOrCallsLegacyBackend PASSED
+
+P2ContractTest > tokenizerBudgetHasExactBoundaryAndNoTrimmingOfEssentialText PASSED
+
+P2ContractTest > modelAndHardwareLimitsCannotBePromotedByRequestOrDeclaredBudget PASSED
+
+P2ContractTest > snapshotsAndDiagnosticsCannotLeakOrMutatePromptContent PASSED
+
+P2ContractTest > closedDecoderRejectsUnknownDuplicateMissingAndWrongTypedFields PASSED
+
+P2ContractTest > malformedRolesAndControlDelimitersAreRejectedEverywhere PASSED
+
+P2ContractTest > utf8AndBoundedInputAreNotCharacterOrTokenEstimates PASSED
+
+P2ContractTest > renderedMessageCannotBypassLegacyCharacterAndNativeByteBounds PASSED
+
+P2ContractTest > authorizationReferenceAloneNeverAuthorizesPreparation PASSED
+
+P2ContractTest > systemAndUntrustedDocumentsNeverBecomeSystemUserConfusion PASSED
+
+P2ContractTest > fixedPolicyAndPrefillMatchExistingNativeSourceButNoTemplateParityIsClaimed PASSED
+
+P2LifecycleTest > cancellationBeforeNativeStartAndExpiryBeforeDeliveryRemainDistinct PASSED
+
+P2LifecycleTest > expiredBeforeLoadDoesNotEnterNativeAndCannotReleaseBeforeAcknowledgment PASSED
+
+P2LifecycleTest > unauthorizedRequestAndFullBoundedReplayLedgerNeverAcquireANewLease PASSED
+
+P2LifecycleTest > malformedOutputStillRecordsActualReturnAndCleanupErrorIsNotMaskedByTimeout PASSED
+
+P2LifecycleTest > loadFailureDrainsBeforeRetryAndNeverPretendsModelFreed PASSED
+
+P2LifecycleTest > cancellationDuringTokenizationWaitsForItsReturnAndContextRefusalCanUnload PASSED
+
+P2LifecycleTest > preparedPromptMustBeForTheSameImmutableRequestAndOperationCannotBeReplayed PASSED
+
+P2LifecycleTest > staleCallbacksAndOldLeaseGenerationCannotFreeOrCancelNewWork PASSED
+
+P2LifecycleTest > timeoutDoesNotReleaseAndAnUnknownOperationNeverAdmitsFallback PASSED
+
+P2LifecycleTest > stopIsIdempotentLateOutputIsDiscardedAndLeasesSurviveUntilUnload PASSED
+
+P2LifecycleTest > otherHeavyWorkOrModelCannotEnterWhileTheP2ContractIsResident PASSED
+
+P2LifecycleTest > cleanupFailureBlocksSecondOperationAndCloseUntilExplicitSuccessfulRetry PASSED
+
+ContextPlannerTest > refusesOverBudgetDefaultAndDoesNotTruncateSystemQuestionOrDocuments PASSED
+
+ContextPlannerTest > derivedRequestRequiresFreshExactHostAuthorization PASSED
+
+ContextPlannerTest > changedModelTemplateOrDeniedAuthorizationCannotBeHiddenByTrimming PASSED
+
+ContextPlannerTest > malformedUtf8AndTemplateControlInjectionAreRejectedByExistingContract PASSED
+
+ContextPlannerTest > simulationCannotPassProductionGate PASSED
+
+ContextPlannerTest > rolesUnicodeSystemAndSourceProvenanceRemainExact PASSED
+
+ContextPlannerTest > unavailableIsNotAnApproximateCounterAndNeverCallsEngine PASSED
+
+ContextPlannerTest > cancellationExpiryAndUnknownFromTrustedPortAreNotTurnedIntoBudgetRetries PASSED
+
+ContextPlannerTest > trimsOnlyWholeOldestPairsWhenExplicitAndReauthorizesDerivedRequest PASSED
+
+RuntimePolicyProfilesTest > residencyCreditAndTabletLimitsAreUnchanged PASSED
+
+RuntimePolicyProfilesTest > processBrokerLifecycleIsProjectedWithoutNativeProofOrNewAuthority PASSED
+
+RuntimePolicyProfilesTest > fullPowerCannotActivateAndCentralRemainsUnqualified PASSED
+
+RuntimePolicyProfilesTest > profilesDelegateExactlyToExistingPolicyIncludingRefusalsAndBudgets PASSED
+
+> Task :app:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :app:processDebugJavaRes UP-TO-DATE
+> Task :app:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:testDebugUnitTest
+> Task :app:generateDebugAndroidTestLintModel
+> Task :app:generateDebugLintReportModel
+> Task :app:generateDebugUnitTestLintModel
+
+> Task :app:lintAnalyzeDebugAndroidTest
+Warning: Unable to initialize metrics, ensure /home/agent/.android is writable, details: /home/agent/.android/analytics.settings (No such file or directory)
+
+> Task :app:lintAnalyzeDebugUnitTest
+> Task :app:dexBuilderDebug
+> Task :app:mergeDebugGlobalSynthetics UP-TO-DATE
+> Task :app:mergeDebugJavaResource
+> Task :app:mergeLibDexDebug
+> Task :app:mergeProjectDexDebug
+> Task :app:configureCMakeDebug[arm64-v8a]
+> Task :app:buildCMakeDebug[arm64-v8a]
+> Task :app:mergeDebugJniLibFolders UP-TO-DATE
+> Task :app:mergeDebugNativeLibs UP-TO-DATE
+> Task :app:stripDebugDebugSymbols UP-TO-DATE
+> Task :app:prepareDebugKeystore UP-TO-DATE
+> Task :app:validateSigningDebug UP-TO-DATE
+> Task :app:writeDebugAppMetadata UP-TO-DATE
+> Task :app:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :app:packageDebug
+> Task :app:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :app:assembleDebug
+> Task :p2-contract:preBuild UP-TO-DATE
+> Task :p2-contract:preDebugBuild UP-TO-DATE
+> Task :p2-contract:compileDebugAidl UP-TO-DATE
+> Task :p2-contract:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :p2-contract:generateDebugBuildConfig UP-TO-DATE
+> Task :p2-contract:generateDebugResValues UP-TO-DATE
+> Task :p2-contract:generateDebugResources UP-TO-DATE
+> Task :p2-contract:packageDebugResources UP-TO-DATE
+> Task :p2-contract:parseDebugLocalResources UP-TO-DATE
+> Task :p2-contract:generateDebugRFile UP-TO-DATE
+> Task :p2-contract:compileDebugKotlin UP-TO-DATE
+> Task :p2-contract:javaPreCompileDebug UP-TO-DATE
+> Task :p2-contract:compileDebugJavaWithJavac UP-TO-DATE
+> Task :p2-contract:bundleLibRuntimeToJarDebug UP-TO-DATE
+> Task :p2-contract:processDebugJavaRes UP-TO-DATE
+> Task :p2-contract:bundleLibCompileToJarDebug UP-TO-DATE
+> Task :p2-endpoint:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :p2-contract:compileDebugLibraryResources UP-TO-DATE
+> Task :p2-contract:writeDebugAarMetadata UP-TO-DATE
+> Task :p2-endpoint:shareRuntime UP-TO-DATE
+> Task :p2-endpoint:preBuild UP-TO-DATE
+> Task :p2-endpoint:preDebugBuild UP-TO-DATE
+> Task :p2-endpoint:checkDebugAarMetadata UP-TO-DATE
+> Task :p2-endpoint:generateDebugResValues UP-TO-DATE
+> Task :p2-endpoint:mapDebugSourceSetPaths UP-TO-DATE
+> Task :p2-endpoint:generateDebugResources UP-TO-DATE
+> Task :p2-endpoint:mergeDebugResources UP-TO-DATE
+> Task :p2-endpoint:packageDebugResources UP-TO-DATE
+> Task :p2-endpoint:parseDebugLocalResources UP-TO-DATE
+> Task :p2-endpoint:createDebugCompatibleScreenManifests UP-TO-DATE
+> Task :p2-contract:extractDeepLinksDebug UP-TO-DATE
+> Task :p2-contract:processDebugManifest UP-TO-DATE
+> Task :p2-endpoint:extractDeepLinksDebug UP-TO-DATE
+> Task :p2-endpoint:processDebugMainManifest UP-TO-DATE
+> Task :p2-endpoint:processDebugManifest UP-TO-DATE
+> Task :p2-endpoint:processDebugManifestForPackage UP-TO-DATE
+> Task :p2-endpoint:processDebugResources UP-TO-DATE
+> Task :p2-endpoint:compileDebugKotlin UP-TO-DATE
+> Task :p2-endpoint:javaPreCompileDebug UP-TO-DATE
+> Task :p2-endpoint:compileDebugJavaWithJavac NO-SOURCE
+> Task :p2-endpoint:bundleDebugClassesToRuntimeJar UP-TO-DATE
+> Task :p2-endpoint:bundleDebugClassesToCompileJar UP-TO-DATE
+> Task :p2-endpoint:prepareF3bReviewSources UP-TO-DATE
+> Task :p2-endpoint:compileDebugUnitTestKotlin UP-TO-DATE
+> Task :p2-endpoint:preDebugUnitTestBuild UP-TO-DATE
+> Task :p2-endpoint:javaPreCompileDebugUnitTest UP-TO-DATE
+> Task :p2-endpoint:compileDebugUnitTestJavaWithJavac NO-SOURCE
+> Task :p2-contract:mergeDebugShaders UP-TO-DATE
+> Task :p2-contract:compileDebugShaders NO-SOURCE
+> Task :p2-contract:generateDebugAssets UP-TO-DATE
+> Task :p2-contract:mergeDebugAssets UP-TO-DATE
+> Task :p2-endpoint:mergeDebugShaders UP-TO-DATE
+> Task :p2-endpoint:compileDebugShaders NO-SOURCE
+> Task :p2-endpoint:generateDebugAssets UP-TO-DATE
+> Task :p2-endpoint:mergeDebugAssets UP-TO-DATE
+> Task :p2-endpoint:packageDebugUnitTestForUnitTest UP-TO-DATE
+> Task :p2-endpoint:generateDebugUnitTestConfig UP-TO-DATE
+> Task :p2-endpoint:processDebugJavaRes UP-TO-DATE
+> Task :p2-endpoint:processDebugUnitTestJavaRes UP-TO-DATE
+> Task :app:lintAnalyzeDebug
+> Task :p2-endpoint:testDebugUnitTest
+> Task :p2-endpoint:mergeDebugNativeDebugMetadata NO-SOURCE
+> Task :p2-endpoint:compressDebugAssets UP-TO-DATE
+> Task :p2-endpoint:desugarDebugFileDependencies UP-TO-DATE
+> Task :p2-endpoint:dexBuilderDebug UP-TO-DATE
+> Task :p2-endpoint:mergeDebugGlobalSynthetics UP-TO-DATE
+
+> Task :app:lintReportDebug
+Wrote HTML report to file:///workspace/JARVIS-LLM/app/build/reports/lint-results-debug.html
+
+> Task :app:lintDebug
+> Task :p2-endpoint:checkDebugDuplicateClasses UP-TO-DATE
+> Task :p2-endpoint:mergeExtDexDebug UP-TO-DATE
+> Task :p2-contract:bundleLibRuntimeToDirDebug UP-TO-DATE
+> Task :p2-endpoint:mergeDebugJavaResource
+> Task :p2-endpoint:mergeProjectDexDebug UP-TO-DATE
+> Task :p2-contract:mergeDebugJniLibFolders UP-TO-DATE
+> Task :p2-contract:mergeDebugNativeLibs NO-SOURCE
+> Task :p2-contract:copyDebugJniLibsProjectOnly UP-TO-DATE
+> Task :p2-endpoint:configureCMakeDebug[arm64-v8a]
+> Task :p2-endpoint:buildCMakeDebug[arm64-v8a]
+> Task :p2-endpoint:mergeDebugJniLibFolders UP-TO-DATE
+> Task :p2-endpoint:mergeDebugNativeLibs UP-TO-DATE
+> Task :p2-endpoint:stripDebugDebugSymbols UP-TO-DATE
+> Task :p2-endpoint:mergeLibDexDebug
+> Task :p2-endpoint:prepareFixtureKey UP-TO-DATE
+> Task :p2-endpoint:validateSigningDebug UP-TO-DATE
+> Task :p2-endpoint:writeDebugAppMetadata UP-TO-DATE
+> Task :p2-endpoint:writeDebugSigningConfigVersions UP-TO-DATE
+> Task :p2-contract:stripDebugDebugSymbols NO-SOURCE
+> Task :p2-contract:copyDebugJniLibsProjectAndLocalJars UP-TO-DATE
+> Task :p2-contract:extractDebugAnnotations
+> Task :p2-contract:extractDeepLinksForAarDebug UP-TO-DATE
+> Task :p2-contract:mergeDebugGeneratedProguardFiles UP-TO-DATE
+> Task :p2-contract:mergeDebugConsumerProguardFiles UP-TO-DATE
+> Task :p2-contract:prepareDebugArtProfile UP-TO-DATE
+> Task :p2-contract:prepareLintJarForPublish UP-TO-DATE
+> Task :p2-contract:mergeDebugJavaResource UP-TO-DATE
+> Task :p2-contract:syncDebugLibJars UP-TO-DATE
+> Task :p2-contract:bundleDebugLocalLintAar UP-TO-DATE
+> Task :p2-contract:createFullJarDebug UP-TO-DATE
+> Task :p2-contract:preDebugAndroidTestBuild UP-TO-DATE
+> Task :p2-contract:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :p2-contract:writeDebugLintModelMetadata UP-TO-DATE
+> Task :p2-contract:generateDebugAndroidTestLintModel
+> Task :p2-endpoint:packageDebug
+> Task :p2-endpoint:createDebugApkListingFileRedirect UP-TO-DATE
+> Task :p2-endpoint:assembleDebug
+> Task :p2-contract:extractProguardFiles UP-TO-DATE
+> Task :p2-contract:generateDebugLintModel
+> Task :p2-contract:preDebugUnitTestBuild UP-TO-DATE
+> Task :p2-contract:generateDebugUnitTestLintModel
+> Task :p2-contract:lintAnalyzeDebugAndroidTest
+> Task :p2-contract:lintAnalyzeDebugUnitTest
+> Task :p2-endpoint:preDebugAndroidTestBuild SKIPPED
+> Task :p2-endpoint:generateDebugAndroidTestResValues UP-TO-DATE
+> Task :p2-endpoint:generateDebugAndroidTestLintModel
+> Task :p2-endpoint:extractProguardFiles UP-TO-DATE
+> Task :p2-endpoint:generateDebugLintReportModel
+> Task :p2-endpoint:generateDebugUnitTestLintModel
+> Task :p2-endpoint:lintAnalyzeDebugAndroidTest
+> Task :p2-contract:lintAnalyzeDebug
+> Task :p2-endpoint:lintAnalyzeDebugUnitTest
+> Task :p2-client:preBuild UP-TO-DATE
+> Task :p2-client:preAuthorizedDebugBuild UP-TO-DATE
+> Task :p2-client:mergeAuthorizedDebugNativeDebugMetadata NO-SOURCE
+> Task :p2-client:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :p2-client:checkAuthorizedDebugAarMetadata UP-TO-DATE
+> Task :p2-client:generateAuthorizedDebugResValues UP-TO-DATE
+> Task :p2-client:mapAuthorizedDebugSourceSetPaths UP-TO-DATE
+> Task :p2-client:generateAuthorizedDebugResources UP-TO-DATE
+> Task :p2-client:mergeAuthorizedDebugResources UP-TO-DATE
+> Task :p2-client:packageAuthorizedDebugResources UP-TO-DATE
+> Task :p2-client:parseAuthorizedDebugLocalResources UP-TO-DATE
+> Task :p2-client:createAuthorizedDebugCompatibleScreenManifests UP-TO-DATE
+> Task :p2-client:extractDeepLinksAuthorizedDebug UP-TO-DATE
+> Task :p2-client:processAuthorizedDebugMainManifest UP-TO-DATE
+> Task :p2-client:processAuthorizedDebugManifest UP-TO-DATE
+> Task :p2-client:processAuthorizedDebugManifestForPackage UP-TO-DATE
+> Task :p2-client:processAuthorizedDebugResources UP-TO-DATE
+> Task :p2-client:compileAuthorizedDebugKotlin
+> Task :p2-client:javaPreCompileAuthorizedDebug UP-TO-DATE
+> Task :p2-client:compileAuthorizedDebugJavaWithJavac NO-SOURCE
+> Task :p2-client:mergeAuthorizedDebugShaders UP-TO-DATE
+> Task :p2-client:compileAuthorizedDebugShaders NO-SOURCE
+> Task :p2-client:generateAuthorizedDebugAssets UP-TO-DATE
+> Task :p2-client:mergeAuthorizedDebugAssets UP-TO-DATE
+> Task :p2-client:compressAuthorizedDebugAssets UP-TO-DATE
+> Task :p2-client:desugarAuthorizedDebugFileDependencies UP-TO-DATE
+> Task :p2-client:dexBuilderAuthorizedDebug UP-TO-DATE
+> Task :p2-client:mergeAuthorizedDebugGlobalSynthetics UP-TO-DATE
+> Task :p2-client:processAuthorizedDebugJavaRes UP-TO-DATE
+> Task :p2-client:mergeAuthorizedDebugJavaResource
+> Task :p2-client:checkAuthorizedDebugDuplicateClasses UP-TO-DATE
+> Task :p2-client:mergeExtDexAuthorizedDebug UP-TO-DATE
+> Task :p2-client:mergeLibDexAuthorizedDebug
+> Task :p2-client:mergeProjectDexAuthorizedDebug UP-TO-DATE
+> Task :p2-client:mergeAuthorizedDebugJniLibFolders UP-TO-DATE
+> Task :p2-client:mergeAuthorizedDebugNativeLibs NO-SOURCE
+> Task :p2-client:stripAuthorizedDebugDebugSymbols NO-SOURCE
+> Task :p2-client:validateSigningAuthorizedDebug UP-TO-DATE
+> Task :p2-client:writeAuthorizedDebugAppMetadata UP-TO-DATE
+> Task :p2-client:writeAuthorizedDebugSigningConfigVersions UP-TO-DATE
+> Task :p2-client:packageAuthorizedDebug
+> Task :p2-client:createAuthorizedDebugApkListingFileRedirect UP-TO-DATE
+> Task :p2-client:assembleAuthorizedDebug
+> Task :p2-client:preWrongPackageDebugBuild UP-TO-DATE
+> Task :p2-client:mergeWrongPackageDebugNativeDebugMetadata NO-SOURCE
+> Task :p2-client:checkWrongPackageDebugAarMetadata UP-TO-DATE
+> Task :p2-client:generateWrongPackageDebugResValues UP-TO-DATE
+> Task :p2-client:mapWrongPackageDebugSourceSetPaths UP-TO-DATE
+> Task :p2-client:generateWrongPackageDebugResources UP-TO-DATE
+> Task :p2-client:mergeWrongPackageDebugResources UP-TO-DATE
+> Task :p2-client:packageWrongPackageDebugResources UP-TO-DATE
+> Task :p2-client:parseWrongPackageDebugLocalResources UP-TO-DATE
+> Task :p2-client:createWrongPackageDebugCompatibleScreenManifests UP-TO-DATE
+> Task :p2-client:extractDeepLinksWrongPackageDebug UP-TO-DATE
+> Task :p2-client:processWrongPackageDebugMainManifest UP-TO-DATE
+> Task :p2-client:processWrongPackageDebugManifest UP-TO-DATE
+> Task :p2-client:processWrongPackageDebugManifestForPackage UP-TO-DATE
+> Task :p2-client:processWrongPackageDebugResources UP-TO-DATE
+> Task :p2-client:compileWrongPackageDebugKotlin
+> Task :p2-client:javaPreCompileWrongPackageDebug UP-TO-DATE
+> Task :p2-client:compileWrongPackageDebugJavaWithJavac NO-SOURCE
+> Task :p2-client:mergeWrongPackageDebugShaders UP-TO-DATE
+> Task :p2-client:compileWrongPackageDebugShaders NO-SOURCE
+> Task :p2-client:generateWrongPackageDebugAssets UP-TO-DATE
+> Task :p2-client:mergeWrongPackageDebugAssets UP-TO-DATE
+> Task :p2-client:compressWrongPackageDebugAssets UP-TO-DATE
+> Task :p2-client:checkWrongPackageDebugDuplicateClasses UP-TO-DATE
+> Task :p2-client:desugarWrongPackageDebugFileDependencies UP-TO-DATE
+> Task :p2-client:mergeExtDexWrongPackageDebug UP-TO-DATE
+> Task :p2-client:mergeLibDexWrongPackageDebug
+> Task :p2-client:dexBuilderWrongPackageDebug UP-TO-DATE
+> Task :p2-client:mergeProjectDexWrongPackageDebug UP-TO-DATE
+> Task :p2-client:mergeWrongPackageDebugGlobalSynthetics UP-TO-DATE
+> Task :p2-client:processWrongPackageDebugJavaRes UP-TO-DATE
+> Task :p2-client:mergeWrongPackageDebugJavaResource
+> Task :p2-client:mergeWrongPackageDebugJniLibFolders UP-TO-DATE
+> Task :p2-client:mergeWrongPackageDebugNativeLibs NO-SOURCE
+> Task :p2-client:stripWrongPackageDebugDebugSymbols NO-SOURCE
+> Task :p2-client:validateSigningWrongPackageDebug UP-TO-DATE
+> Task :p2-client:writeWrongPackageDebugAppMetadata UP-TO-DATE
+> Task :p2-client:writeWrongPackageDebugSigningConfigVersions UP-TO-DATE
+> Task :p2-client:packageWrongPackageDebug
+> Task :p2-client:createWrongPackageDebugApkListingFileRedirect UP-TO-DATE
+> Task :p2-client:assembleWrongPackageDebug
+> Task :p2-client:preWrongSignatureDebugBuild UP-TO-DATE
+> Task :p2-client:mergeWrongSignatureDebugNativeDebugMetadata NO-SOURCE
+> Task :p2-client:checkWrongSignatureDebugAarMetadata UP-TO-DATE
+> Task :p2-client:generateWrongSignatureDebugResValues UP-TO-DATE
+> Task :p2-client:mapWrongSignatureDebugSourceSetPaths UP-TO-DATE
+> Task :p2-client:generateWrongSignatureDebugResources UP-TO-DATE
+> Task :p2-client:mergeWrongSignatureDebugResources UP-TO-DATE
+> Task :p2-client:packageWrongSignatureDebugResources UP-TO-DATE
+> Task :p2-client:parseWrongSignatureDebugLocalResources UP-TO-DATE
+> Task :p2-client:createWrongSignatureDebugCompatibleScreenManifests UP-TO-DATE
+> Task :p2-client:extractDeepLinksWrongSignatureDebug UP-TO-DATE
+> Task :p2-client:processWrongSignatureDebugMainManifest UP-TO-DATE
+> Task :p2-client:processWrongSignatureDebugManifest UP-TO-DATE
+> Task :p2-client:processWrongSignatureDebugManifestForPackage UP-TO-DATE
+> Task :p2-client:processWrongSignatureDebugResources UP-TO-DATE
+> Task :p2-client:compileWrongSignatureDebugKotlin
+> Task :p2-client:javaPreCompileWrongSignatureDebug UP-TO-DATE
+> Task :p2-client:compileWrongSignatureDebugJavaWithJavac NO-SOURCE
+> Task :p2-client:mergeWrongSignatureDebugShaders UP-TO-DATE
+> Task :p2-client:compileWrongSignatureDebugShaders NO-SOURCE
+> Task :p2-client:generateWrongSignatureDebugAssets UP-TO-DATE
+> Task :p2-client:mergeWrongSignatureDebugAssets UP-TO-DATE
+> Task :p2-client:compressWrongSignatureDebugAssets UP-TO-DATE
+> Task :p2-client:checkWrongSignatureDebugDuplicateClasses UP-TO-DATE
+> Task :p2-client:desugarWrongSignatureDebugFileDependencies UP-TO-DATE
+> Task :p2-client:mergeExtDexWrongSignatureDebug UP-TO-DATE
+> Task :p2-client:mergeLibDexWrongSignatureDebug
+> Task :p2-client:dexBuilderWrongSignatureDebug UP-TO-DATE
+> Task :p2-client:mergeProjectDexWrongSignatureDebug UP-TO-DATE
+> Task :p2-client:mergeWrongSignatureDebugGlobalSynthetics UP-TO-DATE
+> Task :p2-client:processWrongSignatureDebugJavaRes UP-TO-DATE
+> Task :p2-client:mergeWrongSignatureDebugJavaResource
+> Task :p2-client:mergeWrongSignatureDebugJniLibFolders UP-TO-DATE
+> Task :p2-client:mergeWrongSignatureDebugNativeLibs NO-SOURCE
+> Task :p2-client:stripWrongSignatureDebugDebugSymbols NO-SOURCE
+> Task :p2-client:validateSigningWrongSignatureDebug UP-TO-DATE
+> Task :p2-client:writeWrongSignatureDebugAppMetadata UP-TO-DATE
+> Task :p2-client:writeWrongSignatureDebugSigningConfigVersions UP-TO-DATE
+> Task :p2-client:packageWrongSignatureDebug
+> Task :p2-client:createWrongSignatureDebugApkListingFileRedirect UP-TO-DATE
+> Task :p2-client:assembleWrongSignatureDebug
+> Task :p2-client:assembleDebug
+> Task :p2-client:bundleAuthorizedDebugClassesToCompileJar UP-TO-DATE
+> Task :p2-client:preAuthorizedDebugAndroidTestBuild SKIPPED
+> Task :p2-client:generateAuthorizedDebugAndroidTestResValues UP-TO-DATE
+> Task :p2-client:generateAuthorizedDebugAndroidTestLintModel
+> Task :p2-client:extractProguardFiles UP-TO-DATE
+> Task :p2-client:generateAuthorizedDebugLintReportModel
+> Task :p2-client:preAuthorizedDebugUnitTestBuild UP-TO-DATE
+> Task :p2-client:generateAuthorizedDebugUnitTestLintModel
+> Task :p2-client:lintAnalyzeAuthorizedDebug
+> Task :p2-client:lintAnalyzeAuthorizedDebugAndroidTest
+> Task :p2-client:lintAnalyzeAuthorizedDebugUnitTest
+> Task :p2-client:lintReportAuthorizedDebug UP-TO-DATE
+> Task :p2-client:lintAuthorizedDebug
+> Task :p2-client:lint
+> Task :p2-endpoint:lintAnalyzeDebug
+> Task :p2-endpoint:lintReportDebug UP-TO-DATE
+> Task :p2-endpoint:lintDebug
+
+BUILD SUCCESSFUL in 1m 33s
+272 actionable tasks: 60 executed, 212 up-to-date
