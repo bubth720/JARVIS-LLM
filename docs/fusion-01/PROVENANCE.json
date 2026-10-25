@@ -1,0 +1,171 @@
+{
+  "format": "jarvis.llm.fusion-01.provenance/1",
+  "base": "2efb3f7aa6205062ab71f570212019fd1d9885b6",
+  "branch": "feat/fusion-01-llm-integration",
+  "scope": "LLM local projection, NOT the global UNIFIED BOM",
+  "native_enabled": false,
+  "observed_at": "2026-10-25T16:59:59.246834+00:00",
+  "references": [
+    {
+      "repository": "bubth720/JARVIS-LLM",
+      "branch": "feat/llm-03-runtime",
+      "commit": "2efb3f7aa6205062ab71f570212019fd1d9885b6",
+      "use": "base",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": []
+    },
+    {
+      "repository": "bubth720/JAVIS-Local-v2",
+      "branch": "feat/core-03-intensive",
+      "commit": "aea5ac859ac551d54fe16187c1883a487dbee9d6",
+      "use": "read-only design reference; no source dependency imported",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "9634af41a7689876d50340edd10dcc084b7ded92beb3d4606f77fc44e1f2b373",
+          "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/aea5ac859ac551d54fe16187c1883a487dbee9d6/AGENTS.md"
+        },
+        {
+          "path": "README.md",
+          "sha256": "91b13afaf897faec74d347a58b03607bb9489e780ddf27be567b68b84a628b4a",
+          "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/aea5ac859ac551d54fe16187c1883a487dbee9d6/README.md"
+        },
+        {
+          "path": "docs/intensive-2026-10-22/REPORT-CORE-03.md",
+          "sha256": "9aa6232782e3a74897b896a01fe85aea867969455631762e6e1ec258d6cc995d",
+          "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/aea5ac859ac551d54fe16187c1883a487dbee9d6/docs/intensive-2026-10-22/REPORT-CORE-03.md"
+        }
+      ]
+    },
+    {
+      "repository": "bubth720/JARVIS-VOICE",
+      "branch": "feat/voice-final-01",
+      "commit": "fe57452fcb33f5b6870070f30ba6c5f1d349c4ba",
+      "use": "read-only design reference; no source dependency imported",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "26132334b7f0362252d7bdd6d89a7f38b437f4cfb77ee317942257f9557f1d65",
+          "url": "https://github.com/bubth720/JARVIS-VOICE/blob/fe57452fcb33f5b6870070f30ba6c5f1d349c4ba/README.md"
+        }
+      ]
+    },
+    {
+      "repository": "bubth720/JARVIS-INTERFACE",
+      "branch": "feat/interface-final-01",
+      "commit": "db459ba388a3fea992d80320c3989be0edda8500",
+      "use": "read-only design reference; no source dependency imported",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "6385956612882b57c6927868d00834ddfbb3a0453fb9db36c910f9a52896e502",
+          "url": "https://github.com/bubth720/JARVIS-INTERFACE/blob/db459ba388a3fea992d80320c3989be0edda8500/README.md"
+        },
+        {
+          "path": "docs/interface-final-01/VALIDATION.md",
+          "sha256": "60c6dfbdba74a1ad0da447367c4512e6c31e31f16b6b22f65c0e949d6654b961",
+          "url": "https://github.com/bubth720/JARVIS-INTERFACE/blob/db459ba388a3fea992d80320c3989be0edda8500/docs/interface-final-01/VALIDATION.md"
+        }
+      ]
+    },
+    {
+      "repository": "bubth720/JARVIS-NEXUS",
+      "branch": "feat/nexus-final-01",
+      "commit": "d903bf04f497ab0dc7f40e9708ed057e4f24c6ee",
+      "use": "read-only design reference; no source dependency imported",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "3e15b24724a34a9d7380eab2e0d2b4f44c3d9d3a381d29f4ac180b5c4d68835c",
+          "url": "https://github.com/bubth720/JARVIS-NEXUS/blob/d903bf04f497ab0dc7f40e9708ed057e4f24c6ee/README.md"
+        },
+        {
+          "path": "docs/dev/NEXUS-FINAL-01.md",
+          "sha256": "d64c13ccf74eddb0b93d52fc43083c46f573e7bb848da331dee62d3b0bfac8f5",
+          "url": "https://github.com/bubth720/JARVIS-NEXUS/blob/d903bf04f497ab0dc7f40e9708ed057e4f24c6ee/docs/dev/NEXUS-FINAL-01.md"
+        }
+      ]
+    },
+    {
+      "repository": "bubth720/JARVIS-SERVICES",
+      "branch": "feat/services-final-01",
+      "commit": "d16dd84f27881460ec9f02d2a54d9ddff23187dc",
+      "use": "read-only design reference; no source dependency imported",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "d2aebe071d5add7fbf12d7547b8c82a2f63e50a7a90f1c800103fc348a8ac6a5",
+          "url": "https://github.com/bubth720/JARVIS-SERVICES/blob/d16dd84f27881460ec9f02d2a54d9ddff23187dc/README.md"
+        },
+        {
+          "path": "docs/intensive-2026-10-22/REPORT-SERV-03.md",
+          "sha256": "1bb71574ffe18f44ddc76b815091fb06b83a72ddd29130b8392b2efa58adbb59",
+          "url": "https://github.com/bubth720/JARVIS-SERVICES/blob/d16dd84f27881460ec9f02d2a54d9ddff23187dc/docs/intensive-2026-10-22/REPORT-SERV-03.md"
+        }
+      ]
+    },
+    {
+      "repository": "bubth720/JARVIS-VOLUTION-",
+      "branch": "feat/evol-03-atelier-de-correctifs-isoles-e",
+      "commit": "c0180181804338d21f3bf9d4b537b709595902f7",
+      "use": "read-only design reference; no source dependency imported",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": [
+        {
+          "path": "README.md",
+          "sha256": "f269b583d6169bf39d9e80922c00c78ee40fda7b7767b02bb9042ee4779a5464",
+          "url": "https://github.com/bubth720/JARVIS-VOLUTION-/blob/c0180181804338d21f3bf9d4b537b709595902f7/README.md"
+        },
+        {
+          "path": "docs/intensive-2026-10-22/REPORT-EVOL-03.md",
+          "sha256": "7c4a74ab86e75c693b527f3189476e32ae509a278be3fe7bb28c3064fdb2daff",
+          "url": "https://github.com/bubth720/JARVIS-VOLUTION-/blob/c0180181804338d21f3bf9d4b537b709595902f7/docs/intensive-2026-10-22/REPORT-EVOL-03.md"
+        }
+      ]
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "branch": "feat/uni-02-tooling",
+      "commit": "329f304115c9bc5b6dd6ccc2d68d19bf455b5e6c",
+      "use": "read-only design reference; no source dependency imported",
+      "ci": "historical HTML inspected; not rerun here",
+      "files": [
+        {
+          "path": "AGENTS.md",
+          "sha256": "52d6adbc91d62ce35369b444eae4ef857f75721a757cf303883469ca45040687",
+          "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/329f304115c9bc5b6dd6ccc2d68d19bf455b5e6c/AGENTS.md"
+        },
+        {
+          "path": "README.md",
+          "sha256": "05f0c8db03db8306ef11c8c0f396fb36dbc95b159ece36cd92c2e2778bb52017",
+          "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/329f304115c9bc5b6dd6ccc2d68d19bf455b5e6c/README.md"
+        },
+        {
+          "path": "docs/intensive-2026-10-22/CAMPAIGN_REPORT.md",
+          "sha256": "fd2b16ad444c0b10ec4c89b0ce3000492980489b8c5943b4254a5e606e373797",
+          "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/329f304115c9bc5b6dd6ccc2d68d19bf455b5e6c/docs/intensive-2026-10-22/CAMPAIGN_REPORT.md"
+        },
+        {
+          "path": "docs/intensive-2026-10-22/VERIFIED_STATUS.md",
+          "sha256": "d0e734643cb287533a8cb044a827e79f815b333514ea8a2d5d3e3c36f5687d37",
+          "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/329f304115c9bc5b6dd6ccc2d68d19bf455b5e6c/docs/intensive-2026-10-22/VERIFIED_STATUS.md"
+        }
+      ]
+    }
+  ],
+  "issues": [
+    {
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/issues/4",
+      "retrieved_html_sha256": "3c799b94f343c2a25b1b9014849903a32ba9e569ad4845ae4c23d773ca38ffd9"
+    },
+    {
+      "url": "https://github.com/bubth720/JARVIS-LLM/issues/3",
+      "retrieved_html_sha256": "d2cb108a20e1a7c467b744a6aa62e4408068621d470756e7312076c461baf2c3"
+    }
+  ]
+}

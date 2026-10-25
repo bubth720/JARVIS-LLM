@@ -1,0 +1,125 @@
+{
+  "format": "local-api-descriptor/1",
+  "version": "jarvis.llm.client/1",
+  "transport": "NONE",
+  "status": "PARTIAL_NON_NATIVE",
+  "GenerateRequest": {
+    "fields": [
+      "version",
+      "prompt",
+      "priority",
+      "profile",
+      "target"
+    ],
+    "prompt_contract": "jarvis.llm.p2/1.0",
+    "priority": [
+      "INTERACTIVE",
+      "BACKGROUND"
+    ],
+    "profile": [
+      "ECO",
+      "BALANCED",
+      "AUTO",
+      "FULL_POWER",
+      "TABLET_ECO"
+    ],
+    "target": [
+      "ANDROID_LOCAL",
+      "LINUX_LOCAL"
+    ],
+    "unknown_or_duplicate_fields": "REJECT",
+    "authorization": "host-owned; deny by default; references do not grant authority"
+  },
+  "correlation": [
+    "epoch",
+    "operationId",
+    "sessionId",
+    "correlationId",
+    "cancellationId",
+    "authorizationRef",
+    "leaseId",
+    "generation",
+    "requestSha256"
+  ],
+  "fingerprint": {
+    "algorithm": "SHA-256",
+    "encoding": "big-endian signed Int32 UTF-8 byte length followed by bytes; counts Int32; generation Int64; strict input UTF-8",
+    "order": [
+      "client version",
+      "P2 version",
+      "priority",
+      "profile",
+      "target",
+      "epoch",
+      "operationId",
+      "sessionId",
+      "correlationId",
+      "cancellationId",
+      "authorizationRef",
+      "leaseId",
+      "generation",
+      "system",
+      "history count + (role enum name,text)*",
+      "documents count + (reference,revision Int32,text)*",
+      "question",
+      "model enum name",
+      "modelSha256",
+      "contextTokens",
+      "outputTokens",
+      "inputBytes",
+      "remainingMillis"
+    ],
+    "authentication": false
+  },
+  "events": {
+    "types": [
+      "Ack",
+      "StreamChunk",
+      "Completed",
+      "Error"
+    ],
+    "origin": [
+      "FIXTURE",
+      "UNAVAILABLE"
+    ],
+    "sequence": [
+      0,
+      257
+    ],
+    "chunk_utf8_bytes": 4096,
+    "aggregate_output_utf8_bytes": 65536,
+    "max_events": 258,
+    "live_accepts": "UNAVAILABLE Error only",
+    "completion": "content-only, not native termination"
+  },
+  "Cancel": {
+    "fields": [
+      "version",
+      "reference"
+    ],
+    "result": "STOP_REQUESTED client projection only; no native completion inferred"
+  },
+  "NativeResourceState": {
+    "observation": "optional passive process-local snapshot",
+    "termination": "UNATTESTED",
+    "unload": "UNATTESTED",
+    "mayAdmitAnotherEngine": false
+  },
+  "TokenCountStatus": "UNSUPPORTED",
+  "exact_token_count": null,
+  "linux_backend": "NOT_IMPLEMENTED",
+  "full_power": "UNQUALIFIED; Android forbidden",
+  "Error": [
+    "UNAUTHORIZED",
+    "NATIVE_UNQUALIFIED",
+    "TOKENIZER_UNAVAILABLE",
+    "UNSUPPORTED_PROFILE",
+    "UNKNOWN_STATE"
+  ],
+  "limits": {
+    "P2": "unchanged P2Limits validation; context size is a request, not exact token usage",
+    "deadline": "host monotonic milliseconds; 1..90000 from P2; timeout/backward clock -> UNKNOWN",
+    "recovery": "no reset; requires separately qualified native recovery"
+  },
+  "not_a_shared_contract_amendment": true
+}

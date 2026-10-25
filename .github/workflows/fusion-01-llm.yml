@@ -1,0 +1,54 @@
+name: FUSION-01 LLM additive contract validation
+on:
+  push:
+    branches: ['feat/fusion-01-llm-integration']
+    paths-ignore: ['docs/fusion-01/REPORT.md', 'docs/fusion-01/evidence/**', 'docs/fusion-01/PR-DRAFT.md']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fusion-llm-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.head_ref == 'feat/fusion-01-llm-integration'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: { fetch-depth: 0 }
+      - name: Freeze existing runtime, models, catalogue, policy, JNI and wire contracts
+        run: |
+          python3 tools/check-fusion-01.py
+          python3 tools/check-recovery-contract.py
+          python3 tools/recovery-vectors.py
+          python3 docs/mission-003f-correction/reference/verify_vectors.py
+          node tools/test-apk-verifier.cjs
+      - run: bash tools/setup-cloud.sh
+      - name: Historical native tests without model or device
+        run: bash tools/cloud-env.sh bash tools/test-native.sh
+      - name: JVM, simulated Android, ARM64 and Lint
+        run: bash tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon --max-workers=2 --console=plain
+      - name: Actual APK signatures, permissions and alignment
+        run: |
+          bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
+          bash tools/cloud-env.sh python3 tools/check-fixtures.py
+      - name: Collect real test results (no native readiness claim)
+        if: always()
+        run: python3 tools/collect-fusion-01.py --output build/fusion-01/ci-results.json
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: fusion-01-llm-evidence
+          path: |
+            build/fusion-01/
+            build/native-tests/Testing/Temporary/LastTest.log
+            build/mission003f-apks.json
+            domain/build/test-results/test/
+            app/build/test-results/testDebugUnitTest/
+            app/build/reports/lint-results-debug.*
+            fixtures/p2-endpoint/build/test-results/testDebugUnitTest/
+            fixtures/p2-endpoint/build/reports/lint-results-debug.*
+            fixtures/p2-client/build/reports/lint-results-*.xml
+            docs/fusion-01/
