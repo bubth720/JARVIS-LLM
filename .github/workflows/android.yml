@@ -1,7 +1,7 @@
 name: Android prototype checks
 on:
   push:
-    branches-ignore: ['feat/fusion-01-llm-integration']
+    branches-ignore: ['feat/fusion-01-llm-integration', 'feat/fusion-02-llm-prequalification']
   pull_request:
   workflow_dispatch:
     inputs:
@@ -17,7 +17,7 @@ permissions:
 jobs:
   verify:
     # FUSION has a dedicated additive guard plus the same native/build/APK checks.
-    if: github.head_ref != 'feat/fusion-01-llm-integration' && github.ref_name != 'feat/fusion-01-llm-integration'
+    if: github.head_ref != 'feat/fusion-01-llm-integration' && github.ref_name != 'feat/fusion-01-llm-integration' && github.head_ref != 'feat/fusion-02-llm-prequalification' && github.ref_name != 'feat/fusion-02-llm-prequalification'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:

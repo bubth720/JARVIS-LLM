@@ -1,0 +1,141 @@
+{
+  "format": "jarvis.llm.future-measurement-template/1",
+  "status": "NOT_RUN",
+  "physical_qualification": "PENDING_SPECIFIC_AUTHORIZATION",
+  "device": {
+    "model": null,
+    "android": null,
+    "abi": null
+  },
+  "apk": {
+    "source_commit": null,
+    "sha256": null,
+    "public_certificate_sha256": null
+  },
+  "model": {
+    "public_name": null,
+    "gguf_sha256": null,
+    "license": null
+  },
+  "configuration": {
+    "profile": null,
+    "context_tokens": null,
+    "output_tokens": null,
+    "threads": null,
+    "batch": null,
+    "micro_batch": null
+  },
+  "conditions": {
+    "power_source": null,
+    "battery_percent": null,
+    "thermal_status": null,
+    "temperature_celsius": null
+  },
+  "admission": {
+    "result": null,
+    "reason_code": null,
+    "estimated_budget_bytes": null,
+    "system_reserve_bytes": null,
+    "available_bytes": null,
+    "margin_bytes": null
+  },
+  "phases": [
+    {
+      "name": "IDLE",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    },
+    {
+      "name": "LOADING",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    },
+    {
+      "name": "READY",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    },
+    {
+      "name": "GENERATING",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    },
+    {
+      "name": "STOP_REQUESTED",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    },
+    {
+      "name": "NATIVE_RETURN",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    },
+    {
+      "name": "UNLOADING",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    },
+    {
+      "name": "IDLE_AFTER",
+      "pss_bytes": null,
+      "rss_bytes": null,
+      "peak_rss_bytes": null,
+      "native_buffers_declared_bytes": null,
+      "available_bytes": null,
+      "measurement_method": null,
+      "sample_interval_ms": null
+    }
+  ],
+  "timing": {
+    "clock": "MONOTONIC_SAME_PROCESS",
+    "load_ms": null,
+    "first_token_ms": null,
+    "last_token_ms": null,
+    "native_return_ms": null,
+    "unload_ms": null,
+    "samples": 0,
+    "p95_ms": null
+  },
+  "native_proofs": {
+    "termination": "UNATTESTED",
+    "unload": "UNATTESTED",
+    "correlated_operation_and_lease_verified": false
+  },
+  "anomalies": [],
+  "conclusion": "INSUFFICIENT_DATA"
+}

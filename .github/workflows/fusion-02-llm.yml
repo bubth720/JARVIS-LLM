@@ -1,0 +1,61 @@
+name: FUSION-02 LLM test-only prequalification
+on:
+  push:
+    branches: ['feat/fusion-02-llm-prequalification']
+    paths-ignore: ['docs/fusion-02/REPORT.md', 'docs/fusion-02/VALIDATION.json', 'docs/fusion-02/evidence/**', 'docs/fusion-02/PR-DRAFT.md']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: fusion02-llm-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  validate:
+    if: github.event_name != 'pull_request' || github.head_ref == 'feat/fusion-02-llm-prequalification'
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with: { fetch-depth: 0 }
+      - name: Frozen production, client contract and recovery vectors
+        run: |
+          python3 tools/check-fusion-02.py
+          python3 tools/check-recovery-contract.py
+          python3 tools/recovery-vectors.py
+          python3 docs/mission-003f-correction/reference/verify_vectors.py
+          node tools/test-apk-verifier.cjs
+      - name: Offline native review, no patch applied
+        run: python3 tools/review-fusion-02-native.py
+      - name: Negative evidence validation tests
+        run: PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tools/tests/fusion02 -v > build/fusion-02/evidence-tests.log 2>&1
+      - run: bash tools/setup-cloud.sh
+      - name: Historical CTest, no model
+        run: bash tools/cloud-env.sh bash tools/test-native.sh
+      - name: Mark source inputs before forced fresh tests
+        run: python3 tools/fusion02_evidence.py start
+      - name: Fresh regression, ARM64 and Lint (no JNI activation)
+        run: bash tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --rerun-tasks --no-daemon --max-workers=2 --console=plain
+      - name: Verify fresh cases against the exact 285-case baseline
+        if: always()
+        run: python3 tools/fusion02_evidence.py finish
+      - name: Actual APK controls without installation
+        run: |
+          bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
+          bash tools/cloud-env.sh python3 tools/check-fixtures.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: fusion-02-llm-evidence
+          path: |
+            build/fusion-02/
+            build/native-tests/Testing/Temporary/LastTest.log
+            build/mission003f-apks.json
+            domain/build/fusion-02/
+            domain/build/test-results/test/
+            app/build/test-results/testDebugUnitTest/
+            app/build/reports/lint-results-debug.*
+            fixtures/p2-endpoint/build/test-results/testDebugUnitTest/
+            fixtures/p2-endpoint/build/reports/lint-results-debug.*
+            fixtures/p2-client/build/reports/lint-results-*.xml
+            docs/fusion-02/

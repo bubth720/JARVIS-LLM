@@ -1,0 +1,127 @@
+{
+  "format": "jarvis.llm.fusion-02.provenance/1",
+  "module": "LLM",
+  "mission": "FUSION-02",
+  "branch": "feat/fusion-02-llm-prequalification",
+  "base": "e0b781442b21034a251f6af450396faabc5f667d",
+  "observed_at": "2026-10-25T22:26:01.410798+00:00",
+  "references": [
+    {
+      "repository": "bubth720/JARVIS-LLM",
+      "ref": "refs/heads/design/003f-f3b-worker-connection",
+      "commit": "8f1c2f5a936d6c01874d7be6bb987f4459b83374",
+      "use": "BASE_OR_ANCESTRY"
+    },
+    {
+      "repository": "bubth720/JARVIS-LLM",
+      "ref": "refs/heads/feat/fusion-01-llm-integration",
+      "commit": "e0b781442b21034a251f6af450396faabc5f667d",
+      "use": "BASE_OR_ANCESTRY"
+    },
+    {
+      "repository": "bubth720/JARVIS-LLM",
+      "ref": "refs/heads/feat/llm-02-runtime",
+      "commit": "895a067ffc860d56a2dbb1ce22cb274096f8e3a2",
+      "use": "BASE_OR_ANCESTRY"
+    },
+    {
+      "repository": "bubth720/JARVIS-LLM",
+      "ref": "refs/heads/feat/llm-03-runtime",
+      "commit": "2efb3f7aa6205062ab71f570212019fd1d9885b6",
+      "use": "BASE_OR_ANCESTRY"
+    },
+    {
+      "repository": "bubth720/JARVIS-LLM",
+      "ref": "refs/heads/main",
+      "commit": "917e3351f9b525857b6aa019e98d07872d8f6e76",
+      "use": "BASE_OR_ANCESTRY"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "ref": "refs/heads/feat/fusion-01-integration-lock",
+      "commit": "3caa57d91ce0dba31043e7cb6373a5e2df8b9fa4",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-UNIFIED",
+      "ref": "refs/heads/main",
+      "commit": "e4435f4bd60c5fdc5595c411cc8cab9da7ef020b",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JAVIS-Local-v2",
+      "ref": "refs/heads/feat/fusion-01-core-integration",
+      "commit": "36761cea101b5f88b87cd4136dc075d28a1adb96",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-NEXUS",
+      "ref": "refs/heads/feat/fusion-01-nexus-integration",
+      "commit": "9d6928cd8651f83fa5091bdb474b33761d366412",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-NEXUS",
+      "ref": "refs/heads/feat/nex-06a-android-api24",
+      "commit": "374ea2e2fd640e78f2f5e12e60e75b493420e504",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-NEXUS",
+      "ref": "refs/heads/feat/nexus-final-01",
+      "commit": "d903bf04f497ab0dc7f40e9708ed057e4f24c6ee",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-SERVICES",
+      "ref": "refs/heads/feat/serv-04a-android-tool-port",
+      "commit": "f00091a639612b91eca1a301580c8f531249f1e3",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-SERVICES",
+      "ref": "refs/heads/feat/services-final-01",
+      "commit": "d16dd84f27881460ec9f02d2a54d9ddff23187dc",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-VOICE",
+      "ref": "refs/heads/feat/voice-final-01",
+      "commit": "fe57452fcb33f5b6870070f30ba6c5f1d349c4ba",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-INTERFACE",
+      "ref": "refs/heads/fix/athena-premium-default",
+      "commit": "1d0a89f3d92cba64122db08cc7b326239f85c08d",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    },
+    {
+      "repository": "bubth720/JARVIS-VOLUTION-",
+      "ref": "refs/heads/feat/evol-03-atelier-de-correctifs-isoles-e",
+      "commit": "c0180181804338d21f3bf9d4b537b709595902f7",
+      "use": "READ_ONLY_REFERENCE_NOT_COMPOSED"
+    }
+  ],
+  "runtime_dependency_added": false,
+  "native_patch_applied": false,
+  "global_android_go": false,
+  "sources": [
+    {
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/issues/5",
+      "retrieved_html_sha256": "0f649b6388efd4885da550c03a49d2ec2479eb8a573a8b906dede1935a7e5658"
+    },
+    {
+      "url": "https://github.com/bubth720/JARVIS-LLM/issues/4",
+      "retrieved_html_sha256": "9ff60d57f117b899bf8076ae3c6a87e5f6f7a841cce187aad98fc18f3e432b6b"
+    },
+    {
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/blob/3caa57d91ce0dba31043e7cb6373a5e2df8b9fa4/docs/fusion-01/REPORT.md",
+      "sha256": "e6b6ffa3d37eee5d0dfc30fd9fbe9e45e17d88de8a7bb005ce32788d6ba80cbf"
+    },
+    {
+      "url": "https://github.com/bubth720/JAVIS-Local-v2/blob/36761cea101b5f88b87cd4136dc075d28a1adb96/docs/fusion-01/REPORT.md",
+      "sha256": "11e6014038de3b580e7c0dde66d459c1f798dd697c8ab1c76eb63095c18a6573"
+    }
+  ]
+}
