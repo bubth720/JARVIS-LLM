@@ -1,0 +1,51 @@
+> Task :domain:checkKotlinGradlePluginConfigurationErrors SKIPPED
+> Task :domain:compileKotlin UP-TO-DATE
+> Task :domain:compileJava NO-SOURCE
+> Task :domain:processResources NO-SOURCE
+> Task :domain:classes UP-TO-DATE
+> Task :domain:jar UP-TO-DATE
+> Task :domain:processTestResources NO-SOURCE
+> Task :domain:compileTestKotlin
+> Task :domain:compileTestJava NO-SOURCE
+> Task :domain:testClasses UP-TO-DATE
+
+> Task :domain:test
+
+ClientQualificationTest > validSequenceAndQuotaCannotHideWrongOrigin PASSED
+
+ClientQualificationTest > barrierProvesChunkAfterStopCannotReappear PASSED
+
+ClientQualificationTest > simultaneousDuplicateChunksAppearOnlyOnce PASSED
+
+ClientQualificationTest > multibyteOutputBoundaryCountsUtf8RatherThanCharacters PASSED
+
+ClientQualificationTest > doubleAckIsIdempotentWithoutDuplicatingTextOrGrantingResources PASSED
+
+ClientQualificationTest > staleEventDoesNotUpdateClockOrCurrentOutput PASSED
+
+ClientQualificationTest > cancelledOutputAndLateErrorStayNonNative PASSED
+
+ClientQualificationTest > lateSuccessCannotReverseAnExplicitRefusal PASSED
+
+ClientQualificationTest > allCorrelationComponentsRejectStaleEventsAndCancellation PASSED
+
+ClientQualificationTest > liveMonitorCannotConsumeAQualifiedLookingFixture PASSED
+
+ClientQualificationTest > expiredDuplicateAckCannotExtendDeadline PASSED
+
+ClientQualificationTest > unknownRemainsStickyAfterLateAckChunkCompletionAndCancel PASSED
+
+ClientQualificationTest > fixtureWithoutModelOrPermissionCannotEmitAckOrText PASSED
+
+ClientQualificationTest > boundedAdversarialTraceExplorationNeverInventsNativeEvidence PASSED
+
+ClientQualificationTest > sameIdentifiersWithAlteredDigestCannotCancelCurrentRequest PASSED
+
+ClientQualificationTest > permissionRevocationRejectsEvenAnIdenticalRequestOnSecondSubmission PASSED
+
+ClientQualificationTest > concurrentCancellationIsIdempotentAndCannotReleaseAnything PASSED
+
+ClientQualificationTest > processRestartDoesNotCreateNativeUnloadEvidence PASSED
+
+BUILD SUCCESSFUL in 3s
+4 actionable tasks: 2 executed, 2 up-to-date

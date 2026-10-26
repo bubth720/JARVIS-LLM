@@ -1,0 +1,9 @@
+{
+  "format": "jarvis.llm.fusion-02.source-binding/1",
+  "tested_working_tree_parent": "e0b781442b21034a251f6af450396faabc5f667d",
+  "candidate_commit": "34491eee148cdd54db09a09175b3ca1742d8e24c",
+  "matching_source_files": 141,
+  "all_source_inputs_match_git_blobs": true,
+  "native_qualification": false,
+  "scope": "LOCAL_SOFTWARE_RESULTS; remote CI reported separately"
+}

@@ -254,7 +254,14 @@
     "failures": 0,
     "gguf_exercised": false
   },
-  "ci_fusion02": "PENDING_PUBLICATION",
+  "ci_fusion02": {
+    "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/40287437858",
+    "status": "SUCCESS",
+    "source_commit": "34491eee148cdd54db09a09175b3ca1742d8e24c",
+    "all_steps_success": true,
+    "artifact": "fusion-02-llm-evidence",
+    "raw_artifact_independently_downloaded": false
+  },
   "lint": [
     {
       "path": "app/build/reports/lint-results-debug.xml",
@@ -277,5 +284,6 @@
     "bytes": 12554698,
     "installed": false,
     "github_actions_apk": false
-  }
+  },
+  "published_code_commit": "34491eee148cdd54db09a09175b3ca1742d8e24c"
 }

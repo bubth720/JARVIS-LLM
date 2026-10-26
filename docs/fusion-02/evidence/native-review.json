@@ -1,0 +1,68 @@
+{
+  "format": "jarvis.llm.fusion-02.native-review/1",
+  "patch_sha256": "be4bcce5ec7066851a09e2e372edca562a45dad3a3a88e35b6a7d5792c07b374",
+  "dry_check_command": [
+    "git",
+    "apply",
+    "--check",
+    "docs/mission-003f-f3b/SENSITIVE.patch"
+  ],
+  "dry_check_exit": 0,
+  "preimages_match": true,
+  "files": [
+    {
+      "path": "app/src/main/cpp/bridge.cpp",
+      "beforeSha256": "471c1940652efdd359e3fb0b0198bf19276bf1117d63355dc6e569ef476f70db",
+      "afterSha256": "9014fdaebe02cac98c16e5f8144af026c858e612750c0078ca8bddb052b27584",
+      "observedSha256": "471c1940652efdd359e3fb0b0198bf19276bf1117d63355dc6e569ef476f70db",
+      "production_file_present": true
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/F3BackendObservation.kt",
+      "beforeSha256": null,
+      "afterSha256": "915542f0963371b80428e8a858924f295a6be912fa6d3daabc08078bf64dab7e",
+      "observedSha256": null,
+      "production_file_present": false
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/F3NativeApi.kt",
+      "beforeSha256": null,
+      "afterSha256": "571d5b87787029cd70b706149a95cc2742e9760ef41bd5560e03a716d42f023d",
+      "observedSha256": null,
+      "production_file_present": false
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/F3Trace.kt",
+      "beforeSha256": null,
+      "afterSha256": "550274320bababfda988b1b81bcccf1c1d52a7005bea61ed88b0cf3d8637ed9f",
+      "observedSha256": null,
+      "production_file_present": false
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt",
+      "beforeSha256": "ac0644ac25a36722e101d6db8571798a5dda892e650048483ac0338e02503a85",
+      "afterSha256": "dabf2df577bdc906e2c792446c5434d93b5339f517e9b0c49cb3c886ba50b831",
+      "observedSha256": "ac0644ac25a36722e101d6db8571798a5dda892e650048483ac0338e02503a85",
+      "production_file_present": true
+    },
+    {
+      "path": "domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt",
+      "beforeSha256": "78a9d0362c0ce5e3bcfc043a97d5f198fa2d470a01b952ee7dddab78cdc59bb1",
+      "afterSha256": "93e21d1a1e59b5fbe3cfbbf457fa1b4f0ea8d49c13eba45429a47c49934ead7e",
+      "observedSha256": "78a9d0362c0ce5e3bcfc043a97d5f198fa2d470a01b952ee7dddab78cdc59bb1",
+      "production_file_present": true
+    },
+    {
+      "path": "fixtures/p2-endpoint/src/main/java/fr/jarvis/fixture/llm/AndroidRuntime.kt",
+      "beforeSha256": "b3cbbae8d20304b6defe0d00fd028aaaf5a9046656c24a1cca1ca03c5c6edc62",
+      "afterSha256": "2dcb30ffaaa2d55ec33b1dc5437729c3667a4fccde1da0c8d407e5ddd16dbab4",
+      "observedSha256": "b3cbbae8d20304b6defe0d00fd028aaaf5a9046656c24a1cca1ca03c5c6edc62",
+      "production_file_present": true
+    }
+  ],
+  "patch_applied": false,
+  "native_generation_executed": false,
+  "review_status": "SPECIFIC_APPROVAL_REQUIRED",
+  "token_count": "UNSUPPORTED",
+  "admission_v2": "CLOSED"
+}

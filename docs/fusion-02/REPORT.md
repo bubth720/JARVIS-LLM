@@ -3,8 +3,8 @@
 **PARTIAL — GO logiciel L0/L1 ; JNI, tokenizer exact, CORE004D et matériel BLOCKED.**
 Dépôt `bubth720/JARVIS-LLM`, branche `feat/fusion-02-llm-prequalification`.
 Base explicite `e0b781442b21034a251f6af450396faabc5f667d` (FUSION-01).
-Le commit de code et le HEAD documentaire seront indiqués dans la clôture et sont
-vérifiables par `git log`. Aucun autre dépôt modifié, merge, force-push, installation,
+Code publié : `34491eee148cdd54db09a09175b3ca1742d8e24c`. Le HEAD documentaire
+est le commit contenant ce rapport, vérifiable par `git log`. Aucun autre dépôt modifié, merge, force-push, installation,
 migration, modèle téléchargé ou activation sensible.
 
 Missions lues intégralement : [LLM #4](https://github.com/bubth720/JARVIS-LLM/issues/4)
@@ -15,7 +15,7 @@ seule, pas un BOM global ni une composition des autres modules.
 ## Fonctions et corrections livrées
 
 1. **L0 préservation vérifiée.** Ancestry F3B→LLM-02→LLM-03→FUSION-01 vérifiée,
-   baseline285 cas rejouée avant tout ajout de test. Gel de296 fichiers de la base,
+   baseline 285 cas rejouée avant tout ajout de test. Gel de 296 fichiers de la base,
    plus un changement CI précisément autorisé par le vérificateur. Tous les fichiers
    de production, SafetyPolicy, catalogue SQLite, modèles/imports, clés/configurations,
    contrats et285 anciens tests restent identiques octet pour octet.
@@ -27,7 +27,7 @@ seule, pas un BOM global ni une composition des autres modules.
 3. **Fiabilité des preuves renforcée.** L'ancien collecteur contrôlait des minimums
    sans vérifier fraîcheur ni identité de chaque cas. Le nouvel outil exige un marqueur
    préalable, des sources inchangées, des XML postérieurs, l'accord résumés/cas réels,
-   zéro doublon/échec/saut et la présence des285 identités historiques exactes.11 tests
+   zéro doublon/échec/saut et la présence des 285 identités historiques exactes.11 tests
    Python négatifs couvrent ces refus. Les horodatages ne sont pas des signatures ;
    le runner reste de confiance. Aucune réécriture des anciennes preuves/outils.
 4. **L2 revue native exploitable.** Sept préimages contrôlées et `git apply --check`
@@ -66,10 +66,10 @@ de configuration nécessaire, aucun service permanent. TLS/checksums conservés.
 | Contrôles APK |Signature, permissions, ARM64, ELF/ZIP16Kio et séparation des fixtures PASS |
 | Contrats /1, /2, vecteurs et vérificateur APK Node |PASS ;22 contrôles de référence, pas une preuve Android/JNI |
 | Gel et revue F3B |PASS ;296 fichiers inchangés, sept préimages conformes, patch non appliqué |
-| CI FUSION-02 distante |À relever après publication ; aucun succès anticipé |
+| CI FUSION-02 distante |[Run40287437858](https://github.com/bubth720/JARVIS-LLM/actions/runs/40287437858) **SUCCESS** sur34491ee, toutes étapes réussies |
 
-Les303 cas incluent les285 anciens : ne pas additionner baseline/passe finale.
-Les11 tests Python et CTest sont séparés, pas comptés comme nouveaux JUnit Android.
+Les 303 cas incluent les 285 anciens : ne pas additionner baseline/passe finale.
+Les 11 tests Python et CTest sont séparés, pas comptés comme nouveaux JUnit Android.
 Tous les tests Gradle de la passe finale ont été forcés (`--rerun-tasks`) ; aucun
 résultat UP-TO-DATE n'est relabellisé fraîchement exécuté. Les285 preuves du parent
 ont aussi été réellement rejouées dans cette mission. Pas de test échoué sur le
@@ -147,3 +147,52 @@ PSS, batterie, thermique, threads, contexte ou annulation native.
 spécifique d'une mission native minimale et de ses tests. Les qualifications
 Android29+/GGUF et physiques demandent leurs accords distincts. Le pilote Android
 CORE/NEXUS/SERVICES peut progresser sans LLM ; ce dépôt ne lance pas CORE004D.
+
+## Publication et lecture des preuves
+
+[Branche publiée](https://github.com/bubth720/JARVIS-LLM/tree/feat/fusion-02-llm-prequalification),
+code34491ee, sans force-push. [Workflow FUSION-02](https://github.com/bubth720/JARVIS-LLM/actions/runs/40287437858)
+entièrement réussi sur ce SHA, statut recontrôlé après achèvement. Les 141 fichiers source recensés
+pendant les tests locaux correspondent exactement aux blobs Git34491ee ;
+[SOURCE-BINDING.json](evidence/SOURCE-BINDING.json). Le run local est antérieur au
+commit et conserve son parent e0b7814 +les empreintes des sources de travail ; ce
+binding ne prétend pas être une nouvelle exécution au SHA publié.
+
+Le test `processRestartDoesNotCreateNativeUnloadEvidence` remplace un **moniteur en
+mémoire** avec une autre epoch : il ne tue ni ne relance un processus Android.
+Les barrières de concurrence sont JVM ; aucun effet natif ou OS n'en est inféré.
+Le contrôle de fraîcheur et les archives brutes rendent explicites ces périmètres.
+
+Les mises à jour du seul rapport/VALIDATION/preuves sont exclues du déclenchement
+push CI ; tout changement de code, contrat, protocole, workflow ou outil déclenche
+la validation. Le commit documentaire de clôture ne change aucun fichier testé.
+
+PR non créée : vérification `gh pr list --repo bubth720/JARVIS-LLM --head
+feat/fusion-02-llm-prequalification --json url,isDraft` refusée par GraphQL
+`Post https://api.github.com/graphql: Forbidden`. Aucun contournement ni numéro
+inventé. [Texte préparé](PR-DRAFT.md),
+[comparaison pour créer le brouillon](https://github.com/bubth720/JARVIS-LLM/compare/feat%2Ffusion-01-llm-integration...feat%2Ffusion-02-llm-prequalification).
+Base proposée FUSION-01 pour isoler cette tranche des missions non fusionnées.
+Aucune PR non brouillon ou fusion n'est autorisée.
+
+## Clôture — validation distante constatée
+
+[CI40287437858](https://github.com/bubth720/JARVIS-LLM/actions/runs/40287437858),
+**SUCCESS** au commit `34491eee148cdd54db09a09175b3ca1742d8e24c`,
+26octobre2026,07:42:32→07:51:05UTC. Gel production/client, revue F3B sèche,
+11tests Python, setup, CTest, tests forcés ARM64/Lint, fraîcheur285cas historiques,
+contrôles APK et upload sont tous SUCCESS. [Reçu CI](evidence/CI.json).
+
+L'artefact `fusion-02-llm-evidence` est publié sur cette exécution. Son upload et
+le statut des étapes sont observés sur GitHub ; le ZIP/les logs individuels distants
+ne sont pas téléchargés indépendamment, l'accès API étant refusé. Les303 cas
+locaux sont vérifiés et archivés individuellement ; aucun compte issu d'un artefact
+non relu n'est inventé. La collecte fraîche du runner et tous ses contrôles passent.
+
+Le commit documentaire de clôture publie seulement REPORT, VALIDATION et evidence ;
+aucun code ni protocole testé ne change après34491ee. Aucune fusion ou installation.
+Main reste `917e3351f9b525857b6aa019e98d07872d8f6e76` sous réserve de vérification
+remote finale. **L0/L1 logiciel livré, dossier L2/L3/L4 livré ; activation native,
+matériel et intégration réelle restent BLOCKED.** Prochaine action : revue du diff
+F3B exact et autorisation distincte d'une mission native limitée, jamais CORE004D
+sur la seule base de ces preuves.

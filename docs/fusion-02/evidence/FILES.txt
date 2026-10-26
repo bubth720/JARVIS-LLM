@@ -1,0 +1,16 @@
+M	.github/workflows/android.yml
+A	.github/workflows/fusion-02-llm.yml
+A	docs/fusion-02/CORE-CONSUMER.md
+A	docs/fusion-02/MEASUREMENT-TEMPLATE.json
+A	docs/fusion-02/NATIVE-REVIEW.md
+A	docs/fusion-02/PR-DRAFT.md
+A	docs/fusion-02/PROVENANCE.json
+A	docs/fusion-02/QUALIFICATION-PROTOCOL.md
+A	docs/fusion-02/REPORT.md
+A	docs/fusion-02/STATE-MACHINE.md
+A	docs/fusion-02/VALIDATION.json
+A	domain/src/test/kotlin/fr/jarvis/domain/client/qualification/ClientQualificationTest.kt
+A	tools/check-fusion-02.py
+A	tools/fusion02_evidence.py
+A	tools/review-fusion-02-native.py
+A	tools/tests/fusion02/test_evidence.py

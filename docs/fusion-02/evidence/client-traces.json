@@ -1,0 +1,1 @@
+{"format":"jarvis.llm.client-fixture-traces/1","origin":"TEST_ONLY","traces":4096,"steps_per_trace":4,"native_ready":false,"physical_proof":false,"states_reached":["CONTENT_DONE","REFUSED","STOP_REQUESTED","STREAMING","UNKNOWN","WAITING"]}

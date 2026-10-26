@@ -1,0 +1,73 @@
+{
+  "observed_at": "2026-10-25T22:19:11.871629+00:00",
+  "runs": [
+    {
+      "repo": "JARVIS-LLM",
+      "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/40214822563",
+      "labels": [
+        "completed successfully: ",
+        "completed successfully: ",
+        "completed successfully: ",
+        "completed successfully: "
+      ],
+      "jobs": [
+        "/JARVIS-LLM/actions/runs/40214822563/job/121233565167"
+      ]
+    },
+    {
+      "repo": "JARVIS-UNIFIED",
+      "url": "https://github.com/bubth720/JARVIS-UNIFIED/actions/runs/40214722427",
+      "labels": [
+        "failed: ",
+        "failed: ",
+        "failed: "
+      ],
+      "jobs": []
+    },
+    {
+      "repo": "JAVIS-Local-v2",
+      "url": "https://github.com/bubth720/JAVIS-Local-v2/actions/runs/40215604539",
+      "labels": [
+        "completed successfully: ",
+        "completed successfully: ",
+        "completed successfully: ",
+        "completed successfully: "
+      ],
+      "jobs": [
+        "/JAVIS-Local-v2/actions/runs/40215604539/job/121235951011"
+      ]
+    },
+    {
+      "repo": "JARVIS-NEXUS",
+      "url": "https://github.com/bubth720/JARVIS-NEXUS/actions/runs/40115049468",
+      "labels": [
+        "failed: ",
+        "failed: ",
+        "failed: ",
+        "completed successfully: ",
+        "failed: "
+      ],
+      "jobs": [
+        "/JARVIS-NEXUS/actions/runs/40115049468/job/120934494420",
+        "/JARVIS-NEXUS/actions/runs/40115049468/job/120934494656"
+      ]
+    },
+    {
+      "repo": "JARVIS-SERVICES",
+      "url": "https://github.com/bubth720/JARVIS-SERVICES/actions/runs/40115305244",
+      "labels": [
+        "failed: ",
+        "failed: ",
+        "failed: ",
+        "completed successfully: ",
+        "failed: ",
+        "completed successfully: "
+      ],
+      "jobs": [
+        "/JARVIS-SERVICES/actions/runs/40115305244/job/120935248386",
+        "/JARVIS-SERVICES/actions/runs/40115305244/job/120935248589",
+        "/JARVIS-SERVICES/actions/runs/40115305244/job/120935248672"
+      ]
+    }
+  ]
+}

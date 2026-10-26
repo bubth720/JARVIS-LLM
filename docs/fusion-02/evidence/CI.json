@@ -1,0 +1,99 @@
+{
+  "url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/40287437858/job/121454326787",
+  "observed_at": "2026-10-26T07:52:12.403886+00:00",
+  "source_commit": "34491eee148cdd54db09a09175b3ca1742d8e24c",
+  "steps": [
+    {
+      "name": "Set up job",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:42:32Z",
+      "completed-at": "2026-10-26T07:42:33Z"
+    },
+    {
+      "name": "Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:42:33Z",
+      "completed-at": "2026-10-26T07:42:34Z"
+    },
+    {
+      "name": "Frozen production, client contract and recovery vectors",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:42:34Z",
+      "completed-at": "2026-10-26T07:42:35Z"
+    },
+    {
+      "name": "Offline native review, no patch applied",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:42:35Z",
+      "completed-at": "2026-10-26T07:42:35Z"
+    },
+    {
+      "name": "Negative evidence validation tests",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:42:35Z",
+      "completed-at": "2026-10-26T07:42:35Z"
+    },
+    {
+      "name": "Run bash tools/setup-cloud.sh",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:42:35Z",
+      "completed-at": "2026-10-26T07:43:10Z"
+    },
+    {
+      "name": "Historical CTest, no model",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:43:10Z",
+      "completed-at": "2026-10-26T07:44:49Z"
+    },
+    {
+      "name": "Mark source inputs before forced fresh tests",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:44:49Z",
+      "completed-at": "2026-10-26T07:44:49Z"
+    },
+    {
+      "name": "Fresh regression, ARM64 and Lint (no JNI activation)",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:44:49Z",
+      "completed-at": "2026-10-26T07:51:01Z"
+    },
+    {
+      "name": "Verify fresh cases against the exact 285-case baseline",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:51:01Z",
+      "completed-at": "2026-10-26T07:51:01Z"
+    },
+    {
+      "name": "Actual APK controls without installation",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:51:01Z",
+      "completed-at": "2026-10-26T07:51:02Z"
+    },
+    {
+      "name": "Run actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:51:02Z",
+      "completed-at": "2026-10-26T07:51:04Z"
+    },
+    {
+      "name": "Post Run actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:51:04Z",
+      "completed-at": "2026-10-26T07:51:05Z"
+    },
+    {
+      "name": "Complete job",
+      "conclusion": "success",
+      "started-at": "2026-10-26T07:51:05Z",
+      "completed-at": "2026-10-26T07:51:05Z"
+    }
+  ],
+  "run_url": "https://github.com/bubth720/JARVIS-LLM/actions/runs/40287437858",
+  "status": "SUCCESS",
+  "source_commit_seen_in_run_html": true,
+  "artifact_name": "fusion-02-llm-evidence",
+  "artifact_uploaded": true,
+  "artifact_independently_downloaded": false,
+  "native_qualification": false,
+  "physical_qualification": false
+}
