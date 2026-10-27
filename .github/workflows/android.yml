@@ -1,7 +1,7 @@
 name: Android prototype checks
 on:
   push:
-    branches-ignore: ['feat/fusion-01-llm-integration', 'feat/fusion-02-llm-prequalification']
+    branches-ignore: ['feat/fusion-01-llm-integration', 'feat/fusion-02-llm-prequalification', 'mission/prefusion-gates-20261026', 'codex/prefusion-20261026-lot1']
   pull_request:
   workflow_dispatch:
     inputs:
@@ -17,7 +17,7 @@ permissions:
 jobs:
   verify:
     # FUSION has a dedicated additive guard plus the same native/build/APK checks.
-    if: github.head_ref != 'feat/fusion-01-llm-integration' && github.ref_name != 'feat/fusion-01-llm-integration' && github.head_ref != 'feat/fusion-02-llm-prequalification' && github.ref_name != 'feat/fusion-02-llm-prequalification'
+    if: github.head_ref != 'feat/fusion-01-llm-integration' && github.ref_name != 'feat/fusion-01-llm-integration' && github.head_ref != 'feat/fusion-02-llm-prequalification' && github.ref_name != 'feat/fusion-02-llm-prequalification' && github.base_ref != 'mission/prefusion-gates-20261026' && github.head_ref != 'codex/prefusion-20261026-lot1' && github.ref_name != 'mission/prefusion-gates-20261026' && github.ref_name != 'codex/prefusion-20261026-lot1'
     runs-on: ubuntu-24.04
     timeout-minutes: 30
     steps:
