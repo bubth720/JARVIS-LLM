@@ -55,6 +55,17 @@ class StreamingCandidateTest {
         val k = key(); val q = ReviewStreamQueue.fixture(k); q.offer(NativeTokenEvent(k, 0, EventType.ACK))
         q.offer(NativeTokenEvent(k, 1, EventType.COMPLETED)); assertEquals(Offer.TERMINAL, q.offer(event(k, 2)))
     }
+    @Test fun stopAfterProducerTerminalStillDiscardsUnrenderedText() {
+        for (type in listOf(EventType.COMPLETED, EventType.CANCELLED, EventType.ERROR)) {
+            val k = key(); val q = ReviewStreamQueue.fixture(k)
+            q.offer(NativeTokenEvent(k, 0, EventType.ACK)); q.offer(event(k, 1))
+            assertEquals(Offer.ACCEPTED, q.offer(NativeTokenEvent(k, 2, type)))
+            assertTrue(q.stop(k)); assertNull(q.poll()); assertEquals(0, q.pendingBytes())
+            assertEquals(0, q.pendingCount()); assertEquals(Offer.TERMINAL, q.offer(event(k, 3)))
+            assertEquals(Status.UNKNOWN, q.nativeDrain); assertEquals(Status.UNKNOWN, q.nativeUnload)
+            assertFalse(q.mayAdmitAnotherEngine)
+        }
+    }
     @Test fun processDeathIsUnknown() {
         val k = key(); val q = ReviewStreamQueue.fixture(k); q.processDied()
         assertTrue(q.isUnknown()); assertEquals(Offer.TERMINAL, q.offer(NativeTokenEvent(k, 0, EventType.ACK)))

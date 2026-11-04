@@ -1,14 +1,14 @@
 {
   "schema": "jarvis.perf02.software-evidence/1",
-  "source_commit": "1b62a5c50eb979d82ef8eb0b488ab38c6fe462ce",
+  "source_commit": "52fed7d992cf42c991e6703c53b9c59472a36045",
   "fresh_marker_verified": false,
-  "source_tree": "9ca2891928df37963d0f83c5550b94b0d8ae1aae",
+  "source_tree": "d25291f17e82d00d386745ff7d4c83d0bf8094ab",
   "worktree_dirty": true,
   "suites": {
     "domain": {
       "baseline": 145,
-      "candidate": 189,
-      "new": 44,
+      "candidate": 190,
+      "new": 45,
       "failures": 0,
       "errors": 0,
       "skipped": 0,
@@ -171,6 +171,10 @@
         ],
         [
           "fr.jarvis.perf.StreamingCandidateTest",
+          "stopAfterProducerTerminalStillDiscardsUnrenderedText"
+        ],
+        [
+          "fr.jarvis.perf.StreamingCandidateTest",
           "stopClearsPendingTextWithoutInventingDrain"
         ],
         [
@@ -255,14 +259,14 @@
     "perf02/evidence.py": "b75fcc38e50092fdcb65c7a49f74b1325092ac561a6591ddf79b735faa4f7a63",
     "perf02/qualification.init.gradle": "ca315a5e73472b8c4a3211fe60186703f2aa6284196e27a84b44deb36bbb1d15",
     "perf02/src/fr/jarvis/perf/LatencyTrace.kt": "448cd7ca0302d6739cb68ee6b47a39f5b5ccf29882658138aed3f89e4eb876ed",
-    "perf02/src/fr/jarvis/perf/StreamingCandidate.kt": "b4f5f578564b3d2662b299a324e35c831aaeba344daf76f6d89e0e1d42532602",
+    "perf02/src/fr/jarvis/perf/StreamingCandidate.kt": "d678e61186d694681294fae98c173446bd54162eb79aa6358f67e313aa40808e",
     "perf02/src/fr/jarvis/perf/TraceExport.kt": "5132243b354500c2bc61c9f1576e0c25106a2d2539e3902a0a50b0dd5140643e",
     "perf02/test_benchmark.py": "06a130093b70b666e02ba5e06a27f399ddfc3522e8136e4d2396c343008d1142",
     "perf02/test_evidence.py": "661faceb849ac313c06b0beecf8002a6da83036fe7eac0fc9d45ec2ebbe9b5c9",
     "perf02/test_preservation.py": "e726134dd2aac2f07dc5247149c4f2fc8c1b404d1c945b2b2f53ebe2cd6903ed",
     "perf02/tests/fr/jarvis/perf/LatencyTraceTest.kt": "a8722597b632d79a18f09f38296c8062af08d8e72ec61ee25bb89c543debfcbc",
     "perf02/tests/fr/jarvis/perf/ObserverOverheadTest.kt": "310b2f6fc48e2a814a155c562094b864cef14b557018f998e3cedc1854e8eeee",
-    "perf02/tests/fr/jarvis/perf/StreamingCandidateTest.kt": "e2df599fafe10bb0d065113e68fe0188eebcb765b28e9d3bb30a5407ea3a5194",
+    "perf02/tests/fr/jarvis/perf/StreamingCandidateTest.kt": "7c0cab63b60920aa340d4e49e12fcc9db8bf2bcceceff2a0f1092cb3ee5ec9c5",
     "perf02/tests/fr/jarvis/perf/TraceExportTest.kt": "a4ebc4a8dcb22533244c25a42123fad99fdf982ee0ea7001175d2a93f9bcdd1f",
     ".github/workflows/perf02.yml": "7dd68c8d44489f1b91ec875636eee12231f3cf82ecdf7c37c10e8e31f19d7c48"
   },
@@ -278,30 +282,30 @@
         "duplicate_marks_per_request": 16,
         "baseline_no_observer": {
           "n": 40,
-          "p50_ns": 74,
-          "p95_ns": 150,
-          "max_ns": 98227
+          "p50_ns": 82,
+          "p95_ns": 287,
+          "max_ns": 310
         },
         "candidate_observer": {
           "n": 40,
-          "p50_ns": 685,
-          "p95_ns": 1519,
-          "max_ns": 14164
+          "p50_ns": 1363,
+          "p95_ns": 3099,
+          "max_ns": 3155
         }
       },
       {
         "duplicate_marks_per_request": 128,
         "baseline_no_observer": {
           "n": 40,
-          "p50_ns": 174,
-          "p95_ns": 480,
-          "max_ns": 674
+          "p50_ns": 200,
+          "p95_ns": 495,
+          "max_ns": 2525
         },
         "candidate_observer": {
           "n": 40,
-          "p50_ns": 1507,
-          "p95_ns": 2587,
-          "max_ns": 42485
+          "p50_ns": 1725,
+          "p95_ns": 3056,
+          "max_ns": 3351
         }
       }
     ]
@@ -325,7 +329,7 @@
       "real_gguf": "NOT_RUN"
     },
     "baseline_gradle": "PASS 303 tests + ARM64 assemblies + app/endpoint/client lint",
-    "candidate_gradle": "PASS 356 tests + app/endpoint lint; production APK is unchanged baseline build, inspected separately",
+    "candidate_gradle": "PASS 357 tests (domain190/app49/endpoint118); final domain rerun after Stop-after-terminal correction. App/endpoint lint and production APK inspections unchanged.",
     "inherited_guard": {
       "schema": "jarvis.perf02.inherited-guard-scope/1",
       "guard": "tools/check-preservation-003e.py",
@@ -336,6 +340,7 @@
       "candidate_last_line": "Protected baseline drift: app/src/main/AndroidManifest.xml",
       "guard_unchanged": true,
       "ci_route_changed": false
-    }
+    },
+    "local_launch_retry": "Initial final-domain launch blocked by sandbox local socket permission before any tests; rerun with network capability PASS."
   }
 }

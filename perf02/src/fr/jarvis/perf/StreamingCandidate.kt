@@ -64,7 +64,8 @@ class ReviewStreamQueue private constructor(private val expected: TraceKey, priv
     }
     /** Stop invalidates queued display content, not native work, cleanup, ownership or a lease. */
     @Synchronized fun stop(key: TraceKey): Boolean {
-        if (key != expected || stopped || terminal || unknown) return false
+        // Producer completion does not mean the consumer rendered the queued text.
+        if (key != expected || stopped || unknown) return false
         stopped = true; queue.clear(); pending = 0; last = null; return true
     }
     @Synchronized fun processDied() { unknown = true; queue.clear(); pending = 0; last = null }

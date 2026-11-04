@@ -17,18 +17,18 @@ Les sources, contrats et historiques #6/#8 ont été examinés : `LlamaBackend`,
 | `measureFixtureP2` puis génération refont formatage/tokenization ; boucle native alloue des pièces | Candidats à profilage et réutilisation bornée, sans preuve de gain ici. Aucun patch natif appliqué, aucune réutilisation KV/prompt non validée. |
 | Autorité CORE et transport live non raccordés ; fixtures synthétiques | CORE_ACCEPT UNSUPPORTED ; ACK/statut/écran prêt ne sont jamais du texte modèle. Aucun changement CORE/INTERFACE. |
 
-Les corrections isolées concernent les nouveaux instruments : première émission conservée, gestion des erreurs d’horloge sans casser stop/le délégué, refus des identités périmées et du rendu tardif, bornes mémoire, doublons et UTF-8 fragmenté. Aucune accélération en production n’est revendiquée. Modèle, qualité, contexte, threads, idle unload et protections sont inchangés.
+La file autorise aussi Stop après un terminal producteur déjà en attente : elle supprime le texte non rendu pour succès, annulation et erreur, sans fabriquer un drain/unload. Test ajouté et exécuté. Les corrections isolées concernent les nouveaux instruments : première émission conservée, gestion des erreurs d’horloge sans casser stop/le délégué, refus des identités périmées et du rendu tardif, bornes mémoire, doublons et UTF-8 fragmenté. Aucune accélération en production n’est revendiquée. Modèle, qualité, contexte, threads, idle unload et protections sont inchangés.
 
 ## Mesures et tests locaux du 4 novembre 2026
 
-[Données brutes locales](LOCAL-RESULTS.json) : SHA256 de chaque source testée, identités des nouveaux tests, APK et limites de provenance. Baseline et variante exécutées dans le même workspace/hôte, même JDK/SDK/NDK vérifiés et source llama épinglée ; aucune mesure génération avant/après disponible. La baseline de code runtime est intacte. Les ajouts étaient présents mais non compilés pendant le build baseline. Ce relevé local est un **worktree**, sans marqueur frais de commit : il ne prétend pas être une attestation de build propre.
+[Données brutes locales](LOCAL-RESULTS.json) : SHA256 de chaque source testée, identités des nouveaux tests, APK et limites de provenance. Baseline et variante exécutées dans le même workspace/hôte, même JDK/SDK/NDK vérifiés et source llama épinglée ; aucune mesure génération avant/après disponible. La baseline de code runtime est intacte. Les ajouts étaient présents mais non compilés pendant le build baseline. Le dernier rerun domain inclut la correction Stop après terminal, app/endpoint sont conservés de leurs runs précédents. Une première tentative Gradle a été bloquée avant les tests par les sockets du sandbox ; le rerun autorisant les sockets a réussi. Ce relevé local est un **worktree**, sans marqueur frais de commit : il ne prétend pas être une attestation de build propre.
 
 | Vérification | Référence | Variante | Résultat |
 |---|---:|---:|---|
-| JVM domain | 145 | 189 | PASS, +44 |
+| JVM domain | 145 | 190 | PASS, +45 |
 | JVM app | 40 | 49 | PASS, +9 |
 | JVM endpoint | 118 | 118 | PASS |
-| Total JVM | 303 | 356 | 0 échec, erreur ou skip ; tous les cas historiques conservés |
+| Total JVM | 303 | 357 | 0 échec, erreur ou skip ; tous les cas historiques conservés |
 | Python PERF | — | 34 | PASS |
 | Python historique m50/prefusion/fusion02 | 38 | 38 | PASS |
 | CTest native_safety hôte | — | 1 | PASS ; aucun GGUF/JNI réel |
@@ -42,8 +42,8 @@ Microbenchmark **JVM hôte du collecteur seulement**, horloge System.nanoTime, J
 
 | Marqueurs doublons/cycle | Contrôle p50 / p95 / max | Collecteur p50 / p95 / max |
 |---|---|---|
-| 16 | 74 / 150 / 98 227 | 685 / 1 519 / 14 164 |
-| 128 | 174 / 480 / 674 | 1 507 / 2 587 / 42 485 |
+| 16 | 82 / 287 / 310 | 1 363 / 3 099 / 3 155 |
+| 128 | 200 / 495 / 2 525 | 1 725 / 3 056 / 3 351 |
 
 Le contrôle est une boucle sans observateur, pas un moteur LLM baseline. JIT, bruit et outliers interdisent toute extrapolation Android ou promesse de gain TTFT. Ce test mesure un coût d’instrumentation, pas une accélération.
 
