@@ -1,0 +1,390 @@
+{
+  "schema": "jarvis.perf02.measurement-template/1",
+  "reference_commit": "1b62a5c50eb979d82ef8eb0b488ab38c6fe462ce",
+  "branch": "codex/llm-perf-ttft-3s",
+  "purpose": "TEMPLATE_ONLY_NO_GENERATION",
+  "real_model": "NOT_RUN",
+  "physical_android": "NOT_RUN",
+  "jni_streaming": "NOT_APPLIED",
+  "sla_lt_3s": "NON_QUALIFIE",
+  "model_sha256": null,
+  "environment_sha256": null,
+  "config_sha256": null,
+  "corpus_sha256": null,
+  "minimum_comparable_attempts_per_cell": 20,
+  "quantile_method": "nearest_rank",
+  "cases": [
+    {
+      "profile": "MOBILE_ECO",
+      "residency": "COLD_PROCESS",
+      "output_cap": 8,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "MOBILE_ECO",
+      "residency": "COLD_PROCESS",
+      "output_cap": 24,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "MOBILE_ECO",
+      "residency": "COLD_MODEL",
+      "output_cap": 8,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "MOBILE_ECO",
+      "residency": "COLD_MODEL",
+      "output_cap": 24,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "MOBILE_ECO",
+      "residency": "WARM_VERIFIED",
+      "output_cap": 8,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "MOBILE_ECO",
+      "residency": "WARM_VERIFIED",
+      "output_cap": 24,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "EQUILIBRE",
+      "residency": "COLD_PROCESS",
+      "output_cap": 8,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "EQUILIBRE",
+      "residency": "COLD_PROCESS",
+      "output_cap": 24,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "EQUILIBRE",
+      "residency": "COLD_MODEL",
+      "output_cap": 8,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "EQUILIBRE",
+      "residency": "COLD_MODEL",
+      "output_cap": 24,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "EQUILIBRE",
+      "residency": "WARM_VERIFIED",
+      "output_cap": 8,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    },
+    {
+      "profile": "EQUILIBRE",
+      "residency": "WARM_VERIFIED",
+      "output_cap": 24,
+      "baseline": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "candidate": {
+        "status": "NOT_RUN",
+        "n": 0,
+        "p50_ms": null,
+        "p95_ms": null,
+        "max_ms": null
+      },
+      "native_first_token": "UNSUPPORTED",
+      "core_accept": "UNSUPPORTED",
+      "input_tokens": "UNKNOWN",
+      "output_tokens": "UNKNOWN",
+      "rss_bytes": null,
+      "pss_bytes": null,
+      "thermal_status": null,
+      "battery_percent": null,
+      "energy_uj": null,
+      "stop_return_ms": null,
+      "native_drain": "UNKNOWN",
+      "native_unload": "UNKNOWN"
+    }
+  ]
+}

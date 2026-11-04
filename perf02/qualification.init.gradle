@@ -1,0 +1,10 @@
+// PERF-02 remains absent from every production/main source set and APK.
+apply from: new File(gradle.startParameter.currentDir, 'docs/mission-003f-f3b/candidate.init.gradle')
+gradle.projectsEvaluated {
+    def root = gradle.rootProject
+    def domain = root.project(':domain')
+    domain.kotlin.sourceSets.getByName('test').kotlin.srcDirs(new File(root.rootDir, 'perf02/src'), new File(root.rootDir, 'perf02/tests'))
+    def app = root.project(':app')
+    app.android.sourceSets.getByName('test').java.srcDirs(new File(root.rootDir, 'perf02/src'),
+        new File(root.rootDir, 'perf02/app'), new File(root.rootDir, 'perf02/app-tests'))
+}
