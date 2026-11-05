@@ -1,0 +1,5 @@
+// Review-only JVM project. No candidate source enters :app or any APK.
+settingsEvaluated { settings ->
+    settings.include(':perf03-review')
+    settings.project(':perf03-review').projectDir = new File(settings.settingsDir, 'perf03/kotlin-review')
+}
