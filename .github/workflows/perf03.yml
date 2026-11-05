@@ -70,8 +70,15 @@ jobs:
           set -euo pipefail
           baseline="$RUNNER_TEMP/perf03-baseline"
           git worktree add --detach "$baseline" 09e278b54b8be58a3d665d2d91de10f8869e40bb
-          ln -s "$GITHUB_WORKSPACE/.tools" "$baseline/.tools"
-          ln -s "$GITHUB_WORKSPACE/.deps" "$baseline/.deps"
+          python3 - "$GITHUB_WORKSPACE" "$baseline" <<'PY'
+          from pathlib import Path
+          import sys
+          source, target = map(Path, sys.argv[1:])
+          for dirname in ('.tools', '.deps'):
+              (target/dirname).mkdir()
+              for child in (source/dirname).iterdir():
+                  (target/dirname/child.name).symlink_to(child, target_is_directory=child.is_dir())
+          PY
           python3 perf03/evidence.py inherited --root "$baseline" --lane baseline
           python3 perf03/evidence.py start --root "$baseline" --lane baseline
           (

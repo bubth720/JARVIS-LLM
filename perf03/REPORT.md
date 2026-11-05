@@ -40,6 +40,8 @@ Les [données locales et empreintes des sources testées](LOCAL-RESULTS.json) so
 
 Le garde historique reste **FAIL** avec `Protected baseline drift: app/src/main/AndroidManifest.xml`. Ce résultat existe déjà à la référence et reste conservé séparément. Une CI PERF-03A verte ne signifie pas que toutes les CI historiques sont vertes. Aucun garde n'est corrigé ou affaibli dans cette mission.
 
+Premier run de publication : [42121145771](https://github.com/bubth720/JARVIS-LLM/actions/runs/42121145771), **FAIL** avant le build baseline. Les 33 tests Kotlin de revue, la syntaxe C++ candidate et ASan/UBSan/LSan des helpers ont réussi ; le marqueur a refusé à raison un worktree rendu dirty par deux symlinks d'outillage. Le correctif ne modifie que la disposition du banc et sa documentation, sans affaiblir le contrôle clean. L'[artefact du premier échec](https://github.com/bubth720/JARVIS-LLM/actions/runs/42121145771/artifacts/13459591223) est conservé ; son ZIP et les 53 empreintes internes ont été vérifiés et sauvegardés localement. Le nouveau run du commit correctif doit être lu séparément. Voir [diagnostic et correction](CI-EVIDENCE.md).
+
 ## Performance et risques
 
 | Mesure de génération réelle, caps 8/24, tous profils/états froid/chaud | Statut | Valeur |
