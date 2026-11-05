@@ -1,0 +1,832 @@
+diff --git a/app/src/main/cpp/bridge.cpp b/app/src/main/cpp/bridge.cpp
+index 48e5c50e6fc7..61323878ca61 100644
+--- a/app/src/main/cpp/bridge.cpp
++++ b/app/src/main/cpp/bridge.cpp
+@@ -4,6 +4,12 @@
+ #include "cancellation.h"
+ #include "model_check.h"
+ #include "native_configuration.h"
++#include "stream_support.h"
++#include <chrono>
++#include <ctime>
++#include <thread>
++#include <unordered_map>
++#include <optional>
+ #include <algorithm>
+ #include <memory>
+ #include <mutex>
+@@ -25,13 +31,48 @@
+     }
+     ~Engine() { unload(); }
+ };
++// Opaque monotonically increasing handles: a freed address can never resurrect an old handle.
++// Every call still obeys the existing backend worker/handleLock ownership contract.
++struct RegisteredEngine { std::unique_ptr<Engine> value; bool busy = false; bool streaming = false; };
++static std::mutex stream_registry_mutex;
++static std::unordered_map<jlong, RegisteredEngine> stream_registry;
++static jlong next_engine_id = 1;
++static void require_not_streaming(jlong h) {
++    std::lock_guard<std::mutex> lock(stream_registry_mutex);
++    auto found = stream_registry.find(h);
++    if (found == stream_registry.end()) throw std::runtime_error("Handle inconnu");
++    if (found->second.streaming) throw std::runtime_error("BUSY_STREAM");
++}
++class EngineCallPin {
++    jlong handle_;
++public:
++    explicit EngineCallPin(jlong h, bool streaming = false) : handle_(h) {
++        std::lock_guard<std::mutex> lock(stream_registry_mutex);
++        auto found = stream_registry.find(handle_);
++        if (found == stream_registry.end() || found->second.busy) throw std::runtime_error("STALE_OR_BUSY_ENGINE");
++        found->second.busy = true; found->second.streaming = streaming;
++    }
++    ~EngineCallPin() {
++        std::lock_guard<std::mutex> lock(stream_registry_mutex);
++        auto found = stream_registry.find(handle_);
++        if (found != stream_registry.end()) { found->second.busy = false; found->second.streaming = false; }
++    }
++    EngineCallPin(const EngineCallPin &) = delete;
++    EngineCallPin & operator=(const EngineCallPin &) = delete;
++};
+ static Engine & engine(jlong handle) {
+-    if (!handle) throw std::runtime_error("Moteur fermé");
+-    return *reinterpret_cast<Engine *>(handle);
++    std::lock_guard<std::mutex> lock(stream_registry_mutex);
++    auto found = stream_registry.find(handle);
++    if (found == stream_registry.end()) throw std::runtime_error("Moteur fermé ou handle périmé");
++    return *found->second.value;
+ }
+ static void check(Engine & e) { if(e.cancel.stopped()) throw std::runtime_error("Calcul natif arrêté"); }
+ static void error(JNIEnv * env, const std::exception & ex) {
+-    env->ThrowNew(env->FindClass("java/lang/IllegalStateException"), ex.what());
++    if (env->ExceptionCheck()) return;
++    auto cls = env->FindClass("java/lang/IllegalStateException");
++    if (!cls || env->ExceptionCheck()) return;
++    env->ThrowNew(cls, ex.what());
++    env->DeleteLocalRef(cls);
+ }
+ // Strict UTF-8 and controls: never let a C-string terminator hide trailing instructions.
+ static void validate_p2(const std::string & s, bool system = false) {
+@@ -74,18 +115,38 @@
+     try {
+         static std::once_flag init;
+         std::call_once(init, [] { llama_log_set([](ggml_log_level, const char *, void *) {}, nullptr); llama_backend_init(); });
+-        return reinterpret_cast<jlong>(new Engine());
++        auto result = std::make_unique<Engine>();
++        std::lock_guard<std::mutex> lock(stream_registry_mutex);
++        if (next_engine_id <= 0 || next_engine_id == INT64_MAX) throw std::runtime_error("ENGINE_ID_EXHAUSTED");
++        const auto id = next_engine_id++;
++        stream_registry.emplace(id, RegisteredEngine{std::move(result), false, false});
++        return id;
+     } catch (const std::exception & ex) { error(env, ex); return 0; }
+ }
+ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_begin(JNIEnv * env, jobject, jlong h) {
+-    try { engine(h).cancel.begin(90'000); } catch (const std::exception & ex) { error(env, ex); }
++    try {
++        std::lock_guard<std::mutex> lock(stream_registry_mutex);
++        auto found = stream_registry.find(h);
++        if (found == stream_registry.end() || found->second.busy) throw std::runtime_error("STALE_OR_BUSY_ENGINE");
++        found->second.value->cancel.begin(90'000);
++    } catch (const std::exception & ex) { error(env, ex); }
+ }
+ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_cancel(JNIEnv * env, jobject, jlong h) {
+-    try { engine(h).cancel.request(); } catch (const std::exception & ex) { error(env, ex); }
++    try {
++        std::lock_guard<std::mutex> lock(stream_registry_mutex);
++        auto found = stream_registry.find(h);
++        if (found == stream_registry.end()) throw std::runtime_error("Handle périmé");
++        found->second.value->cancel.request();
++    } catch (const std::exception & ex) { error(env, ex); }
+ }
+ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
+     JNIEnv * env, jobject, jlong h, jbyteArray path, jint context, jint threads, jboolean small) {
+-    try {
++    std::optional<EngineCallPin> pin;
++    bool entered = false;
++    try {
++        pin.emplace(h);
++        require_not_streaming(h);
++        entered = true;
+         auto & e = engine(h);
+         auto cp = context_params(context, threads, small, &e.cancel);
+         check(e); e.unload();
+@@ -113,7 +174,7 @@
+         if (!e.ctx) throw std::runtime_error("Création du contexte impossible");
+         e.context = llama_n_ctx(e.ctx); e.batch = llama_n_batch(e.ctx);
+         e.max_output = maximum_output_tokens(small, context); check(e);
+-    } catch (const std::exception & ex) { if (h) engine(h).unload(); error(env, ex); }
++    } catch (const std::exception & ex) { if (entered && h) engine(h).unload(); error(env, ex); }
+ }
+ static std::string format(Engine & e, const std::vector<std::string> & roles, const std::vector<std::string> & texts, size_t start, const std::string * custom = nullptr) {
+     const std::string system = "Tu es JARVIS, un assistant local. Réponds en français, brièvement. Admets tes incertitudes. Tu ne peux exécuter aucune action. /no_think";
+@@ -135,8 +196,114 @@
+     result += "<think>\n\n</think>\n\n";
+     return result;
+ }
+-static jbyteArray generate(JNIEnv * env, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens, const std::string * custom, int contextLimit = 0) {
+-    try {
++
++class StreamCancelled final : public std::runtime_error {
++public: StreamCancelled() : std::runtime_error("STREAM_CANCELLED") {}
++};
++class JavaCallbackPending final : public std::runtime_error {
++public: JavaCallbackPending() : std::runtime_error("JAVA_CALLBACK_EXCEPTION") {}
++};
++class StreamLocalFrame {
++    JNIEnv * env_;
++public:
++    explicit StreamLocalFrame(JNIEnv * env) : env_(env) {
++        if (env_->PushLocalFrame(8) != JNI_OK) throw JavaCallbackPending();
++    }
++    ~StreamLocalFrame() { env_->PopLocalFrame(nullptr); }
++};
++static int64_t stream_nanos() {
++    timespec stamp{};
++#ifdef __ANDROID__
++    constexpr auto domain = CLOCK_BOOTTIME; // same domain as elapsedRealtimeNanos, qualification still required
++#else
++    constexpr auto domain = CLOCK_MONOTONIC; // host only; never mix with Android timestamps
++#endif
++    if (clock_gettime(domain, &stamp) != 0 || stamp.tv_sec < 0 || stamp.tv_nsec < 0 || stamp.tv_nsec >= 1'000'000'000 ||
++        stamp.tv_sec > INT64_MAX / 1'000'000'000 ||
++        (stamp.tv_sec == INT64_MAX / 1'000'000'000 && stamp.tv_nsec > INT64_MAX % 1'000'000'000))
++        throw std::runtime_error("STREAM_CLOCK_UNAVAILABLE");
++    return static_cast<int64_t>(stamp.tv_sec) * 1'000'000'000 + stamp.tv_nsec;
++}
++class SynchronousStream {
++    JNIEnv * env_;
++    jobject callback_; // JNI argument local ref, rooted for this synchronous call only; NEVER retained
++    jbyteArray binding_;
++    jmethodID prepared_, event_;
++    Engine & engine_;
++    jarvis::perf03::Utf8Assembler utf8_;
++    int sequence_ = 0, sampled_ = 0, terminal_ = 4;
++    int64_t first_ = -1;
++    bool ended_ = false, cancelled_ = false;
++    jbyteArray array(const char * data, size_t size) {
++        if (size > 128 * 1024) throw std::runtime_error("STREAM_ARRAY_LIMIT");
++        auto result = env_->NewByteArray(static_cast<jsize>(size));
++        if (!result || env_->ExceptionCheck()) throw JavaCallbackPending();
++        if (size) env_->SetByteArrayRegion(result, 0, static_cast<jsize>(size), reinterpret_cast<const jbyte *>(data));
++        if (env_->ExceptionCheck()) throw JavaCallbackPending();
++        return result;
++    }
++    void send(int kind, const std::string & text, bool terminal = false) {
++        if (ended_) throw std::runtime_error("STREAM_ALREADY_TERMINAL");
++        StreamLocalFrame frame(env_);
++        auto payload = array(text.data(), text.size()); // one bounded copy; same payload/sequence on RETRY
++        while (true) {
++            if ((!terminal || kind == 2) && engine_.cancel.stopped()) { cancelled_ = true; throw StreamCancelled(); }
++            auto accepted = env_->CallIntMethod(callback_, event_, binding_, static_cast<jint>(kind),
++                static_cast<jint>(sequence_), payload, static_cast<jint>(sampled_), static_cast<jlong>(first_),
++#ifdef __ANDROID__
++                static_cast<jint>(0));
++#else
++                static_cast<jint>(1));
++#endif
++            if (env_->ExceptionCheck()) throw JavaCallbackPending(); // preserve original Java throwable
++            if (accepted == 0) { ++sequence_; if (terminal) { terminal_ = kind; ended_ = true; } return; }
++            if (accepted == 2 && kind != 3 && kind != 4) { cancelled_ = true; throw StreamCancelled(); }
++            if (accepted != 1 || terminal) throw std::runtime_error("STREAM_CALLBACK_REJECTED");
++            // Backpressure on the existing worker; no registry/handle/broker lock is held.
++            // Existing cancellation deadline (90s) is authoritative, not reset here.
++            std::this_thread::sleep_for(std::chrono::milliseconds(10));
++        }
++    }
++public:
++    SynchronousStream(JNIEnv * env, jobject callback, jbyteArray binding, Engine & value)
++        : env_(env), callback_(callback), binding_(binding), engine_(value) {
++        if (!callback_ || !binding_ || env_->GetArrayLength(binding_) != 64) throw std::runtime_error("STREAM_BINDING_INVALID");
++        const auto digest = bytes(env_, binding_);
++        if (!std::all_of(digest.begin(), digest.end(), [](char c) { return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f'); }))
++            throw std::runtime_error("STREAM_BINDING_INVALID");
++        auto cls = env_->GetObjectClass(callback_);
++        if (!cls || env_->ExceptionCheck()) throw JavaCallbackPending();
++        prepared_ = env_->GetMethodID(cls, "onNativePrepared", "([B[BI)Z");
++        if (env_->ExceptionCheck()) { env_->DeleteLocalRef(cls); throw JavaCallbackPending(); }
++        event_ = env_->GetMethodID(cls, "onNativeEvent", "([BII[BIJI)I");
++        env_->DeleteLocalRef(cls);
++        if (!prepared_ || !event_ || env_->ExceptionCheck()) throw JavaCallbackPending();
++    }
++    void prepared(const std::string & prompt, const char * tmpl, int count) {
++        StreamLocalFrame frame(env_);
++        if (!tmpl) throw std::runtime_error("STREAM_TEMPLATE_ABSENT");
++        const std::string official(tmpl);
++        auto rendered = array(prompt.data(), prompt.size()), templ = array(official.data(), official.size());
++        auto accepted = env_->CallBooleanMethod(callback_, prepared_, rendered, templ, static_cast<jint>(count));
++        if (env_->ExceptionCheck()) throw JavaCallbackPending();
++        if (!accepted) throw std::runtime_error("STREAM_PREPARED_MISMATCH_OR_REVOKED");
++        send(0, ""); // ACK is control; never a first generated token
++    }
++    void sampled() { if (first_ < 0) first_ = stream_nanos(); ++sampled_; }
++    void piece(const char * data, size_t size) {
++        for (const auto & chunk : utf8_.accept(data, size)) send(1, chunk);
++    }
++    void complete() { utf8_.finish(); send(2, "", true); }
++    void failed() noexcept {
++        if (ended_ || env_->ExceptionCheck()) return; // no Java/JNI work under a pending callback exception
++        try { send(cancelled_ || engine_.cancel.stopped() ? 3 : 4, "", true); } catch (...) { /* original exception/ERROR result retained */ }
++    }
++    int terminal() const { return terminal_; }
++};
++
++static jbyteArray generate(JNIEnv * env, jlong h, jobjectArray roleArray, jobjectArray textArray, jint maxTokens, const std::string * custom, int contextLimit = 0, SynchronousStream * stream = nullptr) {
++    try {
++        if (!stream) require_not_streaming(h);
+         auto & e = engine(h); check(e);
+         if (!e.ctx || maxTokens < 1 || maxTokens > e.max_output) throw std::runtime_error("Moteur non prêt ou sortie hors budget");
+         if (!roleArray || !textArray) throw std::runtime_error("Historique absent");
+@@ -170,7 +337,10 @@
+             check(e);
+             const auto prompt = format(e, roles, texts, start, custom);
+             n = llama_tokenize(vocab, prompt.data(), prompt.size(), tokens.data(), tokens.size(), true, true);
+-            if (n > 0 && n + maxTokens + 8 <= effective) break;
++            if (n > 0 && n + maxTokens + 8 <= effective) {
++                if (stream) stream->prepared(prompt, llama_model_chat_template(e.model, nullptr), n);
++                break;
++            }
+             if (custom) throw std::runtime_error("P2_CONTEXT_EXCEEDED");
+             if (start + 2 < roles.size()) start += 2;
+             else throw std::runtime_error("Question trop longue pour le contexte : raccourcis-la");
+@@ -183,34 +353,52 @@
+         }
+         std::unique_ptr<llama_sampler, decltype(&llama_sampler_free)> sampler(llama_sampler_init_greedy(), llama_sampler_free);
+         std::string output;
++        std::vector<char> streamPiece; // reuse scratch ONLY on the candidate streaming path
++        if (stream) streamPiece.resize(256);
+         for (int i = 0; i < maxTokens; ++i) {
+             check(e);
+             llama_token token = llama_sampler_sample(sampler.get(), e.ctx, -1);
+             if (llama_vocab_is_eog(vocab, token)) break;
+-            std::vector<char> piece(256);
++            if (stream) stream->sampled(); // exact first non-EOG token, before piece conversion or callback
++            std::vector<char> legacyPiece;
++            if (!stream) legacyPiece.resize(256);
++            auto & piece = stream ? streamPiece : legacyPiece;
+             int length = llama_token_to_piece(vocab, token, piece.data(), piece.size(), 0, false);
+-            if (length < 0) { piece.resize(-length); length = llama_token_to_piece(vocab, token, piece.data(), piece.size(), 0, false); }
++            if (length < 0) {
++                // Reject output overflow before allocation; never silently drop a token.
++                if (stream && (length == INT32_MIN || -length > static_cast<int>(jarvis::perf03::kMaxTextBytes)))
++                    throw std::runtime_error("STREAM_PIECE_LIMIT");
++                piece.resize(-length); length = llama_token_to_piece(vocab, token, piece.data(), piece.size(), 0, false);
++            }
+             if (length < 0) throw std::runtime_error("Token invalide");
+-            output.append(piece.data(), length);
++            if (stream) stream->piece(piece.data(), static_cast<size_t>(length));
++            else output.append(piece.data(), length);
+             if (i + 1 < maxTokens) {
+                 auto batch = llama_batch_get_one(&token, 1);
+                 if (llama_decode(e.ctx, batch) != 0) throw std::runtime_error("Génération interrompue ou impossible");
+             }
+         }
+         check(e);
++        if (stream) { stream->complete(); return nullptr; }
+         auto result = env->NewByteArray(output.size());
+         if (result) env->SetByteArrayRegion(result, 0, output.size(), reinterpret_cast<const jbyte *>(output.data()));
+         return result;
+-    } catch (const std::exception & ex) { error(env, ex); return nullptr; }
++    } catch (const std::exception & ex) {
++        if (stream) { stream->failed(); return nullptr; }
++        error(env, ex); return nullptr;
++    }
+ }
+ // Separate entry point: legacy ABI and its history policy remain unchanged.
+ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generate(
+     JNIEnv * env, jobject, jlong h, jobjectArray roles, jobjectArray texts, jint maxTokens) {
+-    return generate(env, h, roles, texts, maxTokens, nullptr);
++    try { EngineCallPin pin(h); return generate(env, h, roles, texts, maxTokens, nullptr); }
++    catch (const std::exception & ex) { error(env, ex); return nullptr; }
+ }
+ extern "C" JNIEXPORT jint JNICALL Java_fr_jarvis_llm_engine_NativeBridge_countP2Tokens(
+     JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question) {
+     try {
++        EngineCallPin pin(h);
++        require_not_streaming(h);
+         auto & e = engine(h); check(e);
+         if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+         const auto custom = bytes(env, system), user = bytes(env, question);
+@@ -225,6 +413,7 @@
+ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generateP2(
+     JNIEnv * env, jobject, jlong h, jobjectArray roles, jobjectArray texts, jint maxTokens, jbyteArray system) {
+     try {
++        EngineCallPin pin(h);
+         const auto prompt = bytes(env, system);
+         validate_p2(prompt, true);
+         if (prompt.size() > 8192 || prompt.find("<|") != std::string::npos || prompt.find("<think>") != std::string::npos || prompt.find("</think>") != std::string::npos || prompt.find('\0') != std::string::npos)
+@@ -236,6 +425,8 @@
+ extern "C" JNIEXPORT jobjectArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_measureFixtureP2(
+     JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question) {
+     try {
++        EngineCallPin pin(h);
++        require_not_streaming(h);
+         auto & e = engine(h); check(e);
+         if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+         const auto custom = bytes(env, system), user = bytes(env, question);
+@@ -257,6 +448,8 @@
+ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generateFixtureP2(
+     JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question, jint maxTokens, jint contextLimit) {
+     try {
++        EngineCallPin pin(h);
++        require_not_streaming(h);
+         auto & e = engine(h);
+         if (contextLimit < 512 || contextLimit > e.context || contextLimit % 256 != 0)
+             throw std::runtime_error("Contexte P2 invalide");
+@@ -272,16 +465,64 @@
+         return result;
+     } catch (const std::exception & ex) { error(env, ex); return nullptr; }
+ }
++
++// Candidate ABI, opt-in only: legacy generate/generateP2 remain present and return complete bytes.
++extern "C" JNIEXPORT jint JNICALL Java_fr_jarvis_llm_engine_NativeBridge_generateStream(
++    JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question, jint maxTokens,
++    jint contextLimit, jbyteArray binding, jobject callback) {
++    try {
++        EngineCallPin pin(h, true); // callback, Engine/model/context live through the LAST synchronous callback
++        auto & e = engine(h);
++        SynchronousStream stream(env, callback, binding, e);
++        try {
++            if (contextLimit < 512 || contextLimit > e.context || contextLimit % 256 != 0)
++                throw std::runtime_error("Contexte P2 invalide");
++            const auto custom = bytes(env, system), user = bytes(env, question);
++            if (env->ExceptionCheck()) throw JavaCallbackPending();
++            validate_p2(custom, true); validate_p2(user);
++            if (custom.size() > 8192) throw std::runtime_error("Système hors limites");
++            StreamLocalFrame frame(env);
++            auto cls = env->FindClass("[B");
++            if (!cls || env->ExceptionCheck()) throw JavaCallbackPending();
++            auto roles = env->NewObjectArray(1, cls, nullptr);
++            if (!roles || env->ExceptionCheck()) throw JavaCallbackPending();
++            auto texts = env->NewObjectArray(1, cls, nullptr);
++            if (!texts || env->ExceptionCheck()) throw JavaCallbackPending();
++            auto role = env->NewByteArray(4);
++            if (!role || env->ExceptionCheck()) throw JavaCallbackPending();
++            env->SetByteArrayRegion(role, 0, 4, reinterpret_cast<const jbyte *>("user"));
++            if (env->ExceptionCheck()) throw JavaCallbackPending();
++            env->SetObjectArrayElement(roles, 0, role);
++            if (env->ExceptionCheck()) throw JavaCallbackPending();
++            env->SetObjectArrayElement(texts, 0, question);
++            if (env->ExceptionCheck()) throw JavaCallbackPending();
++            generate(env, h, roles, texts, maxTokens, &custom, contextLimit, &stream);
++        } catch (const std::exception &) { stream.failed(); }
++        return stream.terminal(); // CONTENT terminal only, NEVER an unload/drain receipt
++    } catch (const std::exception & ex) { error(env, ex); return 4; }
++}
++
+ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_unload(JNIEnv * env, jobject, jlong h) {
+-    try { engine(h).unload(); } catch (const std::exception & ex) { error(env, ex); }
+-}
+-extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_destroy(JNIEnv *, jobject, jlong h) {
+-    delete reinterpret_cast<Engine *>(h);
++    try { EngineCallPin pin(h); require_not_streaming(h); engine(h).unload(); } catch (const std::exception & ex) { error(env, ex); }
++}
++extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_destroy(JNIEnv * env, jobject, jlong h) {
++    if (!h) return;
++    try {
++        std::unique_ptr<Engine> value;
++        { std::lock_guard<std::mutex> lock(stream_registry_mutex);
++          auto found = stream_registry.find(h);
++          if (found == stream_registry.end() || found->second.busy) throw std::runtime_error("STALE_OR_BUSY_ENGINE");
++          value = std::move(found->second.value); stream_registry.erase(found); }
++        // Native cleanup outside registry lock, after invalidating the opaque handle.
++        value.reset();
++    } catch (const std::exception & ex) { error(env, ex); }
+ }
+ 
+ // Pinned llama.cpp C++ diagnostic API. Buffer sizes are not process PSS.
+ extern "C" JNIEXPORT jlongArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_allocations(JNIEnv * env, jobject, jlong h) {
+     try {
++        EngineCallPin pin(h);
++        require_not_streaming(h);
+         auto & e = engine(h);
+         if (!e.ctx) throw std::runtime_error("Contexte absent");
+         jlong values[3] = {};
+@@ -299,6 +540,8 @@
+ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_engine_NativeBridge_renderForTest(
+     JNIEnv * env, jobject, jlong h, jbyteArray system, jbyteArray question) {
+     try {
++        EngineCallPin pin(h);
++        require_not_streaming(h);
+         auto & e = engine(h);
+         if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+         const auto custom = bytes(env, system), user = bytes(env, question);
+diff --git a/app/src/main/cpp/stream_support.h b/app/src/main/cpp/stream_support.h
+new file mode 100644
+index 000000000000..35e579b83975 100644
+--- /dev/null
++++ b/app/src/main/cpp/stream_support.h
+@@ -0,0 +1,112 @@
++#pragma once
++// PERF-03A review source only. No JNI or llama.cpp dependency; never linked by
++// the productive build until the exact containing patch is explicitly approved.
++#include <atomic>
++#include <cstddef>
++#include <cstdint>
++#include <stdexcept>
++#include <string>
++#include <vector>
++
++namespace jarvis::perf03 {
++constexpr std::size_t kMaxChunkBytes = 4096;
++constexpr std::size_t kMaxTextBytes = 64 * 1024;
++constexpr std::size_t kMaxPendingEvents = 16;
++constexpr std::size_t kMaxPendingBytes = 16 * 1024;
++
++class Cancellation final {
++ public:
++  void request() noexcept { stopped_.store(true, std::memory_order_release); }
++  bool stopped() const noexcept {
++    return stopped_.load(std::memory_order_acquire);
++  }
++ private:
++  std::atomic<bool> stopped_{false};
++};
++
++// Raw bytes must originate from actual sampled llama token pieces. The caller
++// records token sampling separately: an empty/incomplete UTF-8 piece is not yet
++// usable visible text. This helper never fabricates text or slices final output.
++class Utf8Assembler final {
++ public:
++  std::vector<std::string> accept(const char* data, std::size_t size) {
++    if (failed_ || finished_) throw std::logic_error("UTF-8 stream closed");
++    if (size > kMaxTextBytes - accepted_) {
++      failed_ = true;
++      throw std::length_error("stream text limit");
++    }
++    if (size && !data) {
++      failed_ = true;
++      throw std::invalid_argument("null token piece");
++    }
++    try {
++      std::string bytes = pending_;
++      if (size) bytes.append(data, size);
++      accepted_ += size;
++      pending_.clear();
++      std::vector<std::string> chunks;
++      std::string chunk;
++      chunk.reserve(kMaxChunkBytes);
++      std::size_t offset = 0;
++      while (offset < bytes.size()) {
++        const auto lead = static_cast<unsigned char>(bytes[offset]);
++        std::size_t count;
++        std::uint32_t value;
++        if (lead < 0x80) { count = 1; value = lead; }
++        else if (lead >= 0xC2 && lead <= 0xDF) { count = 2; value = lead & 0x1F; }
++        else if (lead >= 0xE0 && lead <= 0xEF) { count = 3; value = lead & 0x0F; }
++        else if (lead >= 0xF0 && lead <= 0xF4) { count = 4; value = lead & 0x07; }
++        else throw std::invalid_argument("invalid UTF-8 lead");
++        const auto available = bytes.size() - offset;
++        const auto present = available < count ? available : count;
++        for (std::size_t i = 1; i < present; ++i) {
++          const auto next = static_cast<unsigned char>(bytes[offset + i]);
++          if ((next & 0xC0) != 0x80)
++            throw std::invalid_argument("invalid UTF-8 continuation");
++          if (i == 1 && ((lead == 0xE0 && next < 0xA0) ||
++                         (lead == 0xED && next >= 0xA0) ||
++                         (lead == 0xF0 && next < 0x90) ||
++                         (lead == 0xF4 && next >= 0x90)))
++            throw std::invalid_argument("non-scalar UTF-8 prefix");
++          value = (value << 6) | (next & 0x3F);
++        }
++        if (available < count) {
++          pending_.assign(bytes, offset, available); // at most three bytes
++          break;
++        }
++        if ((value < 0x20 && value != 9 && value != 10 && value != 13) || value == 0x7F)
++          throw std::invalid_argument("unsupported text control");
++        if (chunk.size() + count > kMaxChunkBytes) {
++          chunks.push_back(std::move(chunk));
++          chunk.clear();
++          chunk.reserve(kMaxChunkBytes);
++        }
++        chunk.append(bytes, offset, count);
++        offset += count;
++      }
++      if (!chunk.empty()) chunks.push_back(std::move(chunk));
++      return chunks;
++    } catch (...) {
++      failed_ = true;
++      pending_.clear();
++      throw;
++    }
++  }
++  void finish() {
++    if (failed_ || finished_) throw std::logic_error("UTF-8 stream closed");
++    if (!pending_.empty()) {
++      failed_ = true;
++      pending_.clear();
++      throw std::invalid_argument("truncated UTF-8 terminal");
++    }
++    finished_ = true;
++  }
++  std::size_t accepted_bytes() const noexcept { return accepted_; }
++  std::size_t pending_bytes() const noexcept { return pending_.size(); }
++ private:
++  std::string pending_;
++  std::size_t accepted_ = 0;
++  bool failed_ = false;
++  bool finished_ = false;
++};
++} // namespace jarvis::perf03
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt b/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
+index 63ee30e52f82..fb3a9e739960 100644
+--- a/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
++++ b/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
+@@ -15,6 +15,8 @@
+     fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
+     fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray> = error("fixture measure unsupported")
+     fun generateFixtureP2(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int): ByteArray = error("fixture generate unsupported")
++    fun generateStream(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int,
++                       binding: ByteArray, callback: OwnedStreamCallback): Int = error("native streaming not approved or unsupported")
+     fun allocations(handle: Long): LongArray
+     fun unload(handle: Long)
+     fun destroy(handle: Long)
+@@ -30,6 +32,8 @@
+     external override fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
+     external override fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray>
+     external override fun generateFixtureP2(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int): ByteArray
++    external override fun generateStream(handle: Long, system: ByteArray, question: ByteArray, maxTokens: Int, contextLimit: Int,
++                                        binding: ByteArray, callback: OwnedStreamCallback): Int
+     external override fun allocations(handle: Long): LongArray
+     external override fun unload(handle: Long)
+     external override fun destroy(handle: Long)
+@@ -45,6 +49,10 @@
+         private set
+     private val worker = Executors.newSingleThreadExecutor().asCoroutineDispatcher()
+     private val handleLock = Any()
++    private val streamWorkerIncarnation = java.util.UUID.randomUUID().toString()
++    private var streamResidentIncarnation = java.util.UUID.randomUUID().toString()
++    private var lastStreamOwnerSequence = 0L
++    private var activeStream: Pair<StreamRevocation, OwnedStreamBuffer>? = null
+     private val generating = java.util.concurrent.atomic.AtomicBoolean(false)
+     private var handle = native.create()
+     @Volatile override var allocationDiagnostic: String = "Allocations natives non mesurées"
+@@ -52,7 +60,10 @@
+     @Volatile private var cleanupFailed = false
+     private var loaded: Pair<String, RuntimeConfig>? = null
+     override fun prepareOperation() = synchronized(handleLock) { check(handle != 0L && !generating.get() && !cleanupFailed) { "BUSY ou moteur fermé" }; native.begin(handle) }
+-    override fun requestStop() = synchronized(handleLock) { if (handle != 0L) native.cancel(handle) }
++    override fun requestStop() = synchronized(handleLock) {
++        activeStream?.let { it.first.revoke(); it.second.stop() }
++        if (handle != 0L) native.cancel(handle)
++    }
+     override suspend fun load(path: String, config: RuntimeConfig) = withContext(worker) {
+         check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
+         if (loaded != (path to config)) {
+@@ -64,6 +75,7 @@
+                 val lease = ProcessResources.requireLease(ResourceRequest(owner, Module.LLM, ResourceClass.MODEL,
+                     "résidence du modèle", config.memoryBudget, config.model.name))
+                 modelLease = lease // retain even if load AND cleanup fail
++                streamResidentIncarnation = java.util.UUID.randomUUID().toString()
+                 try {
+                     native.load(handle, path.toByteArray(Charsets.UTF_8), config.context, config.threads, config.model == ModelKind.SMALL)
+                     modelLease = lease
+@@ -127,6 +139,70 @@
+             }
+         } } finally { generating.set(false) }
+     }
++    /** Opt-in internal candidate only. No authority is installed by historical clients. */
++    internal suspend fun generateOwnedStream(request: GenerationRequest, contextLimit: Int,
++        authority: StreamOwnerAuthority, buffer: OwnedStreamBuffer): OwnedStreamOutcome {
++        // This first candidate is text-only P2; legacy history generation remains unchanged.
++        require(request.messages.size == 1 && request.messages.single().role == "user")
++        val customSystem = requireNotNull(request.systemPrompt)
++        require(contextLimit in 512..request.config.context && contextLimit % 256 == 0)
++        if (request.config.model == ModelKind.MAIN) require(contextLimit >= 768)
++        val system = customSystem.toByteArray(Charsets.UTF_8)
++        val question = request.messages.single().text.toByteArray(Charsets.UTF_8)
++        check(!cleanupFailed && generating.compareAndSet(false, true)) { "BUSY or CLEANUP_FAILED" }
++        try { return withContext(worker) {
++            ProcessResources.requireHeavy(owner, Module.LLM, "streaming natif candidat").use {
++                check(loaded?.second == request.config)
++                val lease = requireNotNull(modelLease)
++                val resident = StreamResident(lease, owner, streamWorkerIncarnation, streamResidentIncarnation, request.config)
++                val measured = native.measureFixtureP2(handle, system, question)
++                check(measured.size == 3)
++                val count = measured[0].toString(Charsets.US_ASCII).toInt()
++                if (count <= 0 || count.toLong() + request.config.maxTokens + 8 > contextLimit) throw FixtureContextExceeded()
++                // Length framing prevents concatenation ambiguities; no prompt is logged/retained in metadata.
++                val framed = java.io.ByteArrayOutputStream()
++                java.io.DataOutputStream(framed).use { out ->
++                    for (part in listOf("jarvis.llm.prepared/1".toByteArray(Charsets.US_ASCII), system, question,
++                        measured[1], measured[2], request.config.model.name.toByteArray(Charsets.US_ASCII))) {
++                        out.writeInt(part.size); out.write(part)
++                    }
++                    out.writeInt(contextLimit); out.writeInt(request.config.context)
++                    out.writeInt(request.config.maxTokens); out.writeInt(request.config.threads)
++                }
++                val prepared = StreamPrepared(streamHash(measured[1]), streamHash(measured[2]),
++                    streamHash(framed.toByteArray()), count, contextLimit, request.config)
++                // Runs outside handleLock, broker lock and JNI callback. No productive adapter is provided.
++                val grant = requireNotNull(authority.authorize(prepared, resident)) { "CORE_ADMISSION_UNQUALIFIED" }
++                check(grant.prepared === prepared && grant.resident === resident && grant.revocation.isAllowed())
++                check(grant.ownerSequence > lastStreamOwnerSequence) { "STALE_OR_REUSED_STREAM_OWNER_SEQUENCE" }
++                lastStreamOwnerSequence = grant.ownerSequence // grant is consumed once even when callback/JNI fails
++                val callback = OwnedStreamCallback(grant, buffer)
++                buffer.bind(grant)
++                synchronized(handleLock) { check(activeStream == null); activeStream = grant.revocation to buffer }
++                try {
++                    val terminal = native.generateStream(handle, system, question, request.config.maxTokens,
++                        contextLimit, grant.bindingSha256.toByteArray(Charsets.US_ASCII), callback)
++                    check(terminal in StreamKind.COMPLETED.ordinal..StreamKind.ERROR.ordinal)
++                    val kind = StreamKind.entries[terminal]
++                    check(buffer.acceptedTerminal() == kind && (kind != StreamKind.COMPLETED || callback.hasPrepared())) {
++                        "UNCONFIRMED_NATIVE_TERMINAL"
++                    }
++                    OwnedStreamOutcome(kind, nativeReturned = true)
++                } catch (failure: Throwable) {
++                    buffer.invocationFailed() // discard unrendered text; previously displayed content stays explicitly partial
++                    throw failure
++                } finally {
++                    // A returned JNI call is not a global drain, resource release or unload receipt.
++                    callback.close() // no late callback can modify the UI buffer after this invocation
++                    synchronized(handleLock) { if (activeStream?.first === grant.revocation) activeStream = null }
++                    buffer.nativeInvocationFinished()
++                    if (loaded != null) runCatching { refreshAllocations() }.onFailure {
++                        allocations = null; allocationDiagnostic = "Buffers natifs indisponibles"
++                    }
++                }
++            }
++        } } finally { generating.set(false) }
++    }
+     override suspend fun unload() = withContext(worker) { try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }; cleanupFailed = false; loaded = null; allocations = null; modelLease?.close(); modelLease = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
+     override suspend fun close() {
+         requestStop()
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt b/app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt
+new file mode 100644
+index 000000000000..4fc05e565850 100644
+--- /dev/null
++++ b/app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt
+@@ -0,0 +1,172 @@
++package fr.jarvis.llm.engine
++
++import fr.jarvis.domain.RuntimeConfig
++import fr.jarvis.domain.resources.ResourceLease
++import java.nio.ByteBuffer
++import java.nio.charset.CodingErrorAction
++import java.security.MessageDigest
++import java.util.ArrayDeque
++import java.util.UUID
++
++/** PERF-03 candidate, NOT APPLIED. No productive authority implementation is installed. */
++internal enum class StreamKind { ACK, TOKEN, COMPLETED, CANCELLED, ERROR }
++internal enum class NativeStreamClock { ANDROID_BOOTTIME, HOST_MONOTONIC }
++internal enum class StreamOffer(val wire: Int) { ACCEPTED(0), RETRY(1), CANCEL(2), ERROR(3) }
++internal enum class StreamResourceState { CONTENT_DONE, DRAINED, UNLOADED, UNKNOWN, CLEANUP_FAILED }
++internal fun streamHash(bytes: ByteArray): String = MessageDigest.getInstance("SHA-256")
++    .digest(bytes).joinToString("") { "%02x".format(java.util.Locale.ROOT, it.toInt() and 255) }
++private fun validHash(value: String) = value.matches(Regex("[0-9a-f]{64}"))
++private fun validId(value: String) = value.length == 36 && runCatching { UUID.fromString(value).toString() == value }.getOrDefault(false)
++
++/** Actual lease object and local incarnation, NOT a broker attestation or permission. Never close it here. */
++internal class StreamResident(val lease: ResourceLease, val owner: String, val worker: String,
++                              val incarnation: String, val config: RuntimeConfig) {
++    override fun toString() = "StreamResident(redacted)"
++}
++/** Native canonical rendering, tokenizer and unchanged admitted output/config. No prompt is retained. */
++internal class StreamPrepared(val renderedSha256: String, val templateSha256: String,
++    val requestSha256: String, val inputTokens: Int, val contextLimit: Int, val config: RuntimeConfig) {
++    init { require(validHash(renderedSha256) && validHash(templateSha256) && validHash(requestSha256))
++        require(inputTokens > 0 && inputTokens.toLong() + config.maxTokens + 8 <= contextLimit)
++        require(contextLimit in 512..config.context && contextLimit % 256 == 0) }
++    override fun toString() = "StreamPrepared(redacted)"
++}
++/** All fields must be checked against CORE/broker by the explicitly installed authority. */
++internal class StreamGrant(val request: String, val session: String, val epoch: String,
++    val generation: Long, val leaseRef: String, val modelSha256: String, val coreMandateSha256: String,
++    val prepared: StreamPrepared, val resident: StreamResident, val revocation: StreamRevocation, val ownerSequence: Long = generation) {
++    init { require(listOf(request, session, epoch, leaseRef).all(::validId))
++        require(generation in 1..9_007_199_254_740_991L && ownerSequence in 1..9_007_199_254_740_991L)
++        require(validHash(modelSha256) && validHash(coreMandateSha256)) }
++    val bindingSha256: String = streamHash(listOf("jarvis.llm.stream/1", request, session, epoch,
++        generation.toString(), ownerSequence.toString(), leaseRef, modelSha256, coreMandateSha256, prepared.requestSha256,
++        prepared.renderedSha256, prepared.templateSha256, resident.worker, resident.incarnation,
++        prepared.inputTokens.toString(), prepared.contextLimit.toString(), prepared.config.model.name,
++        prepared.config.context.toString(), prepared.config.maxTokens.toString(),
++        prepared.config.threads.toString()).joinToString("\n").toByteArray(Charsets.US_ASCII))
++    override fun toString() = "StreamGrant(redacted)"
++}
++internal class StreamRevocation {
++    private val allowed = java.util.concurrent.atomic.AtomicBoolean(true)
++    fun revoke() { allowed.set(false) }
++    internal fun isAllowed() = allowed.get()
++}
++
++/** No implementation is supplied: CORE mandate, verified model and real lease proof remain prerequisites. */
++internal interface StreamOwnerAuthority {
++    fun authorize(prepared: StreamPrepared, resident: StreamResident): StreamGrant?
++}
++
++internal class OwnedStreamEvent(val grant: StreamGrant, val sequence: Int, val kind: StreamKind,
++    bytes: ByteArray, val sampledTokens: Int, val nativeFirstTokenNanos: Long, val nativeClockDomain: NativeStreamClock) {
++    private val payload: ByteArray
++    init { require(sequence in 0..512 && sampledTokens in 0..256 && nativeFirstTokenNanos >= -1)
++        require(bytes.size <= 4096 && (kind == StreamKind.TOKEN) == bytes.isNotEmpty())
++        if (bytes.isNotEmpty()) {
++            Charsets.UTF_8.newDecoder().onMalformedInput(CodingErrorAction.REPORT)
++                .onUnmappableCharacter(CodingErrorAction.REPORT).decode(ByteBuffer.wrap(bytes))
++            require(bytes.none { it == 0.toByte() || it == 127.toByte() || (it.toInt() in 1..31 && it.toInt() !in listOf(9,10,13)) })
++        }
++        payload = bytes.copyOf()
++    }
++    val byteCount get() = payload.size
++    fun utf8Copy() = payload.copyOf()
++    internal fun same(other: OwnedStreamEvent) = grant === other.grant && sequence == other.sequence &&
++        kind == other.kind && nativeClockDomain == other.nativeClockDomain && sampledTokens == other.sampledTokens && nativeFirstTokenNanos == other.nativeFirstTokenNanos && payload.contentEquals(other.payload)
++    override fun toString() = "OwnedStreamEvent(kind=$kind, sequence=$sequence, bytes=${payload.size}, redacted)"
++}
++
++/** One producer (existing JNI worker), one logical Android consumer; no additional generation thread. */
++internal class OwnedStreamBuffer {
++    private val queue = ArrayDeque<OwnedStreamEvent>()
++    private var grant: StreamGrant? = null
++    private var next = 0
++    private var pending = 0
++    private var total = 0
++    private var last: OwnedStreamEvent? = null
++    private var stopped = false
++    private var terminal = false
++    private var terminalReceipt: StreamKind? = null
++    private var invalid = false
++    @Volatile var jniInvocationFinished = false; private set
++    @Volatile var resourceState = StreamResourceState.UNKNOWN; private set
++    @Synchronized fun bind(expected: StreamGrant) { check(grant == null && !stopped && !invalid); grant = expected }
++    @Synchronized fun offer(event: OwnedStreamEvent): StreamOffer {
++        if (jniInvocationFinished) return StreamOffer.ERROR
++        if (invalid || event.grant !== grant) return fail()
++        if (event.sampledTokens > event.grant.prepared.config.maxTokens) return fail()
++        if (last?.sequence == event.sequence) return if (last!!.same(event)) StreamOffer.ACCEPTED else fail()
++        if (terminal || event.sequence != next) return fail()
++        if (event.kind == StreamKind.ACK && (event.sampledTokens != 0 || event.nativeFirstTokenNanos != -1L)) return fail()
++        if (event.kind == StreamKind.TOKEN && (event.sampledTokens == 0 || event.nativeFirstTokenNanos < 0)) return fail()
++        if (event.sampledTokens == 0 && event.nativeFirstTokenNanos != -1L || event.sampledTokens > 0 && event.nativeFirstTokenNanos < 0) return fail()
++        if (last != null && (event.sampledTokens < last!!.sampledTokens || event.nativeClockDomain != last!!.nativeClockDomain ||
++            last!!.nativeFirstTokenNanos >= 0 && event.nativeFirstTokenNanos != last!!.nativeFirstTokenNanos)) return fail()
++        if (stopped && event.kind !in setOf(StreamKind.CANCELLED, StreamKind.ERROR)) return StreamOffer.CANCEL
++        if (next == 0 && event.kind !in setOf(StreamKind.ACK, StreamKind.CANCELLED, StreamKind.ERROR) || next > 0 && event.kind == StreamKind.ACK) return fail()
++        val end = event.kind in setOf(StreamKind.COMPLETED, StreamKind.CANCELLED, StreamKind.ERROR)
++        if (end) {
++            // Reserve the 16th slot for the terminal; content and sequence remain intact under load.
++            if (queue.size >= 16) return fail()
++        } else {
++            if (total + event.byteCount > 64 * 1024) return fail()
++            if (queue.size >= 15 || pending + event.byteCount > 16 * 1024) return StreamOffer.RETRY
++        }
++        queue.addLast(event); pending += event.byteCount; total += event.byteCount
++        next++; last = event; terminal = end
++        if (end) terminalReceipt = event.kind
++        if (event.kind == StreamKind.COMPLETED) resourceState = StreamResourceState.CONTENT_DONE
++        return StreamOffer.ACCEPTED
++    }
++    @Synchronized private fun fail(): StreamOffer { invalid = true; queue.clear(); pending = 0; terminalReceipt = null
++        resourceState = StreamResourceState.UNKNOWN; return StreamOffer.ERROR }
++    @Synchronized fun poll(): OwnedStreamEvent? = queue.pollFirst()?.also { pending -= it.byteCount }
++    /** Stop discards queued, not yet displayed content; already displayed text remains caller-owned and labelled partial. */
++    @Synchronized fun stop() { stopped = true; queue.clear(); pending = 0 }
++    @Synchronized fun processDied() { fail() }
++    @Synchronized fun invocationFailed() { fail() }
++    @Synchronized fun acceptedTerminal(): StreamKind? = if (invalid) null else terminalReceipt
++    @Synchronized fun nativeInvocationFinished() { jniInvocationFinished = true /* not entry, DRAINED or UNLOADED proof */ }
++    @Synchronized fun pendingBytes() = pending
++    @Synchronized fun pendingEvents() = queue.size
++    @Synchronized fun isUnknown() = invalid
++}
++
++/** Only this final adapter is passed to JNI. It never calls UI or arbitrary consumer code. */
++internal class OwnedStreamCallback(private val grant: StreamGrant, private val buffer: OwnedStreamBuffer) {
++    private var prepared = false
++    private var preparationAttempted = false
++    private var closed = false
++    /** Called with the actual formatter/tokenizer output, before any KV prefill or ACK. */
++    @Synchronized fun onNativePrepared(rendered: ByteArray, template: ByteArray, inputTokens: Int): Boolean {
++        check(!closed)
++        try {
++            check(!preparationAttempted && rendered.size <= 128 * 1024 && template.size <= 128 * 1024)
++            preparationAttempted = true
++            prepared = inputTokens == grant.prepared.inputTokens && streamHash(rendered) == grant.prepared.renderedSha256 &&
++                streamHash(template) == grant.prepared.templateSha256 && grant.revocation.isAllowed()
++            return prepared
++        } catch (failure: Throwable) { buffer.invocationFailed(); throw failure }
++    }
++    /** Native clock domain is ANDROID_BOOTTIME; host CLOCK_MONOTONIC is separately labelled. */
++    @Synchronized fun onNativeEvent(binding: ByteArray, kind: Int, sequence: Int, bytes: ByteArray,
++                      sampledTokens: Int, nativeFirstTokenNanos: Long, nativeClockDomain: Int): Int {
++        check(!closed) // a rejected late callback cannot rewrite a previously established result
++        try {
++            check(binding.contentEquals(grant.bindingSha256.toByteArray(Charsets.US_ASCII)))
++            check(prepared || kind == StreamKind.CANCELLED.ordinal || kind == StreamKind.ERROR.ordinal)
++            require(kind in 0..4 && nativeClockDomain in 0..1)
++            if (!grant.revocation.isAllowed() && kind != StreamKind.CANCELLED.ordinal && kind != StreamKind.ERROR.ordinal)
++                return StreamOffer.CANCEL.wire
++            return buffer.offer(OwnedStreamEvent(grant, sequence, StreamKind.entries[kind], bytes, sampledTokens,
++                nativeFirstTokenNanos, NativeStreamClock.entries[nativeClockDomain])).wire
++        } catch (failure: Throwable) { buffer.invocationFailed(); throw failure }
++    }
++    @Synchronized fun hasPrepared() = prepared
++    @Synchronized fun close() { closed = true }
++}
++
++internal class OwnedStreamOutcome(val terminal: StreamKind, val nativeReturned: Boolean) {
++    val resourceState = if (terminal == StreamKind.COMPLETED) StreamResourceState.CONTENT_DONE else StreamResourceState.UNKNOWN
++    override fun toString() = "OwnedStreamOutcome(terminal=$terminal, nativeReturned=$nativeReturned, noDrainOrUnloadProof)"
++}

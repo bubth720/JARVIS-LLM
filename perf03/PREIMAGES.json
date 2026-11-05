@@ -1,0 +1,45 @@
+{
+  "schema": "jarvis.perf03.native-review/1",
+  "base_commit": "09e278b54b8be58a3d665d2d91de10f8869e40bb",
+  "base_tree": "975fc71395ac7758678cb5af1b76858ee614c9b2",
+  "applied": false,
+  "files": [
+    {
+      "path": "app/src/main/cpp/bridge.cpp",
+      "sha256": "471c1940652efdd359e3fb0b0198bf19276bf1117d63355dc6e569ef476f70db",
+      "git_blob": "48e5c50e6fc7b29d44834df406d3b0bf3b189e6a",
+      "mode": "100644",
+      "candidate_path": "perf03/candidate/native/bridge.cpp",
+      "after_sha256": "5e7394e7ca0f4ad171adc00b274e6a6f5bdc775a3a70efe493119bd341d08245",
+      "after_git_blob": "61323878ca612a4a60b73597932c2ec990c71510"
+    },
+    {
+      "path": "app/src/main/cpp/stream_support.h",
+      "sha256": null,
+      "git_blob": null,
+      "mode": "100644",
+      "candidate_path": "perf03/candidate/native/stream_support.h",
+      "after_sha256": "dcaa1e6ff375c8ecc3d65d477306dc85187fd2fb2bc93825f6beb9f7827e5bc7",
+      "after_git_blob": "35e579b83975c6a4d5a473f7ed1d634d2199fc96"
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt",
+      "sha256": "ac0644ac25a36722e101d6db8571798a5dda892e650048483ac0338e02503a85",
+      "git_blob": "63ee30e52f82c94cd94ec43b84e2d9abff6b0a20",
+      "mode": "100644",
+      "candidate_path": "perf03/candidate/engine/LlamaBackend.kt",
+      "after_sha256": "1e8f5db4a849dde593e4ce36edd656ffd5071c8684bf6c55c1a5b0d84091539a",
+      "after_git_blob": "fb3a9e73996045c7b296d5477e646a69bd4927df"
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt",
+      "sha256": null,
+      "git_blob": null,
+      "mode": "100644",
+      "candidate_path": "perf03/candidate/engine/OwnedStreamContract.kt",
+      "after_sha256": "4dd1ea9f6e4e11ab2ecd97f00d24d81dbd3419cca77d2c984f36334c33ca0c1f",
+      "after_git_blob": "4fc05e5658509f4e5555dba1ed40d8c32806f85d"
+    }
+  ],
+  "patch_sha256": "747598dd77bc53e1a2f8df7f2e60be824ff74f687d355b060e2012b55a665460"
+}

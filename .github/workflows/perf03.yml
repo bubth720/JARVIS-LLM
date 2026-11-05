@@ -1,0 +1,117 @@
+name: PERF-03A native review, frozen runtime and isolated tests
+on:
+  push:
+    branches: ['codex/llm-perf-03a-native-review']
+  pull_request:
+    branches: ['codex/llm-perf-ttft-3s']
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  PERF03_EVENT: ${{ github.event_name }}
+  PERF03_BASE: ${{ github.base_ref }}
+  PERF03_HEAD_REF: ${{ github.head_ref }}
+  PERF03_REF: ${{ github.ref_name }}
+  PERF03_SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+  PERF03_CODE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+concurrency:
+  group: perf03a-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  review-and-regression:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 65
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Exact PERF-02 reference, additive review scope and patch dry-run only
+        run: |
+          set -euo pipefail
+          mkdir -p build/perf03
+          python3 perf03/check.py --ci 2>&1 | tee build/perf03/preservation.log
+          python3 -m unittest discover -s perf03 -p 'test_*.py' -v 2>&1 | tee build/perf03/python-perf03.log
+          python3 -m unittest discover -s perf02 -p 'test_*.py' -v 2>&1 | tee build/perf03/python-perf02.log
+          python3 -m unittest discover -s tests/m50 -v 2>&1 | tee build/perf03/python-m50.log
+          python3 -m unittest discover -s tests/prefusion -v 2>&1 | tee build/perf03/python-prefusion.log
+          python3 -m unittest discover -s tools/tests/fusion02 -v 2>&1 | tee build/perf03/python-fusion02.log
+          python3 tools/check-recovery-contract.py
+          python3 tools/recovery-vectors.py
+          python3 docs/mission-003f-correction/reference/verify_vectors.py
+          node tools/test-apk-verifier.cjs
+          python3 tools/review-fusion-02-native.py
+          python3 perf03/evidence.py inherited --lane candidate
+      - name: Isolated review helpers, backpressure, cancellation and sanitizers — no JNI application
+        run: |
+          set -euo pipefail
+          bash perf03/tests/run.sh 2>&1 | tee build/perf03/helper-tests.log
+      - name: Verified historical toolchain and pinned llama source — no model
+        run: |
+          set -euo pipefail
+          bash tools/setup-cloud.sh 2>&1 | tee build/perf03/toolchain.log
+      - name: Historical native C++ compilation and safety tests — no model generation
+        run: |
+          set -euo pipefail
+          bash tools/cloud-env.sh bash tools/test-native.sh 2>&1 | tee build/perf03/native-baseline.log
+      - name: Compile the review translation unit only — no link, load or patch application
+        run: |
+          set -euo pipefail
+          bash tools/cloud-env.sh bash -c 'g++ -std=c++17 -fsyntax-only -DJARVIS_HOST_TESTS -I"$JAVA_HOME/include" -I"$JAVA_HOME/include/linux" -Iapp/src/main/cpp -I.deps/llama.cpp/include -I.deps/llama.cpp/ggml/include -I.deps/llama.cpp/src perf03/candidate/native/bridge.cpp' 2>&1 | tee build/perf03/candidate-cpp-syntax.log
+      - name: Compile the isolated Kotlin review module — no candidate sources in any APK
+        run: |
+          set -euo pipefail
+          python3 perf03/evidence.py start --lane review
+          bash tools/cloud-env.sh ./gradlew -I perf03/review.init.gradle :perf03-review:test --rerun-tasks --no-daemon --max-workers=2 --console=plain 2>&1 | tee build/perf03/candidate-kotlin-review.log
+          python3 perf03/evidence.py finish --lane review
+      - name: Fresh immutable PERF-02 baseline, same runner and toolchain
+        run: |
+          set -euo pipefail
+          baseline="$RUNNER_TEMP/perf03-baseline"
+          git worktree add --detach "$baseline" 09e278b54b8be58a3d665d2d91de10f8869e40bb
+          python3 - "$GITHUB_WORKSPACE" "$baseline" <<'PY'
+          from pathlib import Path
+          import sys
+          source, target = map(Path, sys.argv[1:])
+          for dirname in ('.tools', '.deps'):
+              (target/dirname).mkdir()
+              for child in (source/dirname).iterdir():
+                  (target/dirname/child.name).symlink_to(child, target_is_directory=child.is_dir())
+          PY
+          python3 perf03/evidence.py inherited --root "$baseline" --lane baseline
+          python3 perf03/evidence.py start --root "$baseline" --lane baseline
+          (
+            cd "$baseline"
+            python3 perf02/check.py --historical
+            bash tools/cloud-env.sh ./gradlew -I perf02/qualification.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --rerun-tasks --no-daemon --max-workers=2 --console=plain
+            bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
+            bash tools/cloud-env.sh python3 tools/check-fixtures.py
+          ) 2>&1 | tee build/perf03/baseline-build.log
+          python3 perf03/evidence.py finish --root "$baseline" --lane baseline
+          bash tools/cloud-env.sh python3 perf03/evidence.py apk --root "$baseline" --lane baseline
+      - name: Fresh candidate regression with all PERF-02 and historical tests
+        run: |
+          set -euo pipefail
+          python3 perf03/evidence.py start --lane candidate
+          bash tools/cloud-env.sh ./gradlew -I perf02/qualification.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --rerun-tasks --no-daemon --max-workers=2 --console=plain 2>&1 | tee build/perf03/candidate-build.log
+          python3 perf03/evidence.py finish --lane candidate
+          python3 perf03/evidence.py compare
+      - name: Actual APK boundaries, ARM64 16 KiB, historical JNI signatures and final preservation
+        run: |
+          set -euo pipefail
+          bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk 2>&1 | tee build/perf03/apk-check.log
+          bash tools/cloud-env.sh python3 tools/check-fixtures.py 2>&1 | tee build/perf03/fixtures-check.log
+          bash tools/cloud-env.sh python3 perf03/evidence.py apk --lane candidate
+          python3 perf03/check.py --ci
+          python3 tools/review-fusion-02-native.py
+      - name: Preserve raw reports and SHA256 before artifact retention
+        if: always()
+        run: python3 perf03/evidence.py package
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: perf03a-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/perf03/
+          if-no-files-found: error
+          retention-days: 90
