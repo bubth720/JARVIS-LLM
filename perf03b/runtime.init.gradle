@@ -1,0 +1,5 @@
+// Qualification-only JVM module; reads the applied backend, never PERF-03A copies.
+settingsEvaluated { settings ->
+    settings.include(':perf03b-runtime')
+    settings.project(':perf03b-runtime').projectDir = new File(settings.settingsDir, 'perf03b/runtime-review')
+}

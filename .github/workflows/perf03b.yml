@@ -1,0 +1,128 @@
+name: PERF-03B approved JNI laboratory qualification
+on:
+  push:
+    branches: ['codex/llm-perf-03b-native-stream']
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  PERF03B_EVENT: ${{ github.event_name }}
+  PERF03B_BASE: ${{ github.base_ref }}
+  PERF03B_HEAD_REF: ${{ github.head_ref }}
+  PERF03B_REF: ${{ github.ref_name }}
+  PERF03B_SAME_REPO: ${{ github.event.pull_request.head.repo.full_name == github.repository }}
+  PERF03B_CODE_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+concurrency:
+  group: perf03b-${{ github.ref_name }}
+  cancel-in-progress: false
+jobs:
+  approved-lab-only:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 75
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          persist-credentials: false
+      - name: Exact GATE-A patch, all other sources and safety frozen
+        run: |
+          set -euo pipefail
+          mkdir -p build/perf03b
+          python3 perf03b/check.py --ci 2>&1 | tee build/perf03b/preservation.log
+          python3 -m unittest discover -s perf03b -p 'test_*.py' -v 2>&1 | tee build/perf03b/python-perf03b.log
+          python3 -m unittest discover -s perf03 -p 'test_*.py' -v 2>&1 | tee build/perf03b/python-perf03a.log
+          python3 -m unittest discover -s perf02 -p 'test_*.py' -v 2>&1 | tee build/perf03b/python-perf02.log
+          python3 -m unittest discover -s tests/m50 -v 2>&1 | tee build/perf03b/python-m50.log
+          python3 -m unittest discover -s tests/prefusion -v 2>&1 | tee build/perf03b/python-prefusion.log
+          python3 -m unittest discover -s tools/tests/fusion02 -v 2>&1 | tee build/perf03b/python-fusion02.log
+          python3 tools/check-recovery-contract.py
+          python3 tools/recovery-vectors.py
+          python3 docs/mission-003f-correction/reference/verify_vectors.py
+          node tools/test-apk-verifier.cjs
+          python3 perf03b/evidence.py inherited --lane candidate
+      - name: Verified historical toolchain and pinned llama source — no model download
+        run: |
+          set -euo pipefail
+          bash tools/setup-cloud.sh 2>&1 | tee build/perf03b/toolchain.log
+          bash tools/cloud-env.sh ./gradlew :app:prepareDebugKeystore --no-daemon --max-workers=2 --console=plain 2>&1 | tee build/perf03b/debug-key-setup.log
+          bash tools/cloud-env.sh bash tools/fixture-keys.sh
+      - name: Fresh unchanged GATE-A baseline, same runner and keys
+        run: |
+          set -euo pipefail
+          baseline="$RUNNER_TEMP/perf03b-baseline"
+          git worktree add --detach "$baseline" ca9d8f060856e134d793d0c23764fae45ce2cc53
+          python3 - "$GITHUB_WORKSPACE" "$baseline" <<'PY'
+          from pathlib import Path
+          import sys
+          source, target = map(Path, sys.argv[1:])
+          for dirname in ('.tools', '.deps'):
+              (target/dirname).mkdir()
+              for child in (source/dirname).iterdir():
+                  (target/dirname/child.name).symlink_to(child, target_is_directory=child.is_dir())
+          PY
+          python3 perf03b/evidence.py inherited --root "$baseline" --lane baseline
+          python3 perf03b/evidence.py start --root "$baseline" --lane baseline
+          (
+            cd "$baseline"
+            python3 perf03/check.py
+            python3 tools/review-fusion-02-native.py
+            bash tools/cloud-env.sh ./gradlew -I perf02/qualification.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --rerun-tasks --no-daemon --max-workers=2 --console=plain
+            bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
+            bash tools/cloud-env.sh python3 tools/check-fixtures.py
+          ) 2>&1 | tee build/perf03b/baseline-build.log
+          python3 perf03b/evidence.py finish --root "$baseline" --lane baseline
+          bash tools/cloud-env.sh python3 perf03b/evidence.py apk --root "$baseline" --lane baseline
+      - name: Applied JNI and pinned llama compile, native safety CTest
+        run: |
+          set -euo pipefail
+          bash tools/cloud-env.sh bash tools/test-native.sh 2>&1 | tee build/perf03b/native-plain-build.log
+      - name: Real approved JNI callbacks, exceptions, handles and cancellation — model-free
+        run: |
+          set -euo pipefail
+          bash tools/cloud-env.sh bash -c 'python3 perf03b/native-tests/run_jni_host.py --library build/native-tests/libjarvis_llm.so --jdk "$JAVA_HOME" --lane plain' 2>&1 | tee build/perf03b/jni-host-plain.log
+      - name: Applied JNI ASan and UBSan, CheckJNI — halt on any critical failure
+        run: |
+          set -euo pipefail
+          bash tools/cloud-env.sh bash perf03b/native-tests/run_sanitized_host.sh 2>&1 | tee build/perf03b/jni-host-sanitized.log
+      - name: Applied Kotlin backend and full historical regression
+        run: |
+          set -euo pipefail
+          test ! -f build/perf03b/CRITICAL-STOP.json
+          python3 perf03b/evidence.py start --lane runtime
+          bash tools/cloud-env.sh ./gradlew -I perf03b/runtime.init.gradle :perf03b-runtime:test --rerun-tasks --no-daemon --max-workers=2 --console=plain 2>&1 | tee build/perf03b/runtime-kotlin.log
+          python3 perf03b/evidence.py finish --lane runtime
+          python3 perf03b/evidence.py start --lane candidate
+          bash tools/cloud-env.sh ./gradlew -I perf02/qualification.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --rerun-tasks --no-daemon --max-workers=2 --console=plain 2>&1 | tee build/perf03b/candidate-build.log
+          python3 perf03b/evidence.py finish --lane candidate
+          python3 perf03b/evidence.py compare
+      - name: Historical APK boundaries and exact legacy signatures plus approved new export
+        run: |
+          set -euo pipefail
+          bash tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk 2>&1 | tee build/perf03b/apk-check.log
+          bash tools/cloud-env.sh python3 tools/check-fixtures.py 2>&1 | tee build/perf03b/fixtures-check.log
+          bash tools/cloud-env.sh python3 perf03b/evidence.py apk --lane candidate
+      - name: Distinct testOnly Android ARM64 laboratory — no model or live authority
+        run: |
+          set -euo pipefail
+          test ! -f build/perf03b/CRITICAL-STOP.json
+          python3 perf03b/evidence.py start --lane lab
+          bash tools/cloud-env.sh ./gradlew -I perf03b/lab.init.gradle :perf03b-lab:testDebugUnitTest :perf03b-lab:lintDebug :perf03b-lab:assembleDebug --rerun-tasks --no-daemon --max-workers=2 --console=plain 2>&1 | tee build/perf03b/lab-build.log
+          python3 perf03b/evidence.py finish --lane lab
+          bash tools/cloud-env.sh python3 perf03b/android-lab/check_apk.py 2>&1 | tee build/perf03b/lab-apk-check.log
+          python3 perf03b/check.py --ci
+      - name: Retain only the checked laboratory APK after all qualification steps
+        run: |
+          mkdir -p build/perf03b/qualified-apk
+          cp perf03b/android-lab/build/outputs/apk/debug/*.apk build/perf03b/qualified-apk/
+          sha256sum build/perf03b/qualified-apk/*.apk > build/perf03b/qualified-apk/SHA256SUMS
+      - name: Preserve raw reports, failures and checksums — no automatic retry
+        if: always()
+        run: python3 perf03b/evidence.py package
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: perf03b-evidence-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/perf03b/
+          if-no-files-found: error
+          retention-days: 90
