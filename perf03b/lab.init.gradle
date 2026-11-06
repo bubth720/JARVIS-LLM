@@ -1,0 +1,5 @@
+// Explicit laboratory module only. Historical settings and application sources remain untouched.
+settingsEvaluated { settings ->
+    settings.include(':perf03b-lab')
+    settings.project(':perf03b-lab').projectDir = new File(settings.settingsDir, 'perf03b/android-lab')
+}

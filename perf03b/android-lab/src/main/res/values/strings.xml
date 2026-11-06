@@ -1,0 +1,19 @@
+<resources>
+    <string name="app_name">JARVIS PERF-03B — Laboratoire</string>
+    <string name="title">JARVIS PERF-03B</string>
+    <string name="scope">Laboratoire local ARM64 • testOnly</string>
+    <string name="not_run">Génération réelle, tokens et TTFT : NOT_RUN</string>
+    <string name="blocked">Aucun modèle disponible. Autorité CORE et raccordement INTERFACE non qualifiés. Le streaming reste désactivé.</string>
+    <string name="lifecycle_explanation">Ce test utilise le vrai backend et son JNI pour créer le moteur, armer l’opération, demander Stop puis fermer le moteur. Il ne charge aucun modèle et ne génère aucun texte.</string>
+    <string name="exercise">Tester le cycle de vie natif sans modèle</string>
+    <string name="stop">Arrêter le test</string>
+    <string name="ready">Prêt — aucun moteur créé.</string>
+    <string name="running">Cycle de vie natif en cours…</string>
+    <string name="passed">PASS — les appels create, begin, Stop et close ont retourné. Aucun modèle ni token généré ; aucun drain global attesté.</string>
+    <string name="busy">BUSY — un test est déjà en cours.</string>
+    <string name="failed">FAIL — test interrompu. Le laboratoire est bloqué jusqu’à analyse des preuves.</string>
+    <string name="cleanup_failed">CLEANUP_FAILED — fermeture non confirmée. Aucun nouvel essai autorisé.</string>
+    <string name="quarantined">BLOCKED — une erreur précédente interdit de créer un autre moteur.</string>
+    <string name="build_identity">Commit : %1$s</string>
+    <string name="gate_b">Aucune installation personnelle ni qualification matérielle n’est autorisée par cette APK.</string>
+</resources>
