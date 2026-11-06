@@ -1,9 +1,12 @@
 import copy
+import hashlib
 import importlib.util
+import json
 from pathlib import Path
 import tempfile
 import time
 import unittest
+from unittest.mock import patch
 
 spec = importlib.util.spec_from_file_location('perf03b_evidence', Path(__file__).with_name('evidence.py'))
 evidence = importlib.util.module_from_spec(spec); spec.loader.exec_module(evidence)
@@ -76,6 +79,61 @@ class EvidenceTests(unittest.TestCase):
                 with self.assertRaises(ValueError): evidence.passing_cases(directory,0)
             path.write_text('<testsuite tests="1"><testcase classname="Case" name="old"/></testsuite>')
             with self.assertRaises(ValueError): evidence.passing_cases(directory,path.stat().st_mtime_ns+1)
+
+    def binary_fixture(self, directory):
+        root = Path(directory); output = root/'build/perf03b'; output.mkdir(parents=True)
+        for lane, source in [('plain','build/native-tests/libjarvis_llm.so'),('sanitized','build/perf03b-native-sanitized/libjarvis_llm.so')]:
+            p = root/source; p.parent.mkdir(parents=True,exist_ok=True); p.write_bytes(b'unit fixture '+lane.encode())
+            result = output/('jni-host-'+lane)/'results.json'; result.parent.mkdir()
+            result.write_text(json.dumps({'status':'PASS','native_library_sha256':hashlib.sha256(p.read_bytes()).hexdigest()}))
+        return root,output,root/'build/perf03b-host-binaries'
+
+    def test_exact_tested_host_binaries_preserved_outside_reports(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(evidence,'provenance',return_value={'source_commit':'commit','source_tree':'tree'}), patch.object(evidence,'git',return_value='commit'):
+            root,output,separate = self.binary_fixture(directory)
+            report = evidence.preserve_host_binaries(root,output,separate)
+            self.assertTrue(all(e['matches_tested_library'] for e in report['libraries'].values()))
+            self.assertEqual((separate/'plain/libjarvis_llm.so').read_bytes(),b'unit fixture plain')
+            self.assertTrue((separate/'SHA256SUMS').is_file())
+            self.assertEqual(json.loads((output/'host-binaries.json').read_text())['source_tree'],'tree')
+            self.assertFalse(any(output.rglob('*.so')))
+
+    def test_mismatched_host_binary_is_preserved_but_cannot_be_qualified(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(evidence,'provenance',return_value={'source_commit':'commit'}), patch.object(evidence,'git',return_value='commit'):
+            root,output,separate = self.binary_fixture(directory)
+            (root/'build/native-tests/libjarvis_llm.so').write_bytes(b'changed binary')
+            with self.assertRaises(ValueError): evidence.preserve_host_binaries(root,output,separate)
+            self.assertEqual((separate/'plain/libjarvis_llm.so').read_bytes(),b'changed binary')
+            self.assertEqual(json.loads((output/'host-binaries.json').read_text())['binary_report_mismatches'],['plain'])
+
+    def test_missing_host_binary_stays_not_built_not_run(self):
+        with tempfile.TemporaryDirectory() as directory, patch.object(evidence,'provenance',return_value={'source_commit':'commit'}), patch.object(evidence,'git',return_value='commit'):
+            root=Path(directory); output=root/'build/perf03b'; separate=root/'build/perf03b-host-binaries'
+            report = evidence.preserve_host_binaries(root,output,separate)
+            self.assertTrue(all(e['binary_status']=='NOT_BUILT' and e['qualification_status']=='NOT_RUN' for e in report['libraries'].values()))
+            self.assertTrue((separate/'manifest.json').is_file())
+
+    def test_native_build_cannot_leak_into_main_reports_artifact(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); output=root/'build/perf03b'
+            with self.assertRaises(ValueError): evidence.preserve_host_binaries(root,output,output/'host-binaries')
+
+    def test_binary_assertion_failure_still_archives_raw_xml_and_checksums(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root=Path(directory); output=root/'build/perf03b'; output.mkdir(parents=True)
+            xml=root/'domain/build/test-results/test/TEST-Case.xml'; xml.parent.mkdir(parents=True)
+            xml.write_text('<testsuite tests="1"><testcase classname="Case" name="raw"/></testsuite>')
+            helper=root/'build/perf03/helper-tests/plain.log'; helper.parent.mkdir(parents=True)
+            helper.write_text('raw helper diagnostic')
+            original=ValueError('HOST_BINARY_NOT_MATCH_TESTED_LIBRARY:plain')
+            with patch.object(evidence,'ROOT',root),patch.object(evidence,'OUTPUT',output),patch.object(evidence,'provenance',return_value={'source_commit':'commit'}),patch.object(evidence,'preserve_host_binaries',side_effect=original):
+                with self.assertRaises(ValueError) as raised: evidence.package()
+            self.assertIs(raised.exception,original)
+            self.assertEqual((output/'raw-junit/candidate/domain/TEST-Case.xml').read_bytes(),xml.read_bytes())
+            self.assertIn('raw-junit/candidate/domain/TEST-Case.xml',(output/'SHA256SUMS').read_text())
+            self.assertEqual((output/'helper-tests/plain.log').read_text(),'raw helper diagnostic')
+            self.assertFalse(any((output/'helper-tests').glob('plain')))
+            self.assertEqual(json.loads((output/'host-binaries-archive-error.json').read_text())['status'],'FAIL')
 
 
 if __name__ == '__main__': unittest.main()

@@ -33,19 +33,30 @@ n'est utilisé par l'Activity. Le résultat PASS signifie seulement que ces appe
 de cycle de vie ont retourné ; il ne prouve ni token généré, ni résidence de
 modèle, ni unload d'un modèle, ni barrière globale DRAINED.
 
-Le propriétaire est retenu lors de la rotation : une nouvelle Activity ne crée
-pas de second backend pour un test en cours. L'arrière-plan demande Stop. La
-destruction du propriétaire annule sa coroutine, mais son `finally` attend
-l'appel `close` en contexte non annulable. Un échec de fermeture conserve
-l'instance en quarantaine ; aucune autre factory ni tentative automatique de
-nettoyage n'est autorisée. Les tests unitaires injectés exercent ces décisions,
+Un propriétaire singleton existe pendant tout le processus. Rotation,
+finish/relaunch et Activities simultanées retrouvent le même propriétaire et
+sa clôture atomique : une nouvelle Activity ne peut pas créer un backend de
+remplacement pendant une fermeture en attente ou après un échec. Les
+contrôleurs utilisent aussi, par défaut, une clôture partagée au processus,
+conservant l'instance active et la quarantaine ; ce verrou n'est pas local à
+une Activity. Une clôture isolée peut être fournie explicitement aux fixtures
+unitaires, jamais par l'Activity productive de laboratoire.
+
+L'arrière-plan demande Stop. La destruction d'une Activity détache seulement
+son affichage ; elle ne détruit pas le propriétaire ni ne réinitialise sa
+quarantaine. Le propriétaire poursuit la fermeture effective du backend, dont
+le `finally` attend `close` en contexte non annulable. Un échec conserve
+l'instance et bloque toute autre factory, même après recréation de l'écran ;
+aucune tentative automatique de nettoyage n'est autorisée. La mort du
+processus ne produit aucun reçu DRAINED/UNLOADED. Les tests injectés couvrent
+notamment deux contrôleurs partageant une fermeture en attente ou échouée,
 sans les assimiler à une exécution JNI ou Android instrumentée.
 
 ## Qualifications séparées
 
 - Compilation ARM64, manifeste final, absence de permission, signature et
   alignement16Kio : à lire dans les preuves de la CI du commit exact.
-- Huit tests JVM du contrôleur : doubles refusés, cleanup réel attendu,
+- Onze tests JVM du contrôleur : doubles refusés, cleanup réel attendu,
   annulation, erreurs et quarantaine. Leur backend est injecté.
 - Callbacks JNI hôte : banc distinct `perf03b/native-tests`, pas cet écran.
 - Streaming de véritables tokens, identité ancien/nouveau sur modèle,

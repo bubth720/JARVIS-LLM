@@ -20,7 +20,7 @@ import kotlinx.coroutines.launch
 
 /** Independent, permission-free laboratory. No prompts, synthetic tokens, model import or transport. */
 class LabActivity : Activity() {
-    private lateinit var owner: LabOwner
+    private val owner = LabProcessOwner
     private val displayScope = CoroutineScope(SupervisorJob() + Dispatchers.Main.immediate)
     private var observation: Job? = null
     private lateinit var status: TextView
@@ -29,7 +29,6 @@ class LabActivity : Activity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        owner = lastNonConfigurationInstance as? LabOwner ?: LabOwner()
         val content = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             val padding = (20 * resources.displayMetrics.density).toInt()
@@ -76,27 +75,23 @@ class LabActivity : Activity() {
         observation?.cancel()
         super.onStop()
     }
-    @Suppress("DEPRECATION")
-    override fun onRetainNonConfigurationInstance(): Any = owner
-
     override fun onDestroy() {
         displayScope.cancel()
-        if (!isChangingConfigurations) owner.dispose()
         super.onDestroy()
     }
 }
 
 private data class LabDisplayState(val message: Int = R.string.ready, val running: Boolean = false, val blocked: Boolean = false)
 
-/** Retained across rotation; a second Activity never constructs a second backend for an active test. */
-private class LabOwner {
+/** One owner until process death: finish/relaunch and multiple Activities share the same pending cleanup. */
+private object LabProcessOwner {
     private val controller = LabLifecycleController()
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
     private val mutable = MutableStateFlow(LabDisplayState())
     val state = mutable.asStateFlow()
     private var test: Job? = null
 
-    fun exercise() {
+    @Synchronized fun exercise() {
         if (test?.isActive == true || mutable.value.blocked) return
         mutable.value = LabDisplayState(R.string.running, running = true)
         test = scope.launch {
@@ -116,5 +111,4 @@ private class LabOwner {
         }
     }
     fun requestStop() = controller.requestStop()
-    fun dispose() { requestStop(); scope.cancel() }
 }

@@ -19,6 +19,7 @@ SUITES = {'domain': 'domain/build/test-results/test', 'app': 'app/build/test-res
           'endpoint': 'fixtures/p2-endpoint/build/test-results/testDebugUnitTest'}
 STREAM_EXPORT = 'Java_fr_jarvis_llm_engine_NativeBridge_generateStream'
 EXPECTED_GUARD = 'Protected baseline drift: app/src/main/AndroidManifest.xml'
+PATCH_SHA = '747598dd77bc53e1a2f8df7f2e60be824ff74f687d355b060e2012b55a665460'
 
 
 def load_frozen(name, path):
@@ -165,7 +166,66 @@ def inspect_apk(root, lane):
     print('PASS historical APK: %d JNI signatures; approved stream export=%s' % (len(symbols), STREAM_EXPORT in symbols))
 
 
+def preserve_host_binaries(root=ROOT, output=OUTPUT, separate=None):
+    """Keep exact tested JNI libraries outside the small reports artifact, including on failure."""
+    separate = separate or root/'build/perf03b-host-binaries'
+    if separate.resolve().is_relative_to(output.resolve()) or output.resolve().is_relative_to(separate.resolve()):
+        raise ValueError('HOST_BINARIES_REQUIRE_SEPARATE_ARTIFACT_ROOT')
+    separate.mkdir(parents=True, exist_ok=True); output.mkdir(parents=True, exist_ok=True)
+    compiled = {'plain': root/'build/native-tests/libjarvis_llm.so',
+                'sanitized': root/'build/perf03b-native-sanitized/libjarvis_llm.so'}
+    entries = {}
+    mismatches = []
+    for lane, source in compiled.items():
+        if not source.is_file():
+            entries[lane] = {'binary_status': 'NOT_BUILT', 'qualification_status': 'NOT_RUN'}
+            continue
+        target = separate/lane/'libjarvis_llm.so'; target.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(source, target)
+        digest = sha(target)
+        result_file = output/('jni-host-'+lane)/'results.json'
+        tested = json.loads(result_file.read_text()) if result_file.is_file() else None
+        match = digest == tested.get('native_library_sha256') if tested is not None else None
+        entries[lane] = {'binary_status': 'PRESERVED', 'source_build_path': source.relative_to(root).as_posix(),
+            'artifact_path': target.relative_to(separate).as_posix(), 'sha256': digest,
+            'size_bytes': target.stat().st_size, 'matches_tested_library': match,
+            'qualification_status': tested.get('status', 'UNKNOWN') if tested is not None else 'NOT_RUN'}
+        if match is False: mismatches.append(lane)
+    source_paths = ['app/src/main/cpp/bridge.cpp', 'app/src/main/cpp/stream_support.h',
+                    'app/src/main/cpp/CMakeLists.txt', 'tools/prepare-native.sh']
+    report = {'schema': 'jarvis.perf03b.host-binary-preservation/1', **provenance(root),
+        'approved_patch_sha256': PATCH_SHA, 'binary_artifact_name': 'perf03b-host-binaries-'+git(root,'rev-parse','HEAD'),
+        'libraries': entries, 'source_sha256': {p:sha(root/p) for p in source_paths if (root/p).is_file()},
+        'binary_report_mismatches': mismatches, 'real_generation': 'NOT_RUN', 'physical_android': 'NOT_RUN',
+        'ttft_status': 'NOT_RUN', 'reexecute_after_critical_failure': False}
+    data = json.dumps(report, indent=2)+'\n'
+    (separate/'manifest.json').write_text(data)
+    (output/'host-binaries.json').write_text(data)
+    paths = sorted(p for p in separate.rglob('*') if p.is_file() and p.name != 'SHA256SUMS')
+    (separate/'SHA256SUMS').write_text(''.join(sha(p)+'  '+p.relative_to(separate).as_posix()+'\n' for p in paths))
+    # Preserve everything first: a mismatch is an evidence failure, never an excuse to discard a binary.
+    if mismatches: raise ValueError('HOST_BINARY_NOT_MATCH_TESTED_LIBRARY:'+','.join(mismatches))
+    return report
+
+
 def package():
+    binary_error = None
+    try:
+        preserve_host_binaries()
+    except Exception as error:
+        # A failing evidence assertion must not prevent collection of the raw failure evidence.
+        binary_error = error
+        OUTPUT.mkdir(parents=True, exist_ok=True)
+        (OUTPUT/'host-binaries-archive-error.json').write_text(json.dumps({
+            'schema': 'jarvis.perf03b.host-binary-archive-error/1', **provenance(ROOT),
+            'status': 'FAIL', 'error_type': type(error).__name__, 'reason': str(error)[:1024],
+            'failure_hidden': False, 'remaining_raw_evidence_collection_attempted': True}, indent=2)+'\n')
+    # Preserve a partial helper failure as well, without archiving executables or CMake objects.
+    helper_source = ROOT/'build/perf03/helper-tests'
+    helper_target = OUTPUT/'helper-tests'; helper_target.mkdir(parents=True, exist_ok=True)
+    for name in ('plain.log','plain.json','asan-ubsan.log','asan-ubsan.json','sanitizers.json','compiler.txt','sources.sha256'):
+        source = helper_source/name
+        if source.is_file(): shutil.copy2(source,helper_target/name)
     roots = [('candidate', ROOT)]
     if os.environ.get('RUNNER_TEMP'):
         baseline = Path(os.environ['RUNNER_TEMP'])/'perf03b-baseline'
@@ -185,6 +245,8 @@ def package():
     files = sorted(p for p in OUTPUT.rglob('*') if p.is_file() and p.name != 'SHA256SUMS')
     (OUTPUT/'SHA256SUMS').write_text(''.join(sha(p)+'  '+p.relative_to(OUTPUT).as_posix()+'\n' for p in files))
     print('Archived %d evidence files; a missing downstream result remains NOT_RUN.' % len(files))
+    if binary_error is not None:
+        raise binary_error
 
 
 def main():

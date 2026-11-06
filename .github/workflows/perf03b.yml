@@ -41,6 +41,16 @@ jobs:
           python3 docs/mission-003f-correction/reference/verify_vectors.py
           node tools/test-apk-verifier.cjs
           python3 perf03b/evidence.py inherited --lane candidate
+      - name: Exact applied UTF-8 helper, bounded queue and sanitizers — component tests only
+        run: |
+          set -euo pipefail
+          mkdir -p build/perf03b/helper-tests
+          cmp app/src/main/cpp/stream_support.h perf03/candidate/native/stream_support.h
+          sha256sum app/src/main/cpp/stream_support.h perf03/candidate/native/stream_support.h > build/perf03b/helper-tests/applied-header-sha256.txt
+          bash perf03/tests/run.sh 2>&1 | tee build/perf03b/helper-tests.log
+          for helper_report in plain.log plain.json asan-ubsan.log asan-ubsan.json sanitizers.json compiler.txt sources.sha256; do
+            cp "build/perf03/helper-tests/$helper_report" build/perf03b/helper-tests/
+          done
       - name: Verified historical toolchain and pinned llama source — no model download
         run: |
           set -euo pipefail
@@ -124,5 +134,12 @@ jobs:
         with:
           name: perf03b-evidence-${{ github.event.pull_request.head.sha || github.sha }}
           path: build/perf03b/
+          if-no-files-found: error
+          retention-days: 90
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: perf03b-host-binaries-${{ github.event.pull_request.head.sha || github.sha }}
+          path: build/perf03b-host-binaries/
           if-no-files-found: error
           retention-days: 90
