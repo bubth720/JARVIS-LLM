@@ -1,0 +1,46 @@
+{
+  "schema": "jarvis.perf03b.approved-application/1",
+  "authorized_base_commit": "ca9d8f060856e134d793d0c23764fae45ce2cc53",
+  "authorized_base_tree": "75798737dfc4a618f213ae299b0e467e7547032a",
+  "branch": "codex/llm-perf-03b-native-stream",
+  "patch_sha256": "747598dd77bc53e1a2f8df7f2e60be824ff74f687d355b060e2012b55a665460",
+  "preapply_worktree_clean": true,
+  "preimages": [
+    {
+      "path": "app/src/main/cpp/bridge.cpp",
+      "mode": "100644",
+      "preimage_sha256": "471c1940652efdd359e3fb0b0198bf19276bf1117d63355dc6e569ef476f70db",
+      "preimage_git_blob": "48e5c50e6fc7b29d44834df406d3b0bf3b189e6a",
+      "preimage_verified": true
+    },
+    {
+      "path": "app/src/main/cpp/stream_support.h",
+      "mode": "100644",
+      "preimage_sha256": null,
+      "preimage_git_blob": null,
+      "preimage_verified": true
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt",
+      "mode": "100644",
+      "preimage_sha256": "ac0644ac25a36722e101d6db8571798a5dda892e650048483ac0338e02503a85",
+      "preimage_git_blob": "63ee30e52f82c94cd94ec43b84e2d9abff6b0a20",
+      "preimage_verified": true
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt",
+      "mode": "100644",
+      "preimage_sha256": null,
+      "preimage_git_blob": null,
+      "preimage_verified": true
+    }
+  ],
+  "dry_run_exit": 0,
+  "apply_exit": 0,
+  "postimages_verified": true,
+  "applied_at_utc": "2026-11-06T12:13:30.654767+00:00",
+  "historical_f3b_applied": false,
+  "production_activation": false,
+  "model_downloaded": false,
+  "user_authorization": "Explicit GATE-A in this conversation; experimental branch only; GATE-B pending"
+}
