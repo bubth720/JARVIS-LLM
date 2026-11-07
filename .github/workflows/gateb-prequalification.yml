@@ -31,7 +31,7 @@ jobs:
           name: perf03b-evidence-059cf9c3040d768e1074f62ec5d174c1a27a2590
           path: qualification-input
       - name: Attempt cloud ARM64 emulator without model
-        run: python3 prequalification/android.py --api ${{ matrix.api }} --input qualification-input --output build/prequalification/api${{ matrix.api }}
+        run: python3 prequalification/android.py --api ${{ matrix.api }} --accel off --input qualification-input --output build/prequalification/api${{ matrix.api }}
       - name: Evidence checksums
         if: always()
         run: |

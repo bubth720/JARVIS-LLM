@@ -10,6 +10,10 @@ APK réutilisée, sans reconstruction ni modification : source059cf9c3, run42246
 
 Scénarios exécutables : installation testOnly, ouverture, indication NOT_RUN, vrai cycle create/begin/Stop/close sans poids, rotation (survie de l'écran), arrière-plan/retour, force-stop/redémarrage en mode avion. La course Stop UI, les refus thermiques/RAM simulés et la génération restent NOT_RUN : aucune capacité de fixture n'est ajoutée à l'APK pour les inventer. Les blocages d'hyperviseur ou d'image ne sont pas des régressions du JNI.
 
+Première tentative réelle : [run42353138163](https://github.com/bubth720/JARVIS-LLM/actions/runs/42353138163), commit15c7c24c, runnerarm64 image20261104.0514.1, émulateur37.2.13.0. Les deux images Google APIs29/35 sont disponibles. Le préflight Hypervisor.Framework retourne0, mais le démarrage réel échoue avec `HVF error: HV_UNSUPPORTED` puis `failed to initialize HVF: Invalid argument`. Zéro cas Android et aucune installation ; BLOCKED malgré les jobs verts. Le commit suivant tente explicitement le mode logiciel documenté `-accel off`, avec la même limite de boot240s, sans changement du JNI, des budgets ou des protections. Ce contrôle distinct ne réécrit pas le résultat initial et n'est pas une tentative de masquer un échec natif.
+
+La [documentation GitHub](https://docs.github.com/en/actions/reference/runners/github-hosted-runners) indique que la virtualisation imbriquée n'est pas prise en charge sur macOS ARM64. La [documentation Google du mode off](https://developer.android.com/studio/run/emulator-commandline) le décrit désormais comme non supporté et expérimental. La tentative vérifie son refus éventuel ; elle ne définit pas `ANDROID_I_WANT_MY_TCG` pour forcer l'activation non supportée, ne change pas SELinux/SIP et n'est pas un résultat de performance. Si le mode est refusé, il faut un autre hôte ARM64 disposant réellement de la virtualisation, à choisir dans un périmètre cloud validé, sans achat ou configuration de compte implicites.
+
 ## Modèle proposé — accord requis
 
 **Qwen/Qwen3-0.6B-GGUF**, fichier **Qwen3-0.6B-Q4_K_M.gguf**, révision immuable `8e42d41f70cb6c571f58c3f31bd9287b372d97cc`.

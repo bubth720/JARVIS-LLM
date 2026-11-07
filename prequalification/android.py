@@ -8,9 +8,9 @@ def validate_guest(api,abi,qemu,expected):
     if qemu!='1' or api!=expected or 'arm64-v8a' not in abi.split(','):
         raise ValueError('REFUSE_NONMATCHING_CLOUD_EMULATOR_BEFORE_INSTALL')
 def main():
-    p=argparse.ArgumentParser();p.add_argument('--api',type=int,choices=[29,35],required=True);p.add_argument('--input',type=Path,required=True);p.add_argument('--output',type=Path,required=True);a=p.parse_args()
+    p=argparse.ArgumentParser();p.add_argument('--api',type=int,choices=[29,35],required=True);p.add_argument('--input',type=Path,required=True);p.add_argument('--output',type=Path,required=True);p.add_argument('--accel',choices=['auto','off'],default='auto');a=p.parse_args()
     out=a.output;out.mkdir(parents=True,exist_ok=True);serial='emulator-5580';emu=None;logfile=None
-    report={'api_requested':a.api,'status':'NOT_RUN','cases':[],'model':'NOT_RUN','ttft':'NOT_RUN','personal_installation':False,'apk_source_commit':'059cf9c3040d768e1074f62ec5d174c1a27a2590','apk_sha256':APK_SHA,'serial':serial}
+    report={'api_requested':a.api,'acceleration':a.accel,'status':'NOT_RUN','cases':[],'model':'NOT_RUN','ttft':'NOT_RUN','personal_installation':False,'apk_source_commit':'059cf9c3040d768e1074f62ec5d174c1a27a2590','apk_sha256':APK_SHA,'serial':serial}
     def run(cmd,label,timeout=60,check=True):
         r=subprocess.run(list(map(str,cmd)),capture_output=True,text=True,timeout=timeout)
         (out/(label+'.log')).write_text(r.stdout+r.stderr)
@@ -31,7 +31,7 @@ def main():
         report['runner_image']=os.environ.get('ImageVersion','UNKNOWN')
         run([emulator,'-version'],'emulator-version',check=False)
         acc=run([emulator,'-accel-check'],'acceleration',check=False)
-        if acc.returncode:raise Blocked('BLOCKED_HYPERVISOR')
+        if acc.returncode and a.accel!='off':raise Blocked('BLOCKED_HYPERVISOR')
         image=f'system-images;android-{a.api};google_apis;arm64-v8a';report['system_image']=image
         listing=run([manager,'--list','--channel=0'],'sdk-list',timeout=180,check=False)
         if listing.returncode:raise Blocked('BLOCKED_SDK_REPOSITORY')
@@ -47,7 +47,7 @@ def main():
         r=subprocess.run([str(avd),'create','avd','--name','jarvis-gateb','--package',image],input='no\n',env=env,text=True,capture_output=True,timeout=90)
         (out/'avd-create.log').write_text(r.stdout+r.stderr)
         if r.returncode:raise Blocked('BLOCKED_AVD_CREATE')
-        logfile=(out/'emulator.log').open('w');emu=subprocess.Popen([str(emulator),'-avd','jarvis-gateb','-port','5580','-no-window','-no-audio','-no-snapshot','-gpu','swiftshader_indirect'],env=env,stdout=logfile,stderr=subprocess.STDOUT)
+        logfile=(out/'emulator.log').open('w');emu=subprocess.Popen([str(emulator),'-avd','jarvis-gateb','-port','5580','-no-window','-no-audio','-no-snapshot','-no-metrics','-accel',a.accel,'-gpu','swiftshader_indirect'],env=env,stdout=logfile,stderr=subprocess.STDOUT)
         deadline=time.monotonic()+240
         while time.monotonic()<deadline:
             if emu.poll() is not None:raise Blocked('BLOCKED_EMULATOR_EXIT')
