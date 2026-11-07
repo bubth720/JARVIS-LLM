@@ -1,0 +1,51 @@
+{
+  "schema": "jarvis.lab-admission01.patch/1",
+  "base_commit": "2500a123a69b059bf21ac6bec24be5a52b54a9c5",
+  "base_tree": "34e16b628a577e9cfae0633785502da742da9287",
+  "patch_sha256": "8df826451e501a107305f8fcaee5ca3d5334e22de23246d32cc7fd5312da21e8",
+  "patch_bytes": 54716,
+  "applied": false,
+  "native_jni_cpp_changed": false,
+  "files": [
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/LabCloudAdmission.kt",
+      "mode": "100644",
+      "preimage_sha256": null,
+      "preimage_exists": false,
+      "postimage_sha256": "3bd53bb2e639d00b1c186f9914893be25ada972152fda52cec4023098b18d1bb",
+      "postimage_bytes": 16864
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/LabHostBudget.kt",
+      "mode": "100644",
+      "preimage_sha256": null,
+      "preimage_exists": false,
+      "postimage_sha256": "a000e5dfe99274cda5e622ffc805996852171c997d89d8b3e4f318809e277c55",
+      "postimage_bytes": 3173
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt",
+      "mode": "100644",
+      "preimage_sha256": "1e8f5db4a849dde593e4ce36edd656ffd5071c8684bf6c55c1a5b0d84091539a",
+      "preimage_exists": true,
+      "postimage_sha256": "e221235da39db55e4dd31757ca5bbeaa5ed1b503a0165d390e6ef0dd0efd023c",
+      "postimage_bytes": 26558
+    },
+    {
+      "path": "app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt",
+      "mode": "100644",
+      "preimage_sha256": "4dd1ea9f6e4e11ab2ecd97f00d24d81dbd3419cca77d2c984f36334c33ca0c1f",
+      "preimage_exists": true,
+      "postimage_sha256": "8c7c07480164d0b86a24534e574ddccb8e09c85d3e3f31ee48c0fbd178390857",
+      "postimage_bytes": 12459
+    },
+    {
+      "path": "domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt",
+      "mode": "100644",
+      "preimage_sha256": "78a9d0362c0ce5e3bcfc043a97d5f198fa2d470a01b952ee7dddab78cdc59bb1",
+      "preimage_exists": true,
+      "postimage_sha256": "33aee5b72d64ea2dc33dafd313d66ac89b9786e8ee8e917dbae86f37f9bed743",
+      "postimage_bytes": 6448
+    }
+  ]
+}

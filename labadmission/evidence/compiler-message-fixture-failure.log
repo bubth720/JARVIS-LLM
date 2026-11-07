@@ -1,0 +1,6 @@
+build/labadmission/negative-external_scope_extension_forbidden.kt:2:31: error: cannot access 'interface StreamBinding : Any': it is internal in file.
+abstract class InvalidScope : StreamBinding
+                              ^^^^^^^^^^^^^
+build/labadmission/negative-external_scope_extension_forbidden.kt:2:31: error: extending sealed classes or interfaces from a different module is prohibited.
+abstract class InvalidScope : StreamBinding
+                              ^^^^^^^^^^^^^

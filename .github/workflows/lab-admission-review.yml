@@ -1,0 +1,43 @@
+name: LAB-ADMISSION-01 exact unapplied patch review
+on:
+  push:
+    branches: ['codex/llm-lab-admission-review']
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  review:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Frozen active sources, exact patch and in-memory postimages
+        run: python3 labadmission/check.py
+      - name: Verified compiler and test dependencies only, no model
+        run: python3 labadmission/bootstrap_jars.py --cache build/labadmission/cache
+      - name: Baseline, exact candidate postimages, historical and security tests
+        run: |
+          set -euo pipefail
+          python3 labadmission/run_review.py --jdk "$JAVA_HOME" --cache build/labadmission/cache --historical --baseline
+          python3 labadmission/run_review.py --jdk "$JAVA_HOME" --cache build/labadmission/cache --historical
+          python3 labadmission/contracts.py --jdk "$JAVA_HOME" --cache build/labadmission/cache
+          python3 labadmission/check.py
+          git diff --exit-code HEAD
+      - name: Text evidence only, even on failure
+        if: always()
+        run: python3 labadmission/publish_evidence.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: lab-admission-review-${{ github.sha }}
+          path: build/labadmission/public/
+          retention-days: 90
+          if-no-files-found: error
