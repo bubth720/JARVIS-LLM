@@ -1,0 +1,51 @@
+name: GATE-B Android ARM64 model-free prequalification
+on:
+  push:
+    branches: ['codex/llm-perf-03b-gateb-prequalification']
+permissions:
+  contents: read
+  actions: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  android:
+    runs-on: macos-15
+    timeout-minutes: 25
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [29, 35]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Exact baseline and unchanged JNI
+        run: |
+          python3 prequalification/check.py
+          python3 -m unittest discover -s prequalification -p 'test_*.py' -v
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
+        with:
+          github-token: ${{ github.token }}
+          run-id: 42246910154
+          name: perf03b-evidence-059cf9c3040d768e1074f62ec5d174c1a27a2590
+          path: qualification-input
+      - name: Attempt cloud ARM64 emulator without model
+        run: python3 prequalification/android.py --api ${{ matrix.api }} --accel off --input qualification-input --output build/prequalification/api${{ matrix.api }}
+      - name: Evidence checksums
+        if: always()
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib
+          p=Path('build/prequalification');p.mkdir(parents=True,exist_ok=True)
+          files=sorted(f for f in p.rglob('*') if f.is_file() and f.name!='SHA256SUMS')
+          (p/'SHA256SUMS').write_text(''.join(hashlib.sha256(f.read_bytes()).hexdigest()+'  '+f.relative_to(p).as_posix()+'\n' for f in files))
+          PY
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: gateb-api${{ matrix.api }}-${{ github.sha }}
+          path: build/prequalification/
+          retention-days: 90
+          if-no-files-found: error

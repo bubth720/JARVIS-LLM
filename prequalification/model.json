@@ -1,0 +1,18 @@
+{
+  "status": "PROPOSED_AWAITING_USER_APPROVAL",
+  "publisher": "Qwen",
+  "repository": "Qwen/Qwen3-0.6B-GGUF",
+  "revision": "8e42d41f70cb6c571f58c3f31bd9287b372d97cc",
+  "file": "Qwen3-0.6B-Q4_K_M.gguf",
+  "size_bytes": 396704416,
+  "sha256": "b0638f08417a2d3c8652760462eb5407c6e30173cf9608ad0820757a281eea0e",
+  "license": "Apache-2.0",
+  "source": "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/blob/8e42d41f70cb6c571f58c3f31bd9287b372d97cc/Qwen3-0.6B-Q4_K_M.gguf",
+  "pointer_source": "https://huggingface.co/Qwen/Qwen3-0.6B-GGUF/raw/8e42d41f70cb6c571f58c3f31bd9287b372d97cc/Qwen3-0.6B-Q4_K_M.gguf",
+  "license_source": "https://huggingface.co/Qwen/Qwen3-0.6B/blob/main/LICENSE",
+  "metadata_only_observed": true,
+  "weights_downloaded": false,
+  "binary_sha256_recomputed": false,
+  "binary_metadata_and_loading": "NOT_RUN",
+  "compatibility": "CANDIDATE_QWEN3_SMALL_Q4_K_M_SUBJECT_TO_EXISTING_NATIVE_CHECKS"
+}
