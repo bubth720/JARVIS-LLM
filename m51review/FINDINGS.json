@@ -1,0 +1,27 @@
+{
+  "schema": "jarvis.m51.authority-decision/1",
+  "reviewed_commit": "69400fe26d61688262b94cc8a2d5efe20d1da4be",
+  "reviewed_tree": "aa2910dbddb25289ff7c22830fcf99d5463871e1",
+  "reviewed_patch_sha256": "8df826451e501a107305f8fcaee5ca3d5334e22de23246d32cc7fd5312da21e8",
+  "verdict": "NO_GO",
+  "gates": {"G_A": "CLOSED", "G_ROOT": "CLOSED", "G_B": "NOT_VALIDATED", "G_C": "NOT_RUN"},
+  "findings": [
+    {"id":"A01","priority":"P0","status":"BLOCKED_BY_DESIGN","claim":"NO_TRUST_ROOT","test":"configuredFactoryRemainsClosed"},
+    {"id":"A02","priority":"P0","status":"NEEDS_THREAT_DECISION","claim":"PATHNAME_AND_WRITABLE_FD_NOT_STRONG_RESIDENCE_PROOF","tests":["currentFileModeDoesNotRevokePreopenedWritableDescriptor_REPRODUCED","metadataOnlyStabilityCheckMissesRestoredMtimeMutation_REPRODUCED"]},
+    {"id":"A03","priority":"P1","status":"REPRODUCED_CONTRACT_LIMIT","claim":"WATCHER_EXCEPTION_SUPPRESSES_LATER_NOTIFICATIONS","test":"failedWatcherPreventsFollowingWatcherNotification_REPRODUCED"},
+    {"id":"A04","priority":"P1","status":"REPRODUCED_SCHEDULING_LIMIT","claim":"BLOCKING_MONITOR_DELAYS_DEADLINE_NOTIFICATION","test":"deadlineUsesSameExecutorAsBlockingMonitor_REPRODUCED"},
+    {"id":"A05","priority":"P1","status":"REPRODUCED_RAW_EXCEPTION_LIMIT","claim":"FILESYSTEM_EXCEPTION_CONTAINS_PATH_NOT_LOGGED_OR_PUBLISHED_AS_PRIVATE_DATA","test":"filesystemExceptionExposesSyntheticPrivatePath_REPRODUCED"},
+    {"id":"A06","priority":"P1","status":"BOOTSTRAP_NOT_QUALIFIED","claim":"DECLARED_EXECUTION_CONTEXT_IS_NOT_ATTESTATION","test":"arbitraryExecutionConstructorIsNotHostObservation"},
+    {"id":"A07","priority":"P2","status":"REPRODUCED_INTERNAL_API_LIMIT","claim":"TERMINAL_METHOD_DOES_NOT_SEAL_TRANSITIONS","test":"phaseTerminalMethodDoesNotSealTerminalTransitions_REPRODUCED"},
+    {"id":"A08","priority":"P2","status":"REPRODUCED_LOCK_BOUNDARY","claim":"WATCHER_RUNS_UNDER_LEASE_MONITOR_NOT_BROKER_MONITOR","test":"revocationCallbackIsOutsideBrokerButInsideLeaseMonitor_REPRODUCED"},
+    {"id":"A09","priority":"P1","status":"NOT_RUN_REAL_RESIDENCE","claim":"SAMPLED_MEMORY_NOT_ATOMIC_PEAK_LIMITER","test":null}
+  ],
+  "runtime": {"code_present":true,"connected":false,"enabled":false,"runtime_ready":false,"user_approved":false,"device_qualified":false,"availability":"BLOCKED"},
+  "real_generation_trials":0,
+  "ttft_p95_ms":null,
+  "native_load":"NOT_RUN",
+  "android":"NOT_RUN",
+  "model_downloaded":false,
+  "patch_applied":false,
+  "operator_root_provisioned":false
+}
