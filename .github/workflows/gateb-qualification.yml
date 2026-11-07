@@ -1,0 +1,77 @@
+name: GATE-B authorized GGUF verification and closed admission
+on:
+  push:
+    branches: ['codex/llm-perf-03b-gateb-qualification']
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  authorized-file:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Exact source preservation and publication safety
+        run: |
+          set -euo pipefail
+          python3 qualification/check.py
+          python3 -m unittest discover -s qualification -p 'test_*.py' -v 2>&1 | tee build/gateb-evidence/tests.log
+      - name: Only the explicitly authorized immutable GGUF and license
+        run: python3 qualification/download.py --private-dir "$RUNNER_TEMP/jarvis-gateb-private" --output build/gateb-evidence
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Pinned sources and metadata-only native validator
+        run: |
+          set -euo pipefail
+          GIT_LFS_SKIP_SMUDGE=1 bash tools/prepare-native.sh 2>&1 | tee build/gateb-evidence/dependency.log
+          cmake -S qualification -B build/gateb-metadata -DLLAMA_SOURCE_DIR="$GITHUB_WORKSPACE/.deps/llama.cpp" -DCMAKE_BUILD_TYPE=Release 2>&1 | tee build/gateb-evidence/configure.log
+          cmake --build build/gateb-metadata --target authorized_metadata -j2 2>&1 | tee build/gateb-evidence/compile.log
+          python3 qualification/validate_metadata.py --private-dir "$RUNNER_TEMP/jarvis-gateb-private" --probe build/gateb-metadata/authorized_metadata --output build/gateb-evidence
+      - name: Evaluate real admission, no fabricated CORE grant or direct JNI bypass
+        run: |
+          python3 qualification/admission.py --output build/gateb-evidence
+          python3 qualification/check.py
+          git diff --exit-code HEAD
+      - name: Destroy ephemeral private weights, never publish weights
+        if: always()
+        run: |
+          rm -f "$RUNNER_TEMP/jarvis-gateb-private/Qwen3-0.6B-Q4_K_M.gguf"
+          test ! -f "$RUNNER_TEMP/jarvis-gateb-private/Qwen3-0.6B-Q4_K_M.gguf"
+      - name: Text-only sanitized evidence staging
+        if: always()
+        run: python3 qualification/package.py --source build/gateb-evidence --target build/gateb-public-evidence
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: gateb-authorized-file-${{ github.sha }}
+          path: build/gateb-public-evidence/
+          retention-days: 90
+          if-no-files-found: error
+  android-host-capability:
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 5
+    steps:
+      - name: New host capability only, no repeated macOS emulator attempts
+        run: |
+          mkdir -p evidence
+          python3 - <<'PY'
+          import json,os,platform,stat
+          from pathlib import Path
+          p=Path('/dev/kvm')
+          ready=p.exists() and stat.S_ISCHR(p.stat().st_mode) and os.access(p,os.R_OK|os.W_OK)
+          d={'host_arch':platform.machine(),'runner_image':os.environ.get('ImageVersion','UNKNOWN'),'kvm_character_device_present':p.exists() and stat.S_ISCHR(p.stat().st_mode),'kvm_accessible':ready,'status':'CAPABILITY_ONLY' if ready else 'BLOCKED_NO_KVM','android_execution':'NOT_RUN','emulator_binary_provisioned':False,'model_downloaded':False,'personal_device':False}
+          Path('evidence/capability.json').write_text(json.dumps(d,indent=2)+'\n');print(json.dumps(d))
+          PY
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: gateb-linux-arm64-capability-${{ github.sha }}
+          path: evidence/
+          retention-days: 90
+          if-no-files-found: error

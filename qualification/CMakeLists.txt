@@ -1,0 +1,8 @@
+cmake_minimum_required(VERSION 3.22.1)
+project(jarvis_authorized_metadata LANGUAGES C CXX)
+set(CMAKE_CXX_STANDARD 17)
+get_filename_component(JARVIS_SOURCE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/.." ABSOLUTE)
+add_subdirectory("${JARVIS_SOURCE_ROOT}/app/src/main/cpp" native)
+add_executable(authorized_metadata metadata.cpp)
+target_include_directories(authorized_metadata PRIVATE "${JARVIS_SOURCE_ROOT}/app/src/main/cpp")
+target_link_libraries(authorized_metadata PRIVATE llama)
