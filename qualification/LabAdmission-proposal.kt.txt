@@ -1,0 +1,26 @@
+// Review sketch only: NOT COMPILED, NOT APPLIED, no credential/lease is minted here.
+// Concrete constructors must remain internal to independently reviewed issuers.
+sealed interface ReviewedScope {
+    class Core /* validated by the real CORE authority */ private constructor() : ReviewedScope
+    class LabCloud /* explicit operator/run/model-bound permit */ private constructor() : ReviewedScope
+}
+interface BrokerOwnedSnapshot {
+    // Implemented/minted only by the actual broker; never from a caller's leaseRef.
+    val ownerIncarnation: String
+    val leaseRevision: Long
+    val live: Boolean
+}
+interface VerifiedResidentReceipt {
+    val measuredModelSha256: String
+    val measuredFileSize: Long
+    val nativeResidenceIncarnation: String
+}
+interface ReviewedLabAdmission {
+    // All arguments must be bound to the SAME owner, preparation, file and live leases.
+    // Result must be unforgeable, one-shot, revocable and unusable by productive CORE ports.
+    fun examine(scope: ReviewedScope.LabCloud,
+                owned: BrokerOwnedSnapshot,
+                resident: VerifiedResidentReceipt,
+                exactPreparedFingerprint: String): ReviewDecision
+}
+sealed interface ReviewDecision // No implementation in this mission.

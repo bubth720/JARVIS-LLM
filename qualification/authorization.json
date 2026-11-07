@@ -1,0 +1,18 @@
+{
+  "schema": "jarvis.gateb.authorization/1",
+  "scope": "EXPLICIT_USER_CLOUD_LAB_ONLY",
+  "base_commit": "95bad9cac56dd30cc67eacc7239cf48ffb9dcac3",
+  "runtime_reference": "059cf9c3040d768e1074f62ec5d174c1a27a2590",
+  "repository": "Qwen/Qwen3-0.6B-GGUF",
+  "revision": "8e42d41f70cb6c571f58c3f31bd9287b372d97cc",
+  "file": "Qwen3-0.6B-Q4_K_M.gguf",
+  "size_bytes": 396704416,
+  "sha256": "b0638f08417a2d3c8652760462eb5407c6e30173cf9608ad0820757a281eea0e",
+  "license": "Apache-2.0",
+  "other_models_allowed": false,
+  "native_patch_changes_allowed": false,
+  "core_interface_changes_allowed": false,
+  "personal_devices_allowed": false,
+  "weight_publication_allowed": false,
+  "gate_b_validated": false
+}
