@@ -1,0 +1,41 @@
+name: M51 independent LAB_CLOUD audit, no application
+on:
+  push:
+    branches: ['codex/m51-lab-cloud-audit']
+permissions:
+  contents: read
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+jobs:
+  audit:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+      - uses: actions/setup-java@cf277c60eb25467037889841efdb72551f06f6c3
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Preserve every PR15 source and its unapplied exact patch
+        run: python3 m51review/check.py
+      - name: Reviewed compiler dependencies only, no model
+        run: python3 labadmission/bootstrap_jars.py --cache build/m51review-cache
+      - name: Inherited regressions and independent adversarial audit
+        run: |
+          set -euo pipefail
+          python3 m51review/run_audit.py --jdk "$JAVA_HOME" --cache build/m51review-cache
+          python3 m51review/check.py
+          git diff --exit-code HEAD
+      - name: Stage only safe text evidence
+        if: always()
+        run: python3 m51review/publish.py
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: m51-authority-audit-${{ github.sha }}
+          path: build/m51review-public/
+          retention-days: 90
+          if-no-files-found: error

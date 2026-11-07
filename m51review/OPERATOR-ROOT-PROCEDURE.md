@@ -1,0 +1,14 @@
+# Procédure proposée de racine opérateur — aucun provisionnement
+
+Ce document ne crée ni clé privée, ni root, ni permis utilisable. Les clés des tests sont des fixtures éphémères en mémoire et ne peuvent pas devenir la preuve d'une approbation humaine.
+
+1. L'opérateur choisit un dispositif de signature sous son contrôle, hors dépôt, hors chat et hors CI publique. Sa création ou sa connexion doit être autorisée séparément. Ne jamais demander une clé privée dans la conversation ou la copier dans un artefact.
+2. Exporter seulement la clé publique au format exact spécifié (DER SubjectPublicKeyInfo, Ed25519) et calculer son SHA256. Vérifier ce fingerprint par un canal indépendant approuvé ; ne pas l'accepter parce que le consommateur a fourni à la fois clé et empreinte.
+3. Préparer un diff de provisionnement minuscule depuis un commit figé : remplacer l'ancrage fermé par le fingerprint public approuvé, versionner l'identité de racine et la procédure de retrait. Inclure préimages/postimages et SHA256 ; validation G-ROOT séparée de G-A, aucun secret dans Git.
+4. Qualifier le bootstrap : source/run/attempt/job/commit/artefact vérifiés, challenge owner/worker réellement émis par l'unique backend vide, modèle/révision/taille/SHA/template exacts, demande publique, configuration et variante. Un LabExecution construit par le consommateur n'est pas cette attestation.
+5. Présenter à l'opérateur un manifeste de tentative lisible correspondant aux octets canoniques length-framed signés. Le signataire vérifie le manifeste et les preuves avant de signer ; aucune approbation globale de futures générations. Les TTL restent bornés et les nonces à usage unique.
+6. Transmettre la signature par un canal approuvé à la seule tentative correspondante ; ne pas écrire le permis brut, les identifiants de bail ou sa signature utilisable dans des rapports publics. Exporter seulement des références expurgées et empreintes, compte de refus et statut.
+7. Pour un benchmark à plusieurs essais, préparer un lot fini de tentatives explicites. Le patch actuel ne possède pas de délégation de campagne ni de signature automatique ; ne pas en inventer une. Expiration ou refus → nouvelle approbation appropriée, pas réémission auto depuis le runner.
+8. Révocation/compromission : arrêter la campagne, révoquer les tentatives connues, bloquer l'admission, conserver UNKNOWN si le natif ne revient pas ; préparer une rotation/retrait de racine sous un nouveau diff approuvé. Ne pas effacer un échec ni déclarer le modèle déchargé par changement de clé.
+
+L'interface d'approbation doit être utilisable sans Termux ou Android Studio. Elle peut prendre la forme d'une procédure opérateur distincte, mais aucun nouveau service cloud, abonnement ou protection GitHub n'est créé ici. L'utilisateur doit décider du canal et de la racine avant toute implantation.
