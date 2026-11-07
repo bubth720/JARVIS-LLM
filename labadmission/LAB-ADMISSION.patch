@@ -1,0 +1,799 @@
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/LabCloudAdmission.kt b/app/src/main/java/fr/jarvis/llm/engine/LabCloudAdmission.kt
+new file mode 100644
+--- /dev/null
++++ b/app/src/main/java/fr/jarvis/llm/engine/LabCloudAdmission.kt
+@@ -0,0 +1,246 @@
++package fr.jarvis.llm.engine
++
++import fr.jarvis.domain.*
++import fr.jarvis.domain.resources.ResourceObservation
++import java.io.ByteArrayOutputStream
++import java.io.DataOutputStream
++import java.nio.file.*
++import java.nio.file.attribute.BasicFileAttributes
++import java.nio.file.attribute.PosixFilePermission
++import java.security.*
++import java.util.UUID
++import java.util.concurrent.ScheduledThreadPoolExecutor
++import java.util.concurrent.TimeUnit
++import java.util.concurrent.atomic.AtomicBoolean
++
++/** Proposed host-only, operator-signed scope. No CORE credential, entry point, key or permit is installed. */
++internal object LabAuthorizedModel {
++    const val repository = "Qwen/Qwen3-0.6B-GGUF"
++    const val revision = "8e42d41f70cb6c571f58c3f31bd9287b372d97cc"
++    const val fileName = "Qwen3-0.6B-Q4_K_M.gguf"
++    const val size = 396704416L
++    const val sha256 = "b0638f08417a2d3c8652760462eb5407c6e30173cf9608ad0820757a281eea0e"
++}
++internal interface LabClock { fun monotonicNanos(): Long; fun unixMillis(): Long }
++internal object LabSystemClock : LabClock {
++    override fun monotonicNanos() = System.nanoTime()
++    override fun unixMillis() = System.currentTimeMillis()
++}
++internal class LabExecution(val run: String, val attempt: String, val commit: String) {
++    init { require(run.matches(Regex("[1-9][0-9]{0,19}")) && attempt.matches(Regex("[1-9][0-9]{0,5}")))
++        require(commit.matches(Regex("[0-9a-f]{40}"))) }
++    override fun toString() = "LabExecution(redacted)"
++    companion object {
++        fun observe(): LabExecution {
++            check(System.getenv("GITHUB_ACTIONS") == "true" && System.getenv("RUNNER_OS") == "Linux" &&
++                System.getenv("GITHUB_REPOSITORY") == "bubth720/JARVIS-LLM") { "LAB_EXECUTION_UNQUALIFIED" }
++            return LabExecution(requireNotNull(System.getenv("GITHUB_RUN_ID")), requireNotNull(System.getenv("GITHUB_RUN_ATTEMPT")),
++                requireNotNull(System.getenv("GITHUB_SHA")))
++        }
++    }
++}
++internal class LabOwnerChallenge(val owner: String, val worker: String) {
++    override fun toString() = "LabOwnerChallenge(redacted)"
++}
++/** No caller-selected trust anchor. Provisioning a real public-key fingerprint requires another exact reviewed diff. */
++internal class LabOperatorTrust private constructor(val publicKey: PublicKey) {
++    override fun toString() = "LabOperatorTrust(redacted)"
++    companion object {
++        private const val APPROVED_OPERATOR_KEY_SHA256 = "" // CLOSED: no operator root is authorized/provisioned by this review.
++        fun fromApprovedKey(key: PublicKey): LabOperatorTrust {
++            check(APPROVED_OPERATOR_KEY_SHA256.matches(Regex("[0-9a-f]{64}"))) { "LAB_TRUST_ROOT_NOT_CONFIGURED" }
++            check(streamHash(key.encoded) == APPROVED_OPERATOR_KEY_SHA256) { "LAB_OPERATOR_KEY_UNTRUSTED" }
++            return LabOperatorTrust(key)
++        }
++    }
++}
++internal enum class LabVariant { HISTORICAL, STREAM }
++internal class LabPermitSpec(val execution: LabExecution, val nonce: String, val session: String,
++    val owner: String, val worker: String, val issuedUnixMillis: Long, val expiresUnixMillis: Long,
++    val modelSha256: String, val templateSha256: String, val requestSha256: String,
++    val config: RuntimeConfig, val variant: LabVariant) {
++    init {
++        require(listOf(nonce,session,worker).all { it.length == 36 && runCatching { UUID.fromString(it).toString() == it }.getOrDefault(false) })
++        require(owner.length in 1..120 && issuedUnixMillis >= 0 && expiresUnixMillis > issuedUnixMillis &&
++            expiresUnixMillis - issuedUnixMillis <= 300_000)
++        require(listOf(modelSha256,templateSha256,requestSha256).all { it.matches(Regex("[0-9a-f]{64}")) })
++        require(modelSha256 == LabAuthorizedModel.sha256 && config.model == ModelKind.SMALL &&
++            config.context == 512 && config.threads == 1 && config.maxTokens in setOf(8,24)) { "LAB_MODEL_OR_CONFIGURATION_UNAPPROVED" }
++    }
++    fun canonical(): ByteArray = ByteArrayOutputStream().also { bytes -> DataOutputStream(bytes).use { out ->
++        for (s in listOf("jarvis.lab-cloud.operator/1", "bubth720/JARVIS-LLM", execution.run, execution.attempt,
++            execution.commit, nonce,session,owner,worker,issuedUnixMillis.toString(),expiresUnixMillis.toString(),
++            LabAuthorizedModel.repository,LabAuthorizedModel.revision,LabAuthorizedModel.fileName,LabAuthorizedModel.size.toString(),
++            modelSha256,templateSha256,requestSha256,config.model.name,config.context.toString(),config.maxTokens.toString(),
++            config.threads.toString(),variant.name)) { val b=s.toByteArray(Charsets.UTF_8);out.writeInt(b.size);out.write(b) }
++    } }.toByteArray()
++    override fun toString() = "LabPermitSpec(scope=LAB_CLOUD, redacted)"
++}
++internal class LabSignedPermit(val spec: LabPermitSpec, signature: ByteArray) {
++    private val signature = signature.copyOf()
++    fun verify(key: PublicKey): Boolean = signature.size == 64 && Signature.getInstance("Ed25519").run {
++        initVerify(key);update(spec.canonical());verify(signature)
++    }
++    override fun toString() = "LabSignedPermit(redacted)"
++}
++/** Process-scoped, bounded ledger shared by all authority instances. Never evict a consumed nonce to allow replay. */
++private object LabReplayLedger {
++    private class Entry(var consumed: Boolean=false, var revoked: Boolean=false, var stop: (() -> Unit)?=null, var stopDelivered: Boolean=false)
++    private val entries = HashMap<String,Entry>()
++    private fun key(s: LabPermitSpec) = streamHash((s.execution.run+"\n"+s.nonce).toByteArray(Charsets.US_ASCII))
++    private fun entry(s: LabPermitSpec): Entry = entries[key(s)] ?: run {
++        check(entries.size < 4096) { "LAB_LEDGER_FULL" };Entry().also { entries[key(s)]=it }
++    }
++    @Synchronized fun consume(spec: LabPermitSpec) {
++        val e=entry(spec);check(!e.consumed && !e.revoked) { "LAB_REPLAY_OR_REVOKED" };e.consumed=true
++    }
++    @Synchronized fun live(spec: LabPermitSpec) = entries[key(spec)]?.let { it.consumed && !it.revoked } == true
++    fun revoke(spec: LabPermitSpec) {
++        val action=synchronized(this) {
++            val e=entry(spec);e.revoked=true
++            if(e.stop != null && !e.stopDelivered) { e.stopDelivered=true;e.stop } else null
++        };action?.invoke()
++    }
++    fun watch(spec: LabPermitSpec, stop: () -> Unit) {
++        val stale=synchronized(this) { val e=entry(spec);check(e.stop == null);e.stop=stop
++            if(e.revoked && !e.stopDelivered) { e.stopDelivered=true;true } else false }
++        if(stale) stop()
++    }
++    @Synchronized fun detach(spec: LabPermitSpec) { entries[key(spec)]?.stop=null }
++}
++private object LabDeadlines {
++    // A control watchdog only: it never loads, prepares, generates or owns a second native worker.
++    val executor = ScheduledThreadPoolExecutor(1) { r -> Thread(r,"jarvis-lab-revocation").apply { isDaemon=true } }
++        .apply { removeOnCancelPolicy=true }
++}
++internal class LabCloudAuthority(private val trust: LabOperatorTrust, private val execution: LabExecution,
++    private val clock: LabClock = LabSystemClock) {
++    fun revoke(signed: LabSignedPermit) {
++        check(signed.verify(trust.publicKey)) { "LAB_REVOCATION_SIGNATURE_INVALID" }
++        val e=signed.spec.execution
++        check(e.run == execution.run && e.attempt == execution.attempt && e.commit == execution.commit) { "LAB_REVOCATION_EXECUTION_MISMATCH" }
++        LabReplayLedger.revoke(signed.spec)
++    }
++    fun redeem(signed: LabSignedPermit, owner: LabOwnerChallenge, request: GenerationRequest): LabAttempt {
++        val s=signed.spec
++        check(signed.verify(trust.publicKey)) { "LAB_SIGNATURE_INVALID" }
++        check(s.execution.run == execution.run && s.execution.attempt == execution.attempt && s.execution.commit == execution.commit &&
++            s.owner == owner.owner && s.worker == owner.worker) { "LAB_EXECUTION_OR_OWNER_MISMATCH" }
++        check(s.config == request.config && s.requestSha256 == labRequestHash(request)) { "LAB_REQUEST_MISMATCH" }
++        val now=clock.unixMillis()
++        check(now >= s.issuedUnixMillis && now < s.expiresUnixMillis) { "LAB_PERMIT_EXPIRED_OR_NOT_YET_VALID" }
++        val remaining=s.expiresUnixMillis-now
++        val mono=clock.monotonicNanos(); check(mono >= 0 && mono <= Long.MAX_VALUE-remaining*1_000_000) { "LAB_CLOCK_INVALID" }
++        LabReplayLedger.consume(s) // permanently consumed before any file/model/native operation, even if the next step fails
++        return LabAttempt(s,clock,mono+remaining*1_000_000)
++    }
++}
++/** Deep copy of the mutable-list boundary BEFORE signature verification; backend keeps this snapshot private. */
++internal fun labFreezeRequest(r: GenerationRequest) = GenerationRequest(r.messages.map { it.copy() },r.config.copy(),r.systemPrompt)
++internal fun labRequestHash(r: GenerationRequest): String {
++    require(r.messages.size == 1 && r.messages.single().role == "user" && r.systemPrompt != null)
++    val system=requireNotNull(r.systemPrompt);val question=r.messages.single().text
++    require(system.length <= 8192 && question.length <= 128*1024) { "LAB_INPUT_LIMIT" }
++    fun exactUtf8(text: String): ByteArray {
++        val buffer=Charsets.UTF_8.newEncoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
++            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT).encode(java.nio.CharBuffer.wrap(text))
++        return ByteArray(buffer.remaining()).also { buffer.get(it) }
++    }
++    require(exactUtf8(system).size <= 8192 && exactUtf8(question).size <= 128*1024) { "LAB_INPUT_LIMIT" }
++    val b=ByteArrayOutputStream()
++    DataOutputStream(b).use { out ->
++        for(s in listOf("jarvis.lab-request/1",r.systemPrompt!!,r.messages.single().text,r.config.model.name)) {
++            val bytes=s.toByteArray(Charsets.UTF_8);out.writeInt(bytes.size);out.write(bytes)
++        }
++        out.writeInt(r.config.context);out.writeInt(r.config.maxTokens);out.writeInt(r.config.threads)
++    }
++    return streamHash(b.toByteArray())
++}
++internal enum class LabPhase { AUTHORIZED, FILE_VERIFIED, RESIDENT, PREPARED, INVOKING, CONTENT_DONE, CANCELLED, ERROR, UNKNOWN, CLEANUP_FAILED }
++internal class LabAttempt internal constructor(val spec: LabPermitSpec, private val clock: LabClock, private val deadline: Long) : AutoCloseable {
++    val revocation = StreamRevocation()
++    @Volatile var phase = LabPhase.AUTHORIZED; private set
++    private val closed = AtomicBoolean(false)
++    private val stopLock=Any()
++    private var stop: (() -> Unit)? = null
++    private var timer: java.util.concurrent.ScheduledFuture<*>? = null
++    private var monitorTask: java.util.concurrent.ScheduledFuture<*>? = null
++    @Volatile var faultCode: String? = null; private set
++    fun isLive() = !closed.get() && revocation.isAllowed() && LabReplayLedger.live(spec) && clock.monotonicNanos() in 0 until deadline
++    fun requireLive() { check(isLive()) { "LAB_PERMIT_REVOKED_OR_EXPIRED" } }
++    fun attachStop(monitor: () -> Unit = { LabHostBudget.requireFits(spec.config) }, action: () -> Unit) {
++        synchronized(stopLock) {
++            check(stop == null && !closed.get()); stop=action
++            monitorTask=LabDeadlines.executor.scheduleAtFixedRate({
++                try { monitor() } catch (failure: Throwable) { faultCode=if(failure.message == "LAB_CALLER_CANCELLED") "LAB_CALLER_CANCELLED" else "LAB_HOST_MONITOR_REFUSED";revoke() }
++            },100,100,TimeUnit.MILLISECONDS)
++            timer=LabDeadlines.executor.schedule({ revoke() },(deadline-clock.monotonicNanos()).coerceAtLeast(0),TimeUnit.NANOSECONDS)
++        }
++        LabReplayLedger.watch(spec,action)
++        if(!isLive()) revoke()
++    }
++    /** All native stop callbacks run outside the permit/broker monitors. */
++    fun revoke() { revocation.revoke(); LabReplayLedger.revoke(spec) }
++    fun cancelledByBackend() { revocation.revoke() }
++    fun advance(expected: LabPhase, next: LabPhase) { requireLive(); check(phase == expected); phase=next }
++    fun terminal(next: LabPhase) { check(next in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED));phase=next }
++    override fun close() { closed.set(true);LabReplayLedger.detach(spec); synchronized(stopLock) { timer?.cancel(false);monitorTask?.cancel(false);timer=null;monitorTask=null;stop=null } }
++    override fun toString() = "LabAttempt(phase=$phase, redacted)"
++}
++/** Cooperative private snapshot contract; no hostile same-UID writer is within this laboratory boundary. */
++internal class LabFileProof private constructor(val path: Path, val key: Any, val modifiedMillis: Long) {
++    fun requireStable() {
++        val a=Files.readAttributes(path,BasicFileAttributes::class.java,LinkOption.NOFOLLOW_LINKS)
++        check(a.isRegularFile && !a.isSymbolicLink && a.size() == LabAuthorizedModel.size && a.fileKey() == key &&
++            a.lastModifiedTime().toMillis() == modifiedMillis) { "LAB_FILE_CHANGED" }
++        check(Files.getPosixFilePermissions(path) == setOf(PosixFilePermission.OWNER_READ) &&
++            Files.getAttribute(path,"unix:nlink") == 1) { "LAB_FILE_WRITABLE_OR_ALIASED" }
++    }
++    override fun toString() = "LabFileProof(redacted)"
++    companion object {
++        fun verify(root: Path, path: Path, alive: () -> Unit): LabFileProof {
++            val r=root.toAbsolutePath().normalize(); val p=path.toAbsolutePath().normalize()
++            check(r == r.toRealPath() && p.parent == r && p == p.toRealPath() && p.fileName.toString() == LabAuthorizedModel.fileName &&
++                Files.getPosixFilePermissions(r) == setOf(PosixFilePermission.OWNER_READ,PosixFilePermission.OWNER_EXECUTE)) { "LAB_PRIVATE_SNAPSHOT_REQUIRED" }
++            val a=Files.readAttributes(p,BasicFileAttributes::class.java,LinkOption.NOFOLLOW_LINKS)
++            check(a.isRegularFile && a.size() == LabAuthorizedModel.size && a.fileKey() != null) { "LAB_FILE_SIZE_OR_TYPE" }
++            val proof=LabFileProof(p,a.fileKey(),a.lastModifiedTime().toMillis());proof.requireStable()
++            val digest=MessageDigest.getInstance("SHA-256");var count=0L
++            Files.newInputStream(p,LinkOption.NOFOLLOW_LINKS).use { input ->
++                val buffer=ByteArray(64*1024)
++                while(true) { alive();val n=input.read(buffer);if(n<0)break;count+=n
++                    check(count <= LabAuthorizedModel.size) { "LAB_FILE_TOO_LARGE" };digest.update(buffer,0,n) }
++            }
++            check(count == LabAuthorizedModel.size && streamHashDigest(digest.digest()) == LabAuthorizedModel.sha256) { "LAB_FILE_SHA256" }
++            proof.requireStable();return proof
++        }
++        private fun streamHashDigest(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(java.util.Locale.ROOT,it.toInt() and 255) }
++    }
++}
++internal class LabResidence(val file: LabFileProof, val resident: StreamResident) {
++    override fun toString() = "LabResidence(redacted)"
++}
++internal class LabStreamBinding private constructor(private val attempt: LabAttempt,
++    private val resources: ResourceObservation, override val prepared: StreamPrepared,
++    override val resident: StreamResident, private val residenceLive: () -> Boolean) : StreamBinding {
++    override val revocation = attempt.revocation
++    override val bindingSha256 = streamHash((listOf("jarvis.lab-cloud.stream/1",streamHash(attempt.spec.canonical()),
++        prepared.requestSha256,prepared.renderedSha256,prepared.templateSha256,prepared.inputTokens.toString(),prepared.contextLimit.toString(),
++        resources.brokerIncarnation,resources.revision.toString(),resources.heavyIdentity.toString(),resources.modelIdentity.toString(),
++        resident.worker,resident.incarnation).joinToString("\n")).toByteArray(Charsets.US_ASCII))
++    override fun isLive() = attempt.isLive() && resources.isLive() && residenceLive()
++    override fun toString() = "LabStreamBinding(scope=LAB_CLOUD, redacted)"
++    companion object {
++        fun admit(a: LabAttempt, resources: ResourceObservation, p: StreamPrepared, r: StreamResident, residenceLive: () -> Boolean): LabStreamBinding {
++            a.requireLive();check(resources.isLive() && residenceLive() && a.phase == LabPhase.RESIDENT && p.config == a.spec.config &&
++                p.templateSha256 == a.spec.templateSha256 && p.originRequestSha256 == a.spec.requestSha256 && p.config == r.config && r.owner == a.spec.owner && r.worker == a.spec.worker) { "LAB_PREPARATION_OR_RESIDENCE_MISMATCH" }
++            a.advance(LabPhase.RESIDENT,LabPhase.PREPARED)
++            return LabStreamBinding(a,resources,p,r,residenceLive)
++        }
++    }
++}
++internal class LabGenerationResult(val variant: LabVariant, val terminal: LabPhase,
++    private val completeBytes: ByteArray?, val streaming: OwnedStreamOutcome?) {
++    fun completeCopy() = completeBytes?.copyOf()
++    override fun toString() = "LabGenerationResult(variant=$variant, terminal=$terminal, noDrainOrUnloadProof)"
++}
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/LabHostBudget.kt b/app/src/main/java/fr/jarvis/llm/engine/LabHostBudget.kt
+new file mode 100644
+--- /dev/null
++++ b/app/src/main/java/fr/jarvis/llm/engine/LabHostBudget.kt
+@@ -0,0 +1,47 @@
++package fr.jarvis.llm.engine
++
++import fr.jarvis.domain.RuntimeConfig
++import java.nio.file.Files
++import java.nio.file.Path
++import java.nio.file.Paths
++
++/** Linux cloud observations only. Never synthesizes Android ABI, thermal or battery readings. */
++internal object LabHostBudget {
++    internal fun assess(config: RuntimeConfig, total: Long, available: Long, rss: Long) {
++        check(total > 0 && available in 0..total && rss >= 0) { "LAB_MEMORY_OBSERVATION_INVALID" }
++        val reserve=maxOf(RuntimeConfig.GIB,total/5)
++        check(available >= config.memoryBudget && available-config.memoryBudget >= reserve && rss <= config.memoryBudget) { "LAB_MEMORY_REFUSED" }
++    }
++    private fun read(path: Path) = Files.newBufferedReader(path,Charsets.UTF_8).use { it.readText() }
++    private fun kib(text: String, key: String): Long {
++        val line=text.lineSequence().single { it.startsWith("$key:") }.trim().split(Regex("\\s+"))
++        check(line.size == 3 && line[2] == "kB");val value=line[1].toLong();check(value in 0..Long.MAX_VALUE/1024);return value*1024
++    }
++    fun requireFits(config: RuntimeConfig) {
++        check(System.getProperty("os.name") == "Linux") { "LAB_HOST_UNSUPPORTED" }
++        assessLinux(config,::read) { Files.isDirectory(it) }
++    }
++    internal fun assessLinux(config: RuntimeConfig, read: (Path) -> String, directory: (Path) -> Boolean) {
++        val mem=read(Paths.get("/proc/meminfo"));var total=kib(mem,"MemTotal");var available=kib(mem,"MemAvailable")
++        check(total > 0 && available in 0..total) { "LAB_MEMORY_OBSERVATION_INVALID" }
++        val group=read(Paths.get("/proc/self/cgroup")).lineSequence().single { it.startsWith("0::") }.removePrefix("0::")
++        check(group.startsWith("/") && group.split('/').none { it == ".." }) { "LAB_CGROUP_UNQUALIFIED" }
++        val mount=read(Paths.get("/proc/self/mountinfo")).lineSequence().filter { it.contains(" - cgroup2 ") }.map { it.split(' ') }.single()
++        val root=mount[3];val point=Paths.get(mount[4]);check(!root.contains('\\') && !point.toString().contains('\\'))
++        check(root == "/" || group == root || group.startsWith(root.trimEnd('/')+"/")) { "LAB_CGROUP_MAPPING_UNKNOWN" }
++        val suffix=if(root == "/")group.removePrefix("/")else group.removePrefix(root).removePrefix("/")
++        var current=point.resolve(suffix).normalize();check(current.startsWith(point) && directory(current)) { "LAB_CGROUP_MAPPING_UNKNOWN" }
++        // Include every visible ancestor limit: a leaf 'max' must never hide a tighter parent.
++        while(true) {
++            val maximum=read(current.resolve("memory.max")).trim()
++            if(maximum != "max") {
++                val limit=maximum.toLong();val used=read(current.resolve("memory.current")).trim().toLong();check(limit > 0 && used >= 0)
++                total=minOf(total,limit);available=minOf(available,(limit-used).coerceAtLeast(0))
++            }
++            if(current == point)break
++            current=requireNotNull(current.parent);check(current.startsWith(point))
++        }
++        available=minOf(available,total)
++        assess(config,total,available,kib(read(Paths.get("/proc/self/status")),"VmRSS"))
++    }
++}
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt b/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
+--- a/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
++++ b/app/src/main/java/fr/jarvis/llm/engine/LlamaBackend.kt
+@@ -40,7 +40,9 @@
+ }
+ 
+ /** All resource operations use one worker. Only the atomic stop flag is changed concurrently. */
+-class LlamaBackend internal constructor(private val native: NativeApi) : LanguageModel {
++class LlamaBackend internal constructor(private val native: NativeApi,
++    private val labHostGuard: (RuntimeConfig) -> Unit) : LanguageModel {
++    internal constructor(native: NativeApi) : this(native,LabHostBudget::requireFits)
+     constructor() : this(NativeBridge)
+     override val capabilities = EngineCapabilities(separateSystemPrompt = true, nativeCancellation = true)
+     private val owner = "llm-" + java.util.UUID.randomUUID().toString()
+@@ -52,6 +54,10 @@
+     private val streamWorkerIncarnation = java.util.UUID.randomUUID().toString()
+     private var streamResidentIncarnation = java.util.UUID.randomUUID().toString()
+     private var lastStreamOwnerSequence = 0L
++    @Volatile private var labExclusive = false
++    @Volatile private var labAttempt: LabAttempt? = null
++    private var labResidence: LabResidence? = null
++    private var labQuarantineHeavy: ResourceLease? = null
+     private var activeStream: Pair<StreamRevocation, OwnedStreamBuffer>? = null
+     private val generating = java.util.concurrent.atomic.AtomicBoolean(false)
+     private var handle = native.create()
+@@ -59,36 +65,41 @@
+         private set
+     @Volatile private var cleanupFailed = false
+     private var loaded: Pair<String, RuntimeConfig>? = null
+-    override fun prepareOperation() = synchronized(handleLock) { check(handle != 0L && !generating.get() && !cleanupFailed) { "BUSY ou moteur fermé" }; native.begin(handle) }
++    override fun prepareOperation() = synchronized(handleLock) { check(!labExclusive) { "LAB_SCOPE_EXCLUSIVE" }; check(handle != 0L && !generating.get() && !cleanupFailed) { "BUSY ou moteur fermé" }; native.begin(handle) }
+     override fun requestStop() = synchronized(handleLock) {
++        labAttempt?.cancelledByBackend()
+         activeStream?.let { it.first.revoke(); it.second.stop() }
+         if (handle != 0L) native.cancel(handle)
+     }
+     override suspend fun load(path: String, config: RuntimeConfig) = withContext(worker) {
++        check(!labExclusive) { "LAB_SCOPE_EXCLUSIVE" }
+         check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
+-        if (loaded != (path to config)) {
+-            ProcessResources.requireHeavy(owner, Module.LLM, "chargement natif").use {
+-                try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }
+-                loaded = null; allocations = null
+-                modelLease?.close(); modelLease = null
+-                allocationDiagnostic = "Allocations natives non mesurées"
+-                val lease = ProcessResources.requireLease(ResourceRequest(owner, Module.LLM, ResourceClass.MODEL,
+-                    "résidence du modèle", config.memoryBudget, config.model.name))
+-                modelLease = lease // retain even if load AND cleanup fail
+-                streamResidentIncarnation = java.util.UUID.randomUUID().toString()
+-                try {
+-                    native.load(handle, path.toByteArray(Charsets.UTF_8), config.context, config.threads, config.model == ModelKind.SMALL)
+-                    modelLease = lease
+-                    refreshAllocations()
+-                    loaded = path to config
+-                } catch (e: Throwable) {
+-                    // The native call has returned. Release only after actual native cleanup.
+-                    try { native.unload(handle) }
+-                    catch (cleanup: Throwable) { cleanupFailed = true; cleanup.addSuppressed(e); throw cleanup }
+-                    allocations = null; modelLease = null; lease.close()
+-                    throw e
+-                }
+-            }
++        if (loaded != (path to config)) ProcessResources.requireHeavy(owner, Module.LLM, "chargement natif").use {
++            loadOnWorker(path,config)
++        }
++    }
++    /** Same native loader and leases; callers already hold this backend's HEAVY lease and worker. */
++    private fun loadOnWorker(path: String, config: RuntimeConfig, observe: ((ResourceLease) -> Unit)? = null) {
++        check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
++        if (loaded == (path to config)) return
++        try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }
++        loaded = null; allocations = null; labResidence = null
++        modelLease?.close(); modelLease = null
++        allocationDiagnostic = "Allocations natives non mesurées"
++        val lease = ProcessResources.requireLease(ResourceRequest(owner, Module.LLM, ResourceClass.MODEL,
++            "résidence du modèle", config.memoryBudget, config.model.name))
++        modelLease = lease
++        streamResidentIncarnation = java.util.UUID.randomUUID().toString()
++        try {
++            observe?.invoke(lease) // pin the REAL pair before native load, never a fabricated lease id
++            native.load(handle, path.toByteArray(Charsets.UTF_8), config.context, config.threads, config.model == ModelKind.SMALL)
++            refreshAllocations()
++            loaded = path to config
++        } catch (e: Throwable) {
++            try { native.unload(handle) }
++            catch (cleanup: Throwable) { cleanupFailed = true; cleanup.addSuppressed(e); throw cleanup }
++            allocations = null; modelLease = null; lease.close()
++            throw e
+         }
+     }
+     private fun refreshAllocations() {
+@@ -97,6 +108,7 @@
+         allocationDiagnostic = "Buffers llama.cpp modèle/contexte/calcul : " + sizes.joinToString(" / ") { "%.1f".format(java.util.Locale.FRANCE, it / 1048576.0) } + " Mio (hors tas JVM et autres allocations ; pas PSS ni pic)"
+     }
+     override suspend fun generate(request: GenerationRequest): String {
++        check(!labExclusive) { "LAB_SCOPE_EXCLUSIVE" }
+         check(!cleanupFailed) { "CLEANUP_FAILED : déchargement confirmé requis" }
+         check(generating.compareAndSet(false, true)) { "BUSY : génération concurrente refusée" }
+         try { return withContext(worker) {
+@@ -118,6 +130,7 @@
+     }
+     /** Text-only fixture: never feed P2Planner's already-prefixed SYSTEM into this path. */
+     suspend fun generateFixtureP2(request: GenerationRequest, contextLimit: Int): FixtureGeneration {
++        check(!labExclusive) { "LAB_SCOPE_EXCLUSIVE" }
+         val customSystem=requireNotNull(request.systemPrompt)
+         require(request.messages.size == 1)
+         require(contextLimit in 512..request.config.context && contextLimit % 256 == 0)
+@@ -142,6 +155,7 @@
+     /** Opt-in internal candidate only. No authority is installed by historical clients. */
+     internal suspend fun generateOwnedStream(request: GenerationRequest, contextLimit: Int,
+         authority: StreamOwnerAuthority, buffer: OwnedStreamBuffer): OwnedStreamOutcome {
++        check(!labExclusive) { "LAB_SCOPE_EXCLUSIVE" }
+         // This first candidate is text-only P2; legacy history generation remains unchanged.
+         require(request.messages.size == 1 && request.messages.single().role == "user")
+         val customSystem = requireNotNull(request.systemPrompt)
+@@ -203,7 +217,147 @@
+             }
+         } } finally { generating.set(false) }
+     }
+-    override suspend fun unload() = withContext(worker) { try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }; cleanupFailed = false; loaded = null; allocations = null; modelLease?.close(); modelLease = null; allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents" }
++    /** A challenge identifies THIS existing backend/worker; it grants no permission by itself. */
++    internal fun labOwnerChallenge() = LabOwnerChallenge(owner,streamWorkerIncarnation)
++    private fun stopLabAttempt(expected: LabAttempt) = synchronized(handleLock) {
++        if (labAttempt === expected && !cleanupFailed) {
++            expected.cancelledByBackend()
++            activeStream?.second?.stop()
++            if (handle != 0L) try { native.cancel(handle) } catch(e: Throwable) { cleanupFailed=true;throw e }
++        }
++    }
++    /** Review-only API: no call site, operator trust root or productive entry point is installed. */
++    internal suspend fun qualifyLab(authority: LabCloudAuthority, signed: LabSignedPermit,
++        privateRoot: java.nio.file.Path, path: java.nio.file.Path, request: GenerationRequest,
++        buffer: OwnedStreamBuffer? = null): LabGenerationResult {
++        val frozen=labFreezeRequest(request)
++        val callerJob=currentCoroutineContext()[Job]
++        val attempt = synchronized(handleLock) {
++            check(handle != 0L && !cleanupFailed && generating.compareAndSet(false,true)) { "BUSY_CLOSED_OR_CLEANUP_FAILED" }
++            try {
++                authority.redeem(signed,labOwnerChallenge(),frozen).also {
++                    if ((it.spec.variant == LabVariant.STREAM) != (buffer != null)) { it.close();error("LAB_VARIANT_MISMATCH") }
++                    labExclusive = true;labAttempt = it
++                }
++            } catch (e: Throwable) { generating.set(false);throw e }
++        }
++        try {
++            attempt.attachStop(monitor={ check(callerJob?.isActive != false) { "LAB_CALLER_CANCELLED" };labHostGuard(frozen.config) }) { stopLabAttempt(attempt) }
++            return withContext(worker) {
++                var heavy: ResourceLease? = null
++                var proof: ResourceObservation? = null
++                var nativeTouched = false
++                try {
++                    attempt.requireLive();labHostGuard(frozen.config)
++                    heavy = ProcessResources.requireHeavy(owner,Module.LLM,"LAB_CLOUD tentative signée",frozen.config.memoryBudget)
++                    val file = LabFileProof.verify(privateRoot,path,attempt::requireLive)
++                    attempt.advance(LabPhase.AUTHORIZED,LabPhase.FILE_VERIFIED)
++                    val same = loaded == (file.path.toString() to frozen.config) && labResidence?.let {
++                        it.file.key == file.key && it.resident.lease === modelLease && it.resident.incarnation == streamResidentIncarnation
++                    } == true
++                    synchronized(handleLock) { attempt.requireLive();nativeTouched=true;native.begin(handle) }
++                    if (!same) {
++                        // A legacy/unattested residence never silently becomes a verified laboratory model.
++                        if (loaded != null) unloadOnWorker()
++                        loadOnWorker(file.path.toString(),frozen.config) { lease ->
++                            proof = requireNotNull(ProcessResources.coordinator.observeOwnedPair(owner,heavy,lease)) { "LAB_RESOURCE_PROOF_MISSING" }
++                            proof!!.onRevoked { stopLabAttempt(attempt) }
++                            attempt.requireLive()
++                        }
++                        // Same immutable private snapshot is hashed again AFTER actual native load returns.
++                        val after=LabFileProof.verify(privateRoot,path,attempt::requireLive)
++                        check(after.key == file.key) { "LAB_LOADED_FILE_CHANGED" }
++                    } else {
++                        proof = requireNotNull(ProcessResources.coordinator.observeOwnedPair(owner,heavy,requireNotNull(modelLease))) { "LAB_RESOURCE_PROOF_MISSING" }
++                        proof!!.onRevoked { stopLabAttempt(attempt) }
++                    }
++                    attempt.requireLive();labHostGuard(frozen.config)
++                    val sizes=requireNotNull(allocations) { "LAB_NATIVE_ALLOCATIONS_UNKNOWN" }
++                    val budget=frozen.config.memoryBudget
++                    check(sizes.model in 0..budget && sizes.context in 0..(budget-sizes.model) &&
++                        sizes.compute in 0..(budget-sizes.model-sizes.context)) { "LAB_NATIVE_BUFFERS_EXCEEDED" }
++                    file.requireStable();check(proof!!.isLive()) { "LAB_RESOURCE_REVOKED" }
++                    val resident=StreamResident(requireNotNull(modelLease),owner,streamWorkerIncarnation,streamResidentIncarnation,frozen.config)
++                    labResidence = LabResidence(file,resident)
++                    attempt.advance(LabPhase.FILE_VERIFIED,LabPhase.RESIDENT)
++                    val system=requireNotNull(frozen.systemPrompt).toByteArray(Charsets.UTF_8)
++                    val question=frozen.messages.single().text.toByteArray(Charsets.UTF_8)
++                    val measured=native.measureFixtureP2(handle,system,question)
++                    check(measured.size == 3 && measured[1].size <= 128*1024 && measured[2].size <= 128*1024)
++                    val count=measured[0].toString(Charsets.US_ASCII).toInt()
++                    val framed=java.io.ByteArrayOutputStream()
++                    java.io.DataOutputStream(framed).use { out ->
++                        for (part in listOf("jarvis.lab-prepared/1".toByteArray(Charsets.US_ASCII),
++                            attempt.spec.requestSha256.toByteArray(Charsets.US_ASCII),measured[1],measured[2])) {
++                            out.writeInt(part.size);out.write(part)
++                        }
++                        out.writeInt(count);out.writeInt(frozen.config.context);out.writeInt(frozen.config.maxTokens);out.writeInt(frozen.config.threads)
++                    }
++                    val prepared=StreamPrepared(streamHash(measured[1]),streamHash(measured[2]),streamHash(framed.toByteArray()),count,frozen.config.context,frozen.config,attempt.spec.requestSha256)
++                    val binding=LabStreamBinding.admit(attempt,proof!!,prepared,resident) {
++                        !cleanupFailed && labResidence?.resident === resident && modelLease === resident.lease &&
++                            streamResidentIncarnation == resident.incarnation && loaded == (file.path.toString() to frozen.config)
++                    }
++                    attempt.advance(LabPhase.PREPARED,LabPhase.INVOKING)
++                    val result = if (attempt.spec.variant == LabVariant.STREAM) {
++                        val q=requireNotNull(buffer);q.bind(binding)
++                        val callback=OwnedStreamCallback(binding,q)
++                        synchronized(handleLock) { attempt.requireLive();activeStream = attempt.revocation to q }
++                        try {
++                            val terminal=native.generateStream(handle,system,question,frozen.config.maxTokens,frozen.config.context,
++                                binding.bindingSha256.toByteArray(Charsets.US_ASCII),callback)
++                            check(terminal in StreamKind.COMPLETED.ordinal..StreamKind.ERROR.ordinal)
++                            val kind=StreamKind.entries[terminal]
++                            check(q.acceptedTerminal() == kind && (kind != StreamKind.COMPLETED || callback.hasPrepared())) { "UNCONFIRMED_NATIVE_TERMINAL" }
++                            val state=when(kind) { StreamKind.COMPLETED -> LabPhase.CONTENT_DONE;StreamKind.CANCELLED -> LabPhase.CANCELLED;else -> LabPhase.ERROR }
++                            LabGenerationResult(LabVariant.STREAM,state,null,OwnedStreamOutcome(kind,true))
++                        } catch(e: Throwable) { q.invocationFailed();throw e }
++                        finally {
++                            callback.close();q.nativeInvocationFinished()
++                            synchronized(handleLock) { if(activeStream?.first === attempt.revocation) activeStream=null }
++                        }
++                    } else {
++                        val bytes=native.generateFixtureP2(handle,system,question,frozen.config.maxTokens,frozen.config.context)
++                        check(bytes.size <= 64*1024) { "LAB_OUTPUT_LIMIT" }
++                        Charsets.UTF_8.newDecoder().onMalformedInput(java.nio.charset.CodingErrorAction.REPORT)
++                            .onUnmappableCharacter(java.nio.charset.CodingErrorAction.REPORT).decode(java.nio.ByteBuffer.wrap(bytes))
++                        LabGenerationResult(LabVariant.HISTORICAL,LabPhase.CONTENT_DONE,bytes.copyOf(),null)
++                    }
++                    check(!cleanupFailed) { "LAB_NATIVE_STOP_UNCONFIRMED" }
++                    file.requireStable()
++                    if(result.terminal == LabPhase.CONTENT_DONE) { attempt.requireLive();check(proof!!.isLive()) }
++                    if(result.terminal != LabPhase.CONTENT_DONE) { unloadOnWorker() }
++                    attempt.terminal(result.terminal)
++                    result // CONTENT_DONE is not DRAINED or UNLOADED; a verified warm residence may remain.
++                } catch(e: Throwable) {
++                    buffer?.invocationFailed()
++                    attempt.terminal(if(cleanupFailed) LabPhase.CLEANUP_FAILED else LabPhase.UNKNOWN)
++                    if(cleanupFailed) throw e // preserve the FIRST critical cleanup failure; never automatically retry
++                    // Cleanup even after cancellation; never release ownership before the native call has returned.
++                    try { if(nativeTouched) unloadOnWorker() }
++                    catch(cleanup: Throwable) {
++                        cleanupFailed=true;attempt.terminal(LabPhase.CLEANUP_FAILED);cleanup.addSuppressed(e);throw cleanup
++                    }
++                    throw e
++                } finally {
++                    proof?.close()
++                    if(cleanupFailed) { labQuarantineHeavy=heavy } else heavy?.close()
++                }
++            }
++        } finally {
++            attempt.close()
++            synchronized(handleLock) { if(labAttempt === attempt) labAttempt=null }
++            generating.set(false)
++        }
++    }
++    override suspend fun unload() = withContext(worker) { unloadOnWorker() }
++    private fun unloadOnWorker() {
++        try { native.unload(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }
++        cleanupFailed = false; loaded = null; allocations = null; labResidence = null
++        modelLease?.close(); modelLease = null
++        labQuarantineHeavy?.close(); labQuarantineHeavy = null
++        allocationDiagnostic = "Moteur déchargé ; buffers natifs non résidents"
++    }
+     override suspend fun close() {
+         requestStop()
+         withContext(worker) {
+@@ -211,7 +365,8 @@
+                 try { native.destroy(handle) } catch (e: Throwable) { cleanupFailed = true; throw e }
+                 handle = 0
+             } }
+-            loaded = null; allocations = null; modelLease?.close(); modelLease = null
++            loaded = null; allocations = null; labResidence = null; modelLease?.close(); modelLease = null
++            labQuarantineHeavy?.close(); labQuarantineHeavy = null
+         }
+         worker.close()
+     }
+diff --git a/app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt b/app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt
+--- a/app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt
++++ b/app/src/main/java/fr/jarvis/llm/engine/OwnedStreamContract.kt
+@@ -8,7 +8,7 @@
+ import java.util.ArrayDeque
+ import java.util.UUID
+ 
+-/** PERF-03 candidate, NOT APPLIED. No productive authority implementation is installed. */
++/** Review candidate: CORE and LAB_CLOUD have disjoint credentials; no productive wiring. */
+ internal enum class StreamKind { ACK, TOKEN, COMPLETED, CANCELLED, ERROR }
+ internal enum class NativeStreamClock { ANDROID_BOOTTIME, HOST_MONOTONIC }
+ internal enum class StreamOffer(val wire: Int) { ACCEPTED(0), RETRY(1), CANCEL(2), ERROR(3) }
+@@ -25,26 +25,39 @@
+ }
+ /** Native canonical rendering, tokenizer and unchanged admitted output/config. No prompt is retained. */
+ internal class StreamPrepared(val renderedSha256: String, val templateSha256: String,
+-    val requestSha256: String, val inputTokens: Int, val contextLimit: Int, val config: RuntimeConfig) {
+-    init { require(validHash(renderedSha256) && validHash(templateSha256) && validHash(requestSha256))
++    val requestSha256: String, val inputTokens: Int, val contextLimit: Int, val config: RuntimeConfig,
++    val originRequestSha256: String?) {
++    constructor(renderedSha256: String, templateSha256: String, requestSha256: String, inputTokens: Int,
++        contextLimit: Int, config: RuntimeConfig) : this(renderedSha256,templateSha256,requestSha256,inputTokens,contextLimit,config,null)
++    init { require(originRequestSha256 == null || validHash(originRequestSha256))
++        require(validHash(renderedSha256) && validHash(templateSha256) && validHash(requestSha256))
+         require(inputTokens > 0 && inputTokens.toLong() + config.maxTokens + 8 <= contextLimit)
+         require(contextLimit in 512..config.context && contextLimit % 256 == 0) }
+     override fun toString() = "StreamPrepared(redacted)"
+ }
++/** A LAB_CLOUD binding has no coreMandateSha256 and cannot implement StreamOwnerAuthority. */
++internal sealed interface StreamBinding {
++    val prepared: StreamPrepared
++    val resident: StreamResident
++    val revocation: StreamRevocation
++    val bindingSha256: String
++    fun isLive(): Boolean
++}
+ /** All fields must be checked against CORE/broker by the explicitly installed authority. */
+ internal class StreamGrant(val request: String, val session: String, val epoch: String,
+     val generation: Long, val leaseRef: String, val modelSha256: String, val coreMandateSha256: String,
+-    val prepared: StreamPrepared, val resident: StreamResident, val revocation: StreamRevocation, val ownerSequence: Long = generation) {
++    override val prepared: StreamPrepared, override val resident: StreamResident, override val revocation: StreamRevocation, val ownerSequence: Long = generation) : StreamBinding {
+     init { require(listOf(request, session, epoch, leaseRef).all(::validId))
+         require(generation in 1..9_007_199_254_740_991L && ownerSequence in 1..9_007_199_254_740_991L)
+         require(validHash(modelSha256) && validHash(coreMandateSha256)) }
+-    val bindingSha256: String = streamHash(listOf("jarvis.llm.stream/1", request, session, epoch,
++    override val bindingSha256: String = streamHash(listOf("jarvis.llm.stream/1", request, session, epoch,
+         generation.toString(), ownerSequence.toString(), leaseRef, modelSha256, coreMandateSha256, prepared.requestSha256,
+         prepared.renderedSha256, prepared.templateSha256, resident.worker, resident.incarnation,
+         prepared.inputTokens.toString(), prepared.contextLimit.toString(), prepared.config.model.name,
+         prepared.config.context.toString(), prepared.config.maxTokens.toString(),
+         prepared.config.threads.toString()).joinToString("\n").toByteArray(Charsets.US_ASCII))
+-    override fun toString() = "StreamGrant(redacted)"
++    override fun isLive() = revocation.isAllowed()
++    override fun toString() = "StreamGrant(scope=CORE, redacted)"
+ }
+ internal class StreamRevocation {
+     private val allowed = java.util.concurrent.atomic.AtomicBoolean(true)
+@@ -57,7 +70,7 @@
+     fun authorize(prepared: StreamPrepared, resident: StreamResident): StreamGrant?
+ }
+ 
+-internal class OwnedStreamEvent(val grant: StreamGrant, val sequence: Int, val kind: StreamKind,
++internal class OwnedStreamEvent(val grant: StreamBinding, val sequence: Int, val kind: StreamKind,
+     bytes: ByteArray, val sampledTokens: Int, val nativeFirstTokenNanos: Long, val nativeClockDomain: NativeStreamClock) {
+     private val payload: ByteArray
+     init { require(sequence in 0..512 && sampledTokens in 0..256 && nativeFirstTokenNanos >= -1)
+@@ -79,7 +92,7 @@
+ /** One producer (existing JNI worker), one logical Android consumer; no additional generation thread. */
+ internal class OwnedStreamBuffer {
+     private val queue = ArrayDeque<OwnedStreamEvent>()
+-    private var grant: StreamGrant? = null
++    private var grant: StreamBinding? = null
+     private var next = 0
+     private var pending = 0
+     private var total = 0
+@@ -90,7 +103,7 @@
+     private var invalid = false
+     @Volatile var jniInvocationFinished = false; private set
+     @Volatile var resourceState = StreamResourceState.UNKNOWN; private set
+-    @Synchronized fun bind(expected: StreamGrant) { check(grant == null && !stopped && !invalid); grant = expected }
++    @Synchronized fun bind(expected: StreamBinding) { check(grant == null && !stopped && !invalid); grant = expected }
+     @Synchronized fun offer(event: OwnedStreamEvent): StreamOffer {
+         if (jniInvocationFinished) return StreamOffer.ERROR
+         if (invalid || event.grant !== grant) return fail()
+@@ -133,7 +146,7 @@
+ }
+ 
+ /** Only this final adapter is passed to JNI. It never calls UI or arbitrary consumer code. */
+-internal class OwnedStreamCallback(private val grant: StreamGrant, private val buffer: OwnedStreamBuffer) {
++internal class OwnedStreamCallback(private val grant: StreamBinding, private val buffer: OwnedStreamBuffer) {
+     private var prepared = false
+     private var preparationAttempted = false
+     private var closed = false
+@@ -144,7 +157,7 @@
+             check(!preparationAttempted && rendered.size <= 128 * 1024 && template.size <= 128 * 1024)
+             preparationAttempted = true
+             prepared = inputTokens == grant.prepared.inputTokens && streamHash(rendered) == grant.prepared.renderedSha256 &&
+-                streamHash(template) == grant.prepared.templateSha256 && grant.revocation.isAllowed()
++                streamHash(template) == grant.prepared.templateSha256 && grant.isLive()
+             return prepared
+         } catch (failure: Throwable) { buffer.invocationFailed(); throw failure }
+     }
+@@ -156,7 +169,7 @@
+             check(binding.contentEquals(grant.bindingSha256.toByteArray(Charsets.US_ASCII)))
+             check(prepared || kind == StreamKind.CANCELLED.ordinal || kind == StreamKind.ERROR.ordinal)
+             require(kind in 0..4 && nativeClockDomain in 0..1)
+-            if (!grant.revocation.isAllowed() && kind != StreamKind.CANCELLED.ordinal && kind != StreamKind.ERROR.ordinal)
++            if (!grant.isLive() && kind != StreamKind.CANCELLED.ordinal && kind != StreamKind.ERROR.ordinal)
+                 return StreamOffer.CANCEL.wire
+             return buffer.offer(OwnedStreamEvent(grant, sequence, StreamKind.entries[kind], bytes, sampledTokens,
+                 nativeFirstTokenNanos, NativeStreamClock.entries[nativeClockDomain])).wire
+diff --git a/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt b/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt
+--- a/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt
++++ b/domain/src/main/kotlin/fr/jarvis/domain/resources/ResourceCoordinator.kt
+@@ -14,34 +14,95 @@
+     data class Refused(val reason: String) : ResourceGrant
+ }
+ class ResourceLease internal constructor(private val release: () -> Unit) : AutoCloseable {
+-    // Ownership release is idempotent, including late completion of an old operation.
+     @Synchronized override fun close() = release()
++    override fun toString() = "ResourceLease(redacted)"
++}
++/** Minted by the actual broker; callers cannot manufacture or transfer ownership with these fields. */
++class ResourceObservation private constructor(private val broker: ResourceCoordinator,
++    private val heavyLease: ResourceLease, private val modelLease: ResourceLease,
++    val brokerIncarnation: String, val revision: Long, val heavyIdentity: Long, val modelIdentity: Long) : AutoCloseable {
++    @Volatile private var closed = false
++    fun isLive(): Boolean = !closed && broker.isLive(this, heavyLease, modelLease)
++    fun onRevoked(action: () -> Unit) = broker.watch(this, action)
++    @Synchronized override fun close() { if (!closed) { closed = true; broker.unpin(this, heavyLease, modelLease) } }
++    override fun toString() = "ResourceObservation(redacted)"
++    companion object {
++        internal fun mint(b: ResourceCoordinator, h: ResourceLease, m: ResourceLease,
++                          incarnation: String, revision: Long, hid: Long, mid: Long) =
++            ResourceObservation(b,h,m,incarnation,revision,hid,mid)
++    }
+ }
+ class ResourceCoordinator {
++    private data class Entry(val id: Long, val request: ResourceRequest, val lease: ResourceLease,
++                             var pins: Int = 0, var revoked: Boolean = false)
++    private val incarnation = java.util.UUID.randomUUID().toString()
+     private var nextId = 0L
+-    private var heavy: Pair<Long, ResourceRequest>? = null
+-    private var model: Pair<Long, ResourceRequest>? = null
++    private var revision = 0L
++    private var heavy: Entry? = null
++    private var model: Entry? = null
++    private val observations = java.util.IdentityHashMap<ResourceObservation, (() -> Unit)?>()
+     @Synchronized fun acquire(request: ResourceRequest): ResourceGrant {
+         val reason = when (request.kind) {
+             ResourceClass.HEAVY -> when {
+-                heavy != null -> "Traitement lourd déjà actif : ${heavy!!.second.module}/${heavy!!.second.operation}"
+-                model != null && model!!.second.owner != request.owner -> "Libérer le modèle résident avant un traitement lourd d'un autre propriétaire"
++                heavy != null -> "Traitement lourd déjà actif : ${heavy!!.request.module}/${heavy!!.request.operation}"
++                model != null && model!!.request.owner != request.owner -> "Libérer le modèle résident avant un traitement lourd d'un autre propriétaire"
+                 else -> null
+             }
+             ResourceClass.MODEL -> when {
+                 model != null -> "Un modèle est déjà chargé ou en cours de chargement"
+-                heavy?.second?.owner != request.owner -> "Le chargement exige un accès lourd exclusif du même propriétaire"
++                heavy?.request?.owner != request.owner || heavy!!.revoked -> "Le chargement exige un accès lourd exclusif du même propriétaire"
+                 else -> null
+             }
+         }
+         if (reason != null) return ResourceGrant.Refused(reason)
++        check(nextId < Long.MAX_VALUE && revision < Long.MAX_VALUE) { "BROKER_SEQUENCE_EXHAUSTED" }
+         val id = ++nextId
+-        if (request.kind == ResourceClass.HEAVY) heavy = id to request else model = id to request
+-        return ResourceGrant.Granted(ResourceLease { release(request.kind, id) })
++        val lease = ResourceLease { release(request.kind, id) }
++        val entry = Entry(id, request, lease)
++        if (request.kind == ResourceClass.HEAVY) heavy = entry else model = entry
++        revision++
++        return ResourceGrant.Granted(lease)
+     }
+-    @Synchronized private fun release(kind: ResourceClass, id: Long) {
+-        if (kind == ResourceClass.HEAVY && heavy?.first == id) heavy = null
+-        if (kind == ResourceClass.MODEL && model?.first == id) model = null
++    private fun release(kind: ResourceClass, id: Long) {
++        val notify = synchronized(this) {
++            val e = (if (kind == ResourceClass.HEAVY) heavy else model)?.takeIf { it.id == id } ?: return
++            if (e.revoked) return
++            check(revision < Long.MAX_VALUE); e.revoked = true; revision++
++            if (e.pins == 0) { if (kind == ResourceClass.HEAVY) heavy = null else model = null }
++            observations.values.filterNotNull().toList()
++        }
++        // Native cancel never runs under the broker monitor; slots stay pinned until actual return.
++        notify.forEach { it() }
+     }
+-    @Synchronized fun snapshot() = ResourceState(heavy?.second, model?.second)
++    internal fun watch(p: ResourceObservation, action: () -> Unit) {
++        val stale = synchronized(this) {
++            check(observations.containsKey(p));check(observations[p] == null)
++            observations[p] = action
++            p.revision != revision
++        }
++        if (stale) action()
++    }
++    /** Identity checks and both pins are atomic. No external callback runs under this monitor. */
++    @Synchronized fun observeOwnedPair(owner: String, heavyLease: ResourceLease, modelLease: ResourceLease): ResourceObservation? {
++        val h = heavy ?: return null; val m = model ?: return null
++        if (h.lease !== heavyLease || m.lease !== modelLease || h.revoked || m.revoked ||
++            h.request.owner != owner || m.request.owner != owner ||
++            h.request.module != Module.LLM || m.request.module != Module.LLM) return null
++        val proof = ResourceObservation.mint(this,h.lease,m.lease,incarnation,revision,h.id,m.id)
++        h.pins++; m.pins++; observations[proof] = null
++        return proof
++    }
++    @Synchronized internal fun isLive(p: ResourceObservation, h: ResourceLease, m: ResourceLease): Boolean =
++        observations.containsKey(p) && p.brokerIncarnation == incarnation && p.revision == revision &&
++        heavy?.let { it.lease === h && it.id == p.heavyIdentity && !it.revoked } == true &&
++        model?.let { it.lease === m && it.id == p.modelIdentity && !it.revoked } == true
++    @Synchronized internal fun unpin(p: ResourceObservation, h: ResourceLease, m: ResourceLease) {
++        if (!observations.containsKey(p)) return
++        observations.remove(p)
++        check(heavy?.lease === h && model?.lease === m)
++        heavy!!.pins--; model!!.pins--
++        if (heavy!!.revoked && heavy!!.pins == 0) heavy = null
++        if (model!!.revoked && model!!.pins == 0) model = null
++    }
++    @Synchronized fun snapshot() = ResourceState(heavy?.request, model?.request)
+ }
