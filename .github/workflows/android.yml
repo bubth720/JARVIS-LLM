@@ -60,7 +60,7 @@ jobs:
         run: |
           python3 tools/publish-validation-003f.py
           python3 tools/publish-validation-f3a.py
-          python3 docs/mission-003f-f3b/verify.py --results
+          python3 tools/check-f3b-successor-r02.py --results
       - name: Publish cloud validation with hardware limitations
         run: python3 tools/publish-validation-003b.py --mission 003D
       - name: Publish actual catalogue scale evidence
