@@ -12,6 +12,7 @@
 #include "a02_snapshot.h"
 #include <cstdio>
 #include <cstring>
+#include <sys/mman.h>
 #include <fstream>
 #include <sstream>
 
@@ -24,10 +25,31 @@
 // Every other path goes to the real fopen unchanged; write/append modes are refused.
 // ---------------------------------------------------------------------------------------------
 extern "C" FILE * __real_fopen(const char * path, const char * mode);
+extern "C" void * __real_mmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset);
 namespace {
 thread_local int t_sealed_fd = -1;
 thread_local char t_sealed_path[48] = {0};
 thread_local int t_sealed_opens = 0;
+thread_local unsigned long long t_sealed_ino = 0, t_sealed_dev = 0;
+thread_local int t_private_maps = 0;
+}
+// Read-only mapping of the sealed copy (linked with -Wl,--wrap=mmap, A02 library only).
+// llama.cpp maps weights with MAP_SHARED|PROT_READ. Kernels before 6.7 (Android API 29 emulator,
+// run 43118616305: "mmap failed: Operation not permitted") refuse ANY shared mapping of a
+// F_SEAL_WRITE memfd opened read-write, even PROT_READ. For the sealed inode of the current load
+// only, and only for mappings WITHOUT PROT_WRITE, request MAP_PRIVATE: same page-cache pages, no
+// copy, no way to modify the file; the seals stay in force. Everything else is untouched.
+extern "C" void * __wrap_mmap(void * addr, size_t length, int prot, int flags, int fd, off_t offset) {
+    if (t_sealed_ino != 0 && fd >= 0 && !(prot & PROT_WRITE) && (flags & MAP_SHARED)) {
+        struct stat st {};
+        if (fstat(fd, &st) == 0 && static_cast<unsigned long long>(st.st_ino) == t_sealed_ino &&
+            static_cast<unsigned long long>(st.st_dev) == t_sealed_dev &&
+            (fcntl(fd, F_GET_SEALS) & jarvis_a02::kRequiredSeals) == jarvis_a02::kRequiredSeals) {
+            flags = (flags & ~MAP_SHARED) | MAP_PRIVATE;
+            ++t_private_maps;
+        }
+    }
+    return __real_mmap(addr, length, prot, flags, fd, offset);
 }
 extern "C" FILE * __wrap_fopen(const char * path, const char * mode) {
     if (t_sealed_fd >= 0 && path && std::strcmp(path, t_sealed_path) == 0) {
@@ -90,11 +112,12 @@ void rethrow_with_llama_tail(JNIEnv * env) {
     if (ise) env->ThrowNew(ise, combined.c_str()); else env->Throw(pending);
 }
 struct SealedOpenScope {
-    SealedOpenScope(int fd, const std::string & path) {
+    SealedOpenScope(int fd, const std::string & path, unsigned long long ino, unsigned long long dev) {
         if (path.size() >= sizeof(t_sealed_path)) throw std::runtime_error("A02_PROC_PATH_TOO_LONG");
         std::memcpy(t_sealed_path, path.c_str(), path.size() + 1); t_sealed_fd = fd; t_sealed_opens = 0;
+        t_sealed_ino = ino; t_sealed_dev = dev; t_private_maps = 0;
     }
-    ~SealedOpenScope() { t_sealed_fd = -1; t_sealed_path[0] = 0; }
+    ~SealedOpenScope() { t_sealed_fd = -1; t_sealed_path[0] = 0; t_sealed_ino = 0; t_sealed_dev = 0; }
 };
 }
 
@@ -173,12 +196,12 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
         const std::string procPath = jarvis_a02::proc_path_for(owned, trace);
         jbyteArray path = to_bytes(env, procPath);
         if (!path) throw std::runtime_error("A02_JNI_ALLOCATION_REFUSED");
-        int sealedOpens = 0;
+        int sealedOpens = 0, privateMaps = 0;
         {
-            SealedOpenScope scope(owned, procPath);
+            SealedOpenScope scope(owned, procPath, trace.inode, trace.device);
             LlamaLogCapture capture;
             jarvis_a02_protected_path_load_not_exported_to_java(env, receiver, h, path, context, threads, small);
-            sealedOpens = t_sealed_opens;
+            sealedOpens = t_sealed_opens; privateMaps = t_private_maps;
             if (env->ExceptionCheck()) rethrow_with_llama_tail(env);
         }
         env->DeleteLocalRef(path);
@@ -196,6 +219,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
              << ",\"seals\":" << trace.seals
              << ",\"loaderPath\":\"/proc/self/fd/<sealed>\""
              << ",\"loaderOpensServedFromSealedFd\":" << sealedOpens
+             << ",\"readOnlyPrivateMapsOfSealedFd\":" << privateMaps
              << ",\"sealedInodeMapped\":" << (proof.sealedMapped ? "true" : "false")
              << ",\"sourceInodeMapped\":false"
              << ",\"pathLoaderExported\":false}";

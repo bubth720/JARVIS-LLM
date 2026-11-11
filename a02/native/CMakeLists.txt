@@ -22,7 +22,7 @@ endif()
 add_subdirectory("${LLAMA_SOURCE_DIR}" "llama-build" EXCLUDE_FROM_ALL)
 add_library(jarvis_llm_a02 SHARED a02_bridge.cpp)
 # Sealed-descriptor open shim (see a02_bridge.cpp): only this library, all platforms.
-target_link_options(jarvis_llm_a02 PRIVATE "-Wl,--wrap=fopen")
+target_link_options(jarvis_llm_a02 PRIVATE "-Wl,--wrap=fopen" "-Wl,--wrap=mmap")
 target_include_directories(jarvis_llm_a02 PRIVATE "${LLAMA_SOURCE_DIR}/src")
 if(ANDROID)
     target_link_libraries(jarvis_llm_a02 PRIVATE llama android log)

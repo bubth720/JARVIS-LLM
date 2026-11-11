@@ -105,6 +105,7 @@ jobs:
           # Write the symbol table to a file first: `nm | grep -q` breaks the pipe under pipefail (exit 74, run 43100142174).
           $ndk/llvm-nm -D --defined-only "$lib" > build/a02-android-all-symbols.txt
           grep -q ' __wrap_fopen$' build/a02-android-all-symbols.txt   # sealed-descriptor open shim linked
+          grep -q ' __wrap_mmap$' build/a02-android-all-symbols.txt    # read-only private mapping shim linked
           sha256sum "$lib" build/a02-android-*/a02_snapshot_test | tee build/a02-android-sha256.txt
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:
