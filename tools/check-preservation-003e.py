@@ -38,7 +38,10 @@ for p in paths:
 # The formatter itself is unchanged. Fixture counting/generation call that one function.
 def formatter(s):return s[s.index('static std::string format('):s.index('static jbyteArray generate(')]
 old=subprocess.check_output(['git','show',BASE+':app/src/main/cpp/bridge.cpp'],text=True)
-assert formatter(old)==formatter(Path('app/src/main/cpp/bridge.cpp').read_text())
+# Historical stream helper classes were inserted after the unchanged formatter.
+# Compare the entire original formatter prefix, not the later additive helpers.
+assert formatter(Path('app/src/main/cpp/bridge.cpp').read_text()).startswith(formatter(old))
+assert formatter(old).endswith('    return result;\n}\n')
 for p in git('ls-files').splitlines():
  if p.endswith(('.keystore','.jks','.gguf','.part')):raise SystemExit('Private key/model artifact tracked: '+p)
 out={'mission':'003E','base':BASE,'sourceCommit':git('rev-parse','HEAD'),'unchanged':unchanged,'reviewedRuntimeChanges':sorted(allowed),'historicalManifestUnchanged':True,'canonicalFormatterUnchanged':True,'safetyThresholdsUnchanged':True,'physicalQualification':False}
