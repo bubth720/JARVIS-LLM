@@ -1,0 +1,30 @@
+name: A01-B opt-in Ed25519 key test APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'a01bdiagnostic/**'
+      - '.github/workflows/a01b-diagnostic.yml'
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Build isolated A01-B Android APK
+        run: ./gradlew -p a01bdiagnostic assembleDebug --no-daemon
+      - name: Record SHA256
+        run: sha256sum a01bdiagnostic/build/outputs/apk/debug/*.apk | tee a01bdiagnostic/apk-sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-a01b-ed25519-optin-apk
+          path: |
+            a01bdiagnostic/build/outputs/apk/debug/*.apk
+            a01bdiagnostic/apk-sha256.txt
+          if-no-files-found: error
+          retention-days: 7
