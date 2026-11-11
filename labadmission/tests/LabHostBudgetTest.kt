@@ -22,7 +22,9 @@ class LabHostBudgetTest {
         "/proc/self/cgroup" to "0::$group\n",
         "/proc/self/mountinfo" to "23 1 0:1 / /cg rw - cgroup2 cgroup rw\n",
         "/cg/job/memory.max" to leaf,"/cg/job/memory.current" to gib.toString(),
-        "/cg/memory.max" to parent,"/cg/memory.current" to gib.toString())
+        "/cg/job/memory.peak" to gib.toString(),
+        "/cg/memory.max" to parent,"/cg/memory.current" to gib.toString(),
+        "/cg/memory.peak" to gib.toString())
     private fun checkLinux(data: Map<String,String>) = LabHostBudget.assessLinux(config,{ data.getValue(it.toString()) },{true})
     @Test fun cgroupAncestorLimitIsObservedEvenWhenLeafIsMax() {
         checkLinux(linux());assertTrue(runCatching { checkLinux(linux(parent=(3*gib).toString())) }.isFailure)
@@ -32,6 +34,15 @@ class LabHostBudgetTest {
     @Test fun escapingOrUnmappedCgroupRefuses() { assertTrue(runCatching { checkLinux(linux(group="/../foreign")) }.isFailure) }
     @Test fun contradictoryProcDataIsNotSilentlyClamped() {
         assertTrue(runCatching { checkLinux(linux()+mapOf("/proc/meminfo" to "MemTotal: 8388608 kB\nMemAvailable: 999999999 kB\n")) }.isFailure)
+    }
+    @Test fun highWaterMarkAboveBudgetRefuses_A09() {
+        assertTrue(runCatching { checkLinux(linux()+mapOf("/cg/memory.peak" to (3*gib).toString())) }.isFailure)
+    }
+    @Test fun missingPeakObservationFailsClosed_A09() {
+        assertTrue(runCatching { checkLinux(linux()-"/cg/memory.peak") }.isFailure)
+    }
+    @Test fun contradictoryPeakBelowCurrentFailsClosed_A09() {
+        assertTrue(runCatching { checkLinux(linux()+mapOf("/cg/memory.peak" to "0")) }.isFailure)
     }
     @Test fun hostMonitorFailureRevokesAndCancels() {
         val f=LabFixtures();val a=f.attempt();val stop=java.util.concurrent.CountDownLatch(1)
