@@ -38,8 +38,8 @@ dispatch='''if '--successor-r02' in sys.argv:
     subprocess.run([sys.executable,'tools/check-preservation-r02.py'],check=True)
     sys.exit(0)
 '''
-assert current==original.replace("BASE = '1ce24405b04a50f97cf30078b9716c7d00c593fc'",
- "BASE = '1ce24405b04a50f97cf30078b9716c7d00c593fc'\n"+dispatch,1), 'F3A original verifier changed'
+assert current==original.replace("BASE = '1ce24405b04a50f97cf30078b9716c7d00c593fc'\\n",
+ "BASE = '1ce24405b04a50f97cf30078b9716c7d00c593fc'\\n"+dispatch,1), 'F3A original verifier changed'
 # Prevent a successor from silently expanding the protected app/domain/fixture
 # scope. Additive lab-only candidates are separately security-qualified.
 for p in git('diff','--name-only',INHERITED,'HEAD','--','app','domain','fixtures').splitlines():
