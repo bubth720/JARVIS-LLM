@@ -189,7 +189,10 @@ internal class LabAttempt internal constructor(val spec: LabPermitSpec, private 
     fun advance(expected: LabPhase, next: LabPhase) { requireLive(); check(phase == expected); phase=next }
     @Synchronized fun terminal(next: LabPhase) {
         check(next in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED))
-        check(phase !in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED)) { "LAB_TERMINAL_ALREADY_SEALED" }
+        // UNKNOWN can be escalated to CLEANUP_FAILED when cleanup itself fails;
+        // no other terminal rewrite is permitted.
+        check(phase !in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED) ||
+            (phase == LabPhase.UNKNOWN && next == LabPhase.CLEANUP_FAILED)) { "LAB_TERMINAL_ALREADY_SEALED" }
         phase=next
     }
     override fun close() { closed.set(true);LabReplayLedger.detach(spec); synchronized(stopLock) { timer?.cancel(false);monitorTask?.cancel(false);timer=null;monitorTask=null;stop=null } }
