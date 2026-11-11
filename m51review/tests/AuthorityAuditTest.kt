@@ -90,11 +90,11 @@ class AuthorityAuditTest {
             assertEquals(before.fileKey(),Files.readAttributes(path,BasicFileAttributes::class.java).fileKey())
         }finally { Files.setPosixFilePermissions(root,PosixFilePermissions.fromString("rwx------"));Files.deleteIfExists(path);Files.delete(root) }
     }
-    @Test fun filesystemExceptionExposesSyntheticPrivatePath_REPRODUCED() {
+    @Test fun filesystemExceptionRedactsPrivatePath_FIXED() {
         val root=Files.createTempDirectory("jarvis-public-audit-").resolve("private-fixture-missing")
         try {
             val e=runCatching { LabFileProof.verify(root,root.resolve(LabAuthorizedModel.fileName)) {} }.exceptionOrNull()
-            assertNotNull(e);assertTrue("Raw exception requires redaction before any public report",e!!.message!!.contains("private-fixture-missing"))
+            assertNotNull(e);assertEquals("LAB_FILE_IO_REFUSED",e!!.message);assertFalse(e.message.orEmpty().contains("private-fixture-missing"))
         }finally { Files.delete(root.parent) }
     }
     @Test fun deadlineIndependentOfBlockingMonitor_FIXED() {
