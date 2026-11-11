@@ -20,7 +20,13 @@ Statut : **implémenté et testé sur hôte Linux ; Android = suite native sur �
 
 ## API JNI (`fr.jarvis.llm.a02.SealedNativeBridge`, `libjarvis_llm_a02.so`)
 
-`create, begin, cancel, loadSealedFd(h, sourceFd, exactSize, sha256Bytes, memoryBudgetBytes, context, threads, small) → trace JSON, generateP2, countP2Tokens, allocations, unload, destroy`.
+`create, begin, cancel, loadSealedFd(h, sourceFd, exactSize, sha256Bytes, memoryBudgetBytes, context, threads, small) → trace JSON, generateP2, generateStream(h, system, question, maxTokens, contextLimit, binding64hex, callback) → terminal (2 terminé, 3 annulé, 4 erreur), countP2Tokens, allocations, unload, destroy`.
+
+`generateStream` est un simple renvoi vers le `SynchronousStream` protégé (callback `onNativePrepared([B[BI)Z` / `onNativeEvent([BII[BIJI)I`).
+
+## Politique protégée du moteur (inchangée, respectée)
+
+Pour Qwen3 0.6B (`native_configuration.h`) : contexte 512 ou 768, **exactement 1 thread**, sortie ≤ 64 (ctx 512) ou ≤ 96 (ctx 768) jetons. Toute autre configuration est refusée (`Configuration native refusée`) ; A02 et l'hôte V1-A s'y conforment au lieu de la contourner.
 
 La trace ne contient ni chemin ni contenu : taille, condensés copiés/scellés, sceaux, `sealedInodeMapped`, `sourceInodeMapped=false`, `pathLoaderExported=false`.
 

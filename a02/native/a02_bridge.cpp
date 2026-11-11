@@ -57,6 +57,8 @@ A02_FWD(void, cancel, (JNIEnv * env, jobject o, jlong h), (env, o, h))
 A02_FWD(jbyteArray, generateP2, (JNIEnv * env, jobject o, jlong h, jobjectArray r, jobjectArray t, jint m, jbyteArray s), (env, o, h, r, t, m, s))
 A02_FWD(jint, countP2Tokens, (JNIEnv * env, jobject o, jlong h, jbyteArray s, jbyteArray q), (env, o, h, s, q))
 A02_FWD(jlongArray, allocations, (JNIEnv * env, jobject o, jlong h), (env, o, h))
+// Real token streaming through the protected SynchronousStream (callback: onNativePrepared/onNativeEvent).
+A02_FWD(jint, generateStream, (JNIEnv * env, jobject o, jlong h, jbyteArray s, jbyteArray q, jint m, jint c, jbyteArray b, jobject cb), (env, o, h, s, q, m, c, b, cb))
 A02_FWD(void, unload, (JNIEnv * env, jobject o, jlong h), (env, o, h))
 A02_FWD(void, destroy, (JNIEnv * env, jobject o, jlong h), (env, o, h))
 

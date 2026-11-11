@@ -18,7 +18,22 @@ public final class SealedNativeBridge {
     native long create(); native void begin(long h); native void cancel(long h);
     native byte[] loadSealedFd(long h, int sourceFd, long size, byte[] sha, long budget, int context, int threads, boolean small);
     native byte[] generateP2(long h, byte[][] roles, byte[][] texts, int output, byte[] system);
+    native int generateStream(long h, byte[] system, byte[] question, int maxTokens, int contextLimit, byte[] binding, Object callback);
     native long[] allocations(long h); native void unload(long h); native void destroy(long h);
+
+    /** Host stream sink with the exact JNI shape used by the protected SynchronousStream. */
+    static final class Sink {
+        final StringBuilder text = new StringBuilder(); int chunks = 0, terminal = -1, ack = 0; long firstNanos = -1;
+        volatile boolean cancelAfterFirst = false; SealedNativeBridge bridge; long handle;
+        public boolean onNativePrepared(byte[] rendered, byte[] template, int inputTokens) { return inputTokens > 0 && rendered.length > 0; }
+        public int onNativeEvent(byte[] binding, int kind, int sequence, byte[] bytes, int sampled, long firstTokenNanos, int clock) {
+            if (kind == 0) ack++;
+            else if (kind == 1) { chunks++; text.append(new String(bytes, StandardCharsets.UTF_8)); firstNanos = firstTokenNanos;
+                if (cancelAfterFirst && chunks == 2) bridge.cancel(handle); }
+            else terminal = kind;
+            return 0;
+        }
+    }
 
     static int passed = 0;
     static byte[] b(String s) { return s.getBytes(StandardCharsets.UTF_8); }
@@ -88,7 +103,7 @@ public final class SealedNativeBridge {
         Files.copy(model.toPath(), victim.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
         String trace;
         try (FileInputStream in = new FileInputStream(victim)) {
-            trace = new String(n.loadSealedFd(h, fd(in), victim.length(), b(sha), BUDGET, 512, 2, true), StandardCharsets.UTF_8);
+            trace = new String(n.loadSealedFd(h, fd(in), victim.length(), b(sha), BUDGET, 768, 1, true), StandardCharsets.UTF_8);
         }
         System.out.println("TRACE " + trace);
         check(trace.contains("\"sealedInodeMapped\":true"), "llama-mmap-is-the-sealed-memfd");
@@ -101,11 +116,22 @@ public final class SealedNativeBridge {
         byte[][] roles2 = {b("user"), b("assistant"), b("user")};
         String a2 = new String(n.generateP2(h, roles2, new byte[][]{b("Je m'appelle Thomas."), b("Enchanté Thomas."), b("Comment je m'appelle ?")}, 16, b("Réponds en français. /no_think")), StandardCharsets.UTF_8);
         check(a2.trim().length() > 0, "multi-turn: " + a2.replace('\n', ' '));
+        // Real streaming: several chunks then COMPLETED(2); cancellation mid-stream gives CANCELLED(3).
+        Sink sink = new Sink();
+        n.begin(h);
+        int term = n.generateStream(h, b("Réponds en français. /no_think"), b("Écris trois phrases sur la mer."), 48, 768, b("a".repeat(64)), sink);
+        check(term == 2 && sink.terminal == 2 && sink.ack == 1 && sink.chunks > 3 && sink.text.length() > 0, "real-stream-completed chunks=" + sink.chunks);
+        Sink cancel = new Sink(); cancel.cancelAfterFirst = true; cancel.bridge = n; cancel.handle = h;
+        n.begin(h);
+        int cterm = n.generateStream(h, b("Réponds en français. /no_think"), b("Compte de un à cent en toutes lettres."), 96, 768, b("b".repeat(64)), cancel);
+        check(cterm == 3 && cancel.terminal == 3 && cancel.chunks < 40, "real-stream-cancelled-after-" + cancel.chunks + "-chunks");
+        n.begin(h);
+        check(n.generateP2(h, roles, new byte[][]{b("Dis oui.")}, 4, b("Réponds en français. /no_think")).length > 0, "engine-usable-after-stream-cancel");
         long[] alloc = n.allocations(h);
         n.unload(h);
         // 10 load/unload cycles from a fresh verified source: descriptors and shmem must return.
         for (int i = 0; i < 10; i++) {
-            try (FileInputStream in = new FileInputStream(model)) { n.loadSealedFd(h, fd(in), model.length(), b(sha), BUDGET, 512, 2, true); }
+            try (FileInputStream in = new FileInputStream(model)) { n.loadSealedFd(h, fd(in), model.length(), b(sha), BUDGET, 768, 1, true); }
             n.unload(h);
         }
         System.gc();
