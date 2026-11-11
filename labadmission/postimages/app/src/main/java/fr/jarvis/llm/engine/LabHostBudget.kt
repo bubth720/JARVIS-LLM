@@ -36,6 +36,11 @@ internal object LabHostBudget {
             val maximum=read(current.resolve("memory.max")).trim()
             if(maximum != "max") {
                 val limit=maximum.toLong();val used=read(current.resolve("memory.current")).trim().toLong();check(limit > 0 && used >= 0)
+                // A periodic RSS sample cannot bound a transient peak. Record
+                // the cgroup high-water mark and fail closed when it exceeds
+                // the declared envelope; hard-limit admission remains separate.
+                val peak=read(current.resolve("memory.peak")).trim().toLong()
+                check(peak >= used && peak <= limit && peak <= config.memoryBudget) { "LAB_MEMORY_PEAK_REFUSED" }
                 total=minOf(total,limit);available=minOf(available,(limit-used).coerceAtLeast(0))
             }
             if(current == point)break
