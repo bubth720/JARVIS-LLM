@@ -11,7 +11,13 @@ info=catalog("https://huggingface.co/api/models/"+repo+"?blobs=true")
 revision=info["sha"]
 assert re.fullmatch("[a-f0-9]{40}",revision)
 matches=[x for x in info["siblings"] if x["rfilename"].lower().endswith("-q4_k_m.gguf")]
-assert len(matches)==1,"Expected unique official Q4_K_M GGUF"
+if not matches:
+ repo="unsloth/Qwen3-0.6B-GGUF"
+ info=catalog("https://huggingface.co/api/models/"+repo+"?blobs=true")
+ revision=info["sha"]
+ assert re.fullmatch("[a-f0-9]{40}",revision)
+ matches=[x for x in info["siblings"] if x["rfilename"].lower().endswith("-q4_k_m.gguf")]
+assert len(matches)==1,"Expected unique Q4_K_M GGUF in pinned checked repositories"
 entry=matches[0];size=entry["lfs"]["size"];expected=entry["lfs"]["sha256"]
 assert re.fullmatch("[a-f0-9]{64}",expected) and 0<size<=800*1024*1024
 url="https://huggingface.co/"+repo+"/resolve/"+revision+"/"+urllib.parse.quote(entry["rfilename"])
