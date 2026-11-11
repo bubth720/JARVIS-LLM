@@ -1,0 +1,30 @@
+name: A01 independent read-only diagnostic APK
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'a01diagnostic/**'
+      - '.github/workflows/a01-diagnostic.yml'
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Compile isolated Android APK
+        run: ./gradlew -p a01diagnostic assembleDebug --no-daemon
+      - name: Record APK SHA-256
+        run: sha256sum a01diagnostic/build/outputs/apk/debug/*.apk | tee a01diagnostic/apk-sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-a01-readonly-diagnostic-apk
+          path: |
+            a01diagnostic/build/outputs/apk/debug/*.apk
+            a01diagnostic/apk-sha256.txt
+          if-no-files-found: error
+          retention-days: 7
