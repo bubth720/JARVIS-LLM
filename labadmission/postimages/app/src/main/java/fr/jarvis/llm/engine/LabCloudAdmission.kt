@@ -205,7 +205,7 @@ internal class LabFileProof private constructor(val path: Path, val key: Any, va
     }
     override fun toString() = "LabFileProof(redacted)"
     companion object {
-        fun verify(root: Path, path: Path, alive: () -> Unit): LabFileProof {
+        fun verify(root: Path, path: Path, alive: () -> Unit): LabFileProof = try {
             val r=root.toAbsolutePath().normalize(); val p=path.toAbsolutePath().normalize()
             check(r == r.toRealPath() && p.parent == r && p == p.toRealPath() && p.fileName.toString() == LabAuthorizedModel.fileName &&
                 Files.getPosixFilePermissions(r) == setOf(PosixFilePermission.OWNER_READ,PosixFilePermission.OWNER_EXECUTE)) { "LAB_PRIVATE_SNAPSHOT_REQUIRED" }
@@ -219,7 +219,10 @@ internal class LabFileProof private constructor(val path: Path, val key: Any, va
                     check(count <= LabAuthorizedModel.size) { "LAB_FILE_TOO_LARGE" };digest.update(buffer,0,n) }
             }
             check(count == LabAuthorizedModel.size && streamHashDigest(digest.digest()) == LabAuthorizedModel.sha256) { "LAB_FILE_SHA256" }
-            proof.requireStable();return proof
+            proof.requireStable();proof
+        } catch (_: java.io.IOException) {
+            // Do not leak private filesystem paths through public failure messages.
+            throw IllegalStateException("LAB_FILE_IO_REFUSED")
         }
         private fun streamHashDigest(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(java.util.Locale.ROOT,it.toInt() and 255) }
     }
