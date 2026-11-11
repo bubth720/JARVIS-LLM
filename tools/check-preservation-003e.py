@@ -16,7 +16,7 @@ for p in paths:
  if p=='app/src/main/AndroidManifest.xml' and current!=b:
   # Only the existing non-exported model selector is allowed as a historical additive delta.
   # All baseline permission, backup, network and other activity declarations remain byte-identical.
-  insertion=b'        <activity android:name=".model.ModelSelectionActivity" android:exported="false" />\\n'
+  insertion=b'        <activity android:name=".model.ModelSelectionActivity" android:exported="false" />\n'
   anchor=b'        <activity android:name=".catalogue.CatalogueActivity" android:exported="false" />'
   if b.count(anchor)!=1 or current!=b.replace(anchor,insertion+anchor,1):
    raise SystemExit('Protected baseline drift: '+p)
