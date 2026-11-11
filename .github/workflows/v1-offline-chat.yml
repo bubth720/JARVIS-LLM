@@ -24,8 +24,10 @@ jobs:
           python3 tools/check-preservation-003e.py
           python3 tools/check-preservation-003f.py
           python3 tools/check-preservation-f3a.py --successor-r02
+      - name: Install pinned Android toolchain and native sources
+        run: ./tools/setup-cloud.sh
       - name: Compile existing Android chat with native llama.cpp
-        run: ./gradlew :app:assembleDebug --no-daemon
+        run: ./tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :app:assembleDebug --no-daemon
       - name: Verify APK, native arm64 loader and offline manifest
         run: |
           python3 v1candidate/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
