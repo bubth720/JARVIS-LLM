@@ -31,10 +31,17 @@ jobs:
           python3 tools/check-preservation-003f.py
           python3 tools/check-recovery-contract.py
           python3 tools/check-preservation-d4e.py
-          python3 tools/check-preservation-f3a.py --successor-f3b
-          python3 docs/mission-003f-f3b/verify.py
+          python3 tools/check-preservation-f3a.py --successor-r02
+          python3 tools/check-f3b-successor-r02.py
           python3 tools/recovery-vectors.py
           python3 docs/mission-003f-correction/reference/verify_vectors.py
+      - name: A02 native sealed FD adversarial tests
+        run: |
+          mkdir -p build/a02
+          g++ -std=c++17 -D_GNU_SOURCE -Wall -Wextra -Werror perf03/tests/a02_sealed_fd_test.cpp -o build/a02/sealed-fd-test
+          build/a02/sealed-fd-test
+      - name: A02 sealed snapshot Linux adversarial prototype
+        run: python3 tools/test-a02-sealed-snapshot.py
       - name: Test offline APK hash verifier (not Android hardware)
         run: node tools/test-apk-verifier.cjs
       - name: Install verified JDK, SDK, NDK and native sources
@@ -43,6 +50,8 @@ jobs:
         run: ./tools/cloud-env.sh ./tools/test-native.sh
       - name: JVM and simulated Android tests, Lint, ARM64 APK
         run: ./tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon
+      - name: R02 isolated security review and adversarial JVM tests
+        run: ./tools/cloud-env.sh python3 m51review/run_audit.py --jdk .tools/jdk-21.0.12.1+1 --cache .tools/gradle-home/caches/modules-2/files-2.1
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
       - name: Check isolated fixture APKs, signatures, shared engine and contract digest

@@ -32,10 +32,11 @@ internal class LabExecution(val run: String, val attempt: String, val commit: St
     override fun toString() = "LabExecution(redacted)"
     companion object {
         fun observe(): LabExecution {
-            check(System.getenv("GITHUB_ACTIONS") == "true" && System.getenv("RUNNER_OS") == "Linux" &&
-                System.getenv("GITHUB_REPOSITORY") == "bubth720/JARVIS-LLM") { "LAB_EXECUTION_UNQUALIFIED" }
-            return LabExecution(requireNotNull(System.getenv("GITHUB_RUN_ID")), requireNotNull(System.getenv("GITHUB_RUN_ATTEMPT")),
-                requireNotNull(System.getenv("GITHUB_SHA")))
+            // Environment variables are caller-controlled metadata, not a
+            // cryptographic runner attestation. Refuse production admission
+            // until an independently verified bootstrap is implemented.
+            throw IllegalStateException("LAB_EXECUTION_ATTESTATION_NOT_CONFIGURED")
+
         }
     }
 }
@@ -110,7 +111,10 @@ private object LabReplayLedger {
 }
 private object LabDeadlines {
     // A control watchdog only: it never loads, prepares, generates or owns a second native worker.
+    // Separate deadline control from potentially blocking resource monitors.
     val executor = ScheduledThreadPoolExecutor(1) { r -> Thread(r,"jarvis-lab-revocation").apply { isDaemon=true } }
+        .apply { removeOnCancelPolicy=true }
+    val monitorExecutor = ScheduledThreadPoolExecutor(1) { r -> Thread(r,"jarvis-lab-monitor").apply { isDaemon=true } }
         .apply { removeOnCancelPolicy=true }
 }
 internal class LabCloudAuthority(private val trust: LabOperatorTrust, private val execution: LabExecution,
@@ -171,7 +175,7 @@ internal class LabAttempt internal constructor(val spec: LabPermitSpec, private 
     fun attachStop(monitor: () -> Unit = { LabHostBudget.requireFits(spec.config) }, action: () -> Unit) {
         synchronized(stopLock) {
             check(stop == null && !closed.get()); stop=action
-            monitorTask=LabDeadlines.executor.scheduleAtFixedRate({
+            monitorTask=LabDeadlines.monitorExecutor.scheduleAtFixedRate({
                 try { monitor() } catch (failure: Throwable) { faultCode=if(failure.message == "LAB_CALLER_CANCELLED") "LAB_CALLER_CANCELLED" else "LAB_HOST_MONITOR_REFUSED";revoke() }
             },100,100,TimeUnit.MILLISECONDS)
             timer=LabDeadlines.executor.schedule({ revoke() },(deadline-clock.monotonicNanos()).coerceAtLeast(0),TimeUnit.NANOSECONDS)
@@ -183,7 +187,14 @@ internal class LabAttempt internal constructor(val spec: LabPermitSpec, private 
     fun revoke() { revocation.revoke(); LabReplayLedger.revoke(spec) }
     fun cancelledByBackend() { revocation.revoke() }
     fun advance(expected: LabPhase, next: LabPhase) { requireLive(); check(phase == expected); phase=next }
-    fun terminal(next: LabPhase) { check(next in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED));phase=next }
+    @Synchronized fun terminal(next: LabPhase) {
+        check(next in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED))
+        // UNKNOWN can be escalated to CLEANUP_FAILED when cleanup itself fails;
+        // no other terminal rewrite is permitted.
+        check(phase !in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED) ||
+            (phase == LabPhase.UNKNOWN && next == LabPhase.CLEANUP_FAILED)) { "LAB_TERMINAL_ALREADY_SEALED" }
+        phase=next
+    }
     override fun close() { closed.set(true);LabReplayLedger.detach(spec); synchronized(stopLock) { timer?.cancel(false);monitorTask?.cancel(false);timer=null;monitorTask=null;stop=null } }
     override fun toString() = "LabAttempt(phase=$phase, redacted)"
 }
@@ -198,7 +209,7 @@ internal class LabFileProof private constructor(val path: Path, val key: Any, va
     }
     override fun toString() = "LabFileProof(redacted)"
     companion object {
-        fun verify(root: Path, path: Path, alive: () -> Unit): LabFileProof {
+        fun verify(root: Path, path: Path, alive: () -> Unit): LabFileProof = try {
             val r=root.toAbsolutePath().normalize(); val p=path.toAbsolutePath().normalize()
             check(r == r.toRealPath() && p.parent == r && p == p.toRealPath() && p.fileName.toString() == LabAuthorizedModel.fileName &&
                 Files.getPosixFilePermissions(r) == setOf(PosixFilePermission.OWNER_READ,PosixFilePermission.OWNER_EXECUTE)) { "LAB_PRIVATE_SNAPSHOT_REQUIRED" }
@@ -212,7 +223,10 @@ internal class LabFileProof private constructor(val path: Path, val key: Any, va
                     check(count <= LabAuthorizedModel.size) { "LAB_FILE_TOO_LARGE" };digest.update(buffer,0,n) }
             }
             check(count == LabAuthorizedModel.size && streamHashDigest(digest.digest()) == LabAuthorizedModel.sha256) { "LAB_FILE_SHA256" }
-            proof.requireStable();return proof
+            proof.requireStable();proof
+        } catch (_: java.io.IOException) {
+            // Do not leak private filesystem paths through public failure messages.
+            throw IllegalStateException("LAB_FILE_IO_REFUSED")
         }
         private fun streamHashDigest(bytes: ByteArray) = bytes.joinToString("") { "%02x".format(java.util.Locale.ROOT,it.toInt() and 255) }
     }

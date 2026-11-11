@@ -14,7 +14,10 @@ sealed interface ResourceGrant {
     data class Refused(val reason: String) : ResourceGrant
 }
 class ResourceLease internal constructor(private val release: () -> Unit) : AutoCloseable {
-    @Synchronized override fun close() = release()
+    private val released = java.util.concurrent.atomic.AtomicBoolean(false)
+    // Never invoke external revocation callbacks under a lease monitor.
+    // CAS seals ownership even when a callback fails; a second close cannot reissue it.
+    override fun close() { if (released.compareAndSet(false,true)) release() }
     override fun toString() = "ResourceLease(redacted)"
 }
 /** Minted by the actual broker; callers cannot manufacture or transfer ownership with these fields. */
@@ -72,7 +75,16 @@ class ResourceCoordinator {
             observations.values.filterNotNull().toList()
         }
         // Native cancel never runs under the broker monitor; slots stay pinned until actual return.
-        notify.forEach { it() }
+        // Deliver every revocation even when one observer throws. Keep the first failure
+        // visible to the caller, and attach later failures without masking the first.
+        var firstFailure: Throwable? = null
+        notify.forEach { callback ->
+            try { callback() } catch (failure: Throwable) {
+                if (firstFailure == null) firstFailure = failure
+                else if (firstFailure !== failure) firstFailure!!.addSuppressed(failure)
+            }
+        }
+        firstFailure?.let { throw it }
     }
     internal fun watch(p: ResourceObservation, action: () -> Unit) {
         val stale = synchronized(this) {

@@ -27,30 +27,56 @@ class AuthorityAuditTest {
         val e=runCatching { LabOperatorTrust.fromApprovedKey(key) }.exceptionOrNull()
         assertEquals("LAB_TRUST_ROOT_NOT_CONFIGURED",e!!.message)
     }
+    @Test fun environmentOnlyExecutionCannotAttest_A06() {
+        val failure=runCatching { LabExecution.observe() }.exceptionOrNull()
+        assertEquals("LAB_EXECUTION_ATTESTATION_NOT_CONFIGURED",failure?.message)
+    }
     @Test fun arbitraryExecutionConstructorIsNotHostObservation() {
         // This is not a credential: it demonstrates why approved bootstrap composition is mandatory.
         val claimed=LabExecution("71000001","1","1".repeat(40))
         assertEquals("71000001",claimed.run)
         assertEquals("1".repeat(40),claimed.commit)
     }
-    @Test fun failedWatcherPreventsFollowingWatcherNotification_REPRODUCED()=PairFixture().use { f ->
-        val first=f.observe();val second=f.observe();var laterCalls=0
-        // IdentityHashMap order is not insertion order: inspect only this unit broker's current key order.
-        val entries=ResourceCoordinator::class.java.getDeclaredField("observations").apply { isAccessible=true }.get(f.broker) as java.util.IdentityHashMap<*,*>
-        val order=entries.keys.toList().map { it as ResourceObservation }
-        order[0].onRevoked { error("PUBLIC_UNIT_WATCHER_FAILURE") };order[1].onRevoked { laterCalls++ }
+    @Test fun failingWatcherDoesNotSkipLaterNotification_FIXED()=PairFixture().use { f ->
+        val first=f.observe();val second=f.observe();var calls=0
         try {
+            first.onRevoked { calls++;error("PUBLIC_UNIT_WATCHER_FAILURE") }
+            second.onRevoked { calls++ }
             val error=runCatching { f.heavy.close() }.exceptionOrNull()
             assertEquals("PUBLIC_UNIT_WATCHER_FAILURE",error!!.message)
-            assertEquals("Second watcher is skipped by current forEach",0,laterCalls)
+            assertEquals(2,calls)
             assertFalse(first.isLive());assertFalse(second.isLive())
         }finally { first.close();second.close() }
     }
-    @Test fun revocationCallbackIsOutsideBrokerButInsideLeaseMonitor_REPRODUCED()=PairFixture().use { f ->
+    @Test fun revocationCallbackIsOutsideBrokerAndLeaseMonitor_FIXED()=PairFixture().use { f ->
         f.observe().use { proof ->
             var brokerHeld=true;var leaseHeld=false
             proof.onRevoked { brokerHeld=Thread.holdsLock(f.broker);leaseHeld=Thread.holdsLock(f.heavy) }
-            f.heavy.close();assertFalse(brokerHeld);assertTrue(leaseHeld)
+            f.heavy.close();assertFalse(brokerHeld);assertFalse(leaseHeld)
+        }
+    }
+    @Test fun concurrentCloseAndReentrantStopDoNotDeadlock_A08()=PairFixture().use { f ->
+        f.observe().use { proof ->
+            val entered=CountDownLatch(1)
+            val finish=CountDownLatch(1)
+            var notifications=0
+            proof.onRevoked {
+                notifications++
+                entered.countDown()
+                // Reenter the same lease from a different thread; the original
+                // close must not hold a monitor that blocks this completion.
+                val worker=Thread { try { f.heavy.close() } finally { finish.countDown() } }
+                worker.isDaemon=true
+                worker.start()
+                assertTrue("Lease monitor held across callback",finish.await(2,TimeUnit.SECONDS))
+            }
+            val closer=Thread { f.heavy.close() }
+            closer.start()
+            assertTrue(entered.await(2,TimeUnit.SECONDS))
+            closer.join(2000)
+            assertFalse("Revocation callback deadlocked",closer.isAlive)
+            assertEquals(1,notifications)
+            assertFalse(proof.isLive())
         }
     }
     @Test fun revokedPinnedSlotsAreNotReissued()=PairFixture().use { f ->
@@ -92,27 +118,27 @@ class AuthorityAuditTest {
             assertEquals(before.fileKey(),Files.readAttributes(path,BasicFileAttributes::class.java).fileKey())
         }finally { Files.setPosixFilePermissions(root,PosixFilePermissions.fromString("rwx------"));Files.deleteIfExists(path);Files.delete(root) }
     }
-    @Test fun filesystemExceptionExposesSyntheticPrivatePath_REPRODUCED() {
+    @Test fun filesystemExceptionRedactsPrivatePath_FIXED() {
         val root=Files.createTempDirectory("jarvis-public-audit-").resolve("private-fixture-missing")
         try {
             val e=runCatching { LabFileProof.verify(root,root.resolve(LabAuthorizedModel.fileName)) {} }.exceptionOrNull()
-            assertNotNull(e);assertTrue("Raw exception requires redaction before any public report",e!!.message!!.contains("private-fixture-missing"))
+            assertNotNull(e);assertEquals("LAB_FILE_IO_REFUSED",e!!.message);assertFalse(e.message.orEmpty().contains("private-fixture-missing"))
         }finally { Files.delete(root.parent) }
     }
-    @Test fun deadlineUsesSameExecutorAsBlockingMonitor_REPRODUCED() {
+    @Test fun deadlineIndependentOfBlockingMonitor_FIXED() {
         val fixture=LabFixtures();val signed=fixture.sign(fixture.spec(expiry=fixture.clock.wall+300));val a=fixture.authority.redeem(signed,fixture.owner,fixture.request)
         val entered=CountDownLatch(1);val release=CountDownLatch(1);val cancelled=CountDownLatch(1)
         try {
             a.attachStop(monitor={entered.countDown();check(release.await(5,TimeUnit.SECONDS))}) { cancelled.countDown() }
             assertTrue(entered.await(2,TimeUnit.SECONDS))
             // The periodic monitor owns the only control thread beyond the real scheduled deadline.
-            assertFalse(cancelled.await(500,TimeUnit.MILLISECONDS))
+            assertTrue("Deadline must not wait for the blocking monitor",cancelled.await(1500,TimeUnit.MILLISECONDS))
             release.countDown();assertTrue(cancelled.await(2,TimeUnit.SECONDS))
         }finally { release.countDown();a.close() }
     }
-    @Test fun phaseTerminalMethodDoesNotSealTerminalTransitions_REPRODUCED() {
+    @Test fun terminalPhaseCannotBeOverwritten_FIXED() {
         val f=LabFixtures();val a=f.attempt()
-        try { a.terminal(LabPhase.CLEANUP_FAILED);a.terminal(LabPhase.CONTENT_DONE);assertEquals(LabPhase.CONTENT_DONE,a.phase) }finally { a.close() }
+        try { a.terminal(LabPhase.CLEANUP_FAILED);val failure=runCatching { a.terminal(LabPhase.CONTENT_DONE) }.exceptionOrNull();assertEquals("LAB_TERMINAL_ALREADY_SEALED",failure!!.message);assertEquals(LabPhase.CLEANUP_FAILED,a.phase) }finally { a.close() }
     }
     @Test fun revocationIsOneShotAfterFailingStop() {
         val f=LabFixtures();val signed=f.sign();val a=f.authority.redeem(signed,f.owner,f.request);var calls=0

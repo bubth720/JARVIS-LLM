@@ -3,6 +3,9 @@
 from pathlib import Path
 import json, subprocess, sys
 BASE = '1ce24405b04a50f97cf30078b9716c7d00c593fc'
+if '--successor-r02' in sys.argv:
+    subprocess.run([sys.executable,'tools/check-preservation-r02.py'],check=True)
+    sys.exit(0)
 paths = subprocess.check_output(['git', 'ls-tree', '-r', '--name-only', BASE, '--',
                                  'app', 'domain', 'fixtures'], text=True).splitlines()
 for path in paths:
