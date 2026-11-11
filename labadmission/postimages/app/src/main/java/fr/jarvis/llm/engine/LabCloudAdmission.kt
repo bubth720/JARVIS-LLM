@@ -183,7 +183,11 @@ internal class LabAttempt internal constructor(val spec: LabPermitSpec, private 
     fun revoke() { revocation.revoke(); LabReplayLedger.revoke(spec) }
     fun cancelledByBackend() { revocation.revoke() }
     fun advance(expected: LabPhase, next: LabPhase) { requireLive(); check(phase == expected); phase=next }
-    fun terminal(next: LabPhase) { check(next in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED));phase=next }
+    @Synchronized fun terminal(next: LabPhase) {
+        check(next in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED))
+        check(phase !in setOf(LabPhase.CONTENT_DONE,LabPhase.CANCELLED,LabPhase.ERROR,LabPhase.UNKNOWN,LabPhase.CLEANUP_FAILED)) { "LAB_TERMINAL_ALREADY_SEALED" }
+        phase=next
+    }
     override fun close() { closed.set(true);LabReplayLedger.detach(spec); synchronized(stopLock) { timer?.cancel(false);monitorTask?.cancel(false);timer=null;monitorTask=null;stop=null } }
     override fun toString() = "LabAttempt(phase=$phase, redacted)"
 }
