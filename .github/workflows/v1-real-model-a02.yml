@@ -1,0 +1,46 @@
+name: V1 real GGUF Linux probe and A02 sealed snapshot
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/v1-real-model-a02.yml'
+      - 'v1candidate/**'
+      - 'tools/test-a02-sealed-snapshot.py'
+jobs:
+  a02-linux:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+      - name: A02 sealed snapshot adversarial suite
+        run: python3 tools/test-a02-sealed-snapshot.py
+      - name: A02 native sealed FD adversarial suite
+        run: |
+          mkdir -p build/a02
+          g++ -std=c++17 -D_GNU_SOURCE -Wall -Wextra -Werror perf03/tests/a02_sealed_fd_test.cpp -o build/a02/sealed-fd-test
+          build/a02/sealed-fd-test
+  gguf-linux:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Setup pinned native engine
+        run: |
+          ./tools/setup-cloud.sh
+          ./tools/cloud-env.sh ./tools/test-native.sh
+      - name: Download hash-verified official GGUF and run real Linux JNI inference
+        run: ./tools/cloud-env.sh python3 v1candidate/probe_qwen.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: jarvis-v1-qwen-real-inference-linux-evidence
+          path: build/v1-qwen-probe.json
+          if-no-files-found: warn
+          retention-days: 7
