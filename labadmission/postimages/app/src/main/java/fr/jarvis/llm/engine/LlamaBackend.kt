@@ -11,7 +11,7 @@ internal interface NativeApi {
     fun begin(handle: Long)
     fun cancel(handle: Long)
     fun load(handle: Long, path: ByteArray, context: Int, threads: Int, small: Boolean)
-    fun loadSealedFd(handle: Long, fd: Int, exactSize: Long, context: Int, threads: Int, small: Boolean) = error("A02_NATIVE_FD_NOT_APPROVED")
+    fun loadSealedFd(handle: Long, fd: Int, exactSize: Long, context: Int, threads: Int, small: Boolean): Unit = error("A02_NATIVE_FD_NOT_APPROVED")
     fun generate(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int): ByteArray
     fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
     fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray> = error("fixture measure unsupported")
