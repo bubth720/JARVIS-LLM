@@ -14,7 +14,10 @@ sealed interface ResourceGrant {
     data class Refused(val reason: String) : ResourceGrant
 }
 class ResourceLease internal constructor(private val release: () -> Unit) : AutoCloseable {
-    @Synchronized override fun close() = release()
+    private val released = java.util.concurrent.atomic.AtomicBoolean(false)
+    // Never invoke external revocation callbacks under a lease monitor.
+    // CAS seals ownership even when a callback fails; a second close cannot reissue it.
+    override fun close() { if (released.compareAndSet(false,true)) release() }
     override fun toString() = "ResourceLease(redacted)"
 }
 /** Minted by the actual broker; callers cannot manufacture or transfer ownership with these fields. */
