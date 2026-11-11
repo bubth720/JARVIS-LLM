@@ -4,6 +4,7 @@
 #include "cancellation.h"
 #include "model_check.h"
 #include "native_configuration.h"
+#include "a02_sealed_fd.h"
 #include "stream_support.h"
 #include <chrono>
 #include <ctime>
@@ -175,6 +176,29 @@ extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_load(
         e.context = llama_n_ctx(e.ctx); e.batch = llama_n_batch(e.ctx);
         e.max_output = maximum_output_tokens(small, context); check(e);
     } catch (const std::exception & ex) { if (entered && h) engine(h).unload(); error(env, ex); }
+}
+// A02 candidate: the loader only receives a path to a verified sealed
+// descriptor. This is NOT yet wired to LabFileProof or Android memfd creation.
+// Do not enable lab admission until the exact sealed bytes are hashed.
+extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_engine_NativeBridge_loadSealedFd(
+    JNIEnv * env, jobject receiver, jlong h, jint supplied_fd, jlong exact_size,
+    jint context, jint threads, jboolean small) {
+    int owned=-1;
+    try {
+        owned=jarvis_a02::duplicate_verified_fd(supplied_fd,exact_size);
+        const auto fd_path=std::string("/proc/self/fd/")+std::to_string(owned);
+        const auto * raw=reinterpret_cast<const jbyte *>(fd_path.data());
+        jbyteArray path=env->NewByteArray(static_cast<jsize>(fd_path.size()));
+        if (!path) throw std::runtime_error("A02_JNI_ALLOCATION_REFUSED");
+        env->SetByteArrayRegion(path,0,static_cast<jsize>(fd_path.size()),raw);
+        if (!env->ExceptionCheck()) Java_fr_jarvis_llm_engine_NativeBridge_load(
+            env,receiver,h,path,context,threads,small);
+        env->DeleteLocalRef(path);
+        close(owned);
+    } catch (const std::exception & ex) {
+        if (owned>=0) close(owned);
+        error(env,ex);
+    }
 }
 static std::string format(Engine & e, const std::vector<std::string> & roles, const std::vector<std::string> & texts, size_t start, const std::string * custom = nullptr) {
     const std::string system = "Tu es JARVIS, un assistant local. Réponds en français, brièvement. Admets tes incertitudes. Tu ne peux exécuter aucune action. /no_think";
