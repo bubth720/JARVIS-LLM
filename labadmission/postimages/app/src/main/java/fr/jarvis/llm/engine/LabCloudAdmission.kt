@@ -32,10 +32,11 @@ internal class LabExecution(val run: String, val attempt: String, val commit: St
     override fun toString() = "LabExecution(redacted)"
     companion object {
         fun observe(): LabExecution {
-            check(System.getenv("GITHUB_ACTIONS") == "true" && System.getenv("RUNNER_OS") == "Linux" &&
-                System.getenv("GITHUB_REPOSITORY") == "bubth720/JARVIS-LLM") { "LAB_EXECUTION_UNQUALIFIED" }
-            return LabExecution(requireNotNull(System.getenv("GITHUB_RUN_ID")), requireNotNull(System.getenv("GITHUB_RUN_ATTEMPT")),
-                requireNotNull(System.getenv("GITHUB_SHA")))
+            // Environment variables are caller-controlled metadata, not a
+            // cryptographic runner attestation. Refuse production admission
+            // until an independently verified bootstrap is implemented.
+            throw IllegalStateException("LAB_EXECUTION_ATTESTATION_NOT_CONFIGURED")
+
         }
     }
 }
