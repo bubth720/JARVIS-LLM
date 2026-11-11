@@ -33,16 +33,14 @@ class AuthorityAuditTest {
         assertEquals("71000001",claimed.run)
         assertEquals("1".repeat(40),claimed.commit)
     }
-    @Test fun failedWatcherPreventsFollowingWatcherNotification_REPRODUCED()=PairFixture().use { f ->
-        val first=f.observe();val second=f.observe();var laterCalls=0
-        // IdentityHashMap order is not insertion order: inspect only this unit broker's current key order.
-        val entries=ResourceCoordinator::class.java.getDeclaredField("observations").apply { isAccessible=true }.get(f.broker) as java.util.IdentityHashMap<*,*>
-        val order=entries.keys.toList().map { it as ResourceObservation }
-        order[0].onRevoked { error("PUBLIC_UNIT_WATCHER_FAILURE") };order[1].onRevoked { laterCalls++ }
+    @Test fun failingWatcherDoesNotSkipLaterNotification_FIXED()=PairFixture().use { f ->
+        val first=f.observe();val second=f.observe();var calls=0
         try {
+            first.onRevoked { calls++;error("PUBLIC_UNIT_WATCHER_FAILURE") }
+            second.onRevoked { calls++ }
             val error=runCatching { f.heavy.close() }.exceptionOrNull()
             assertEquals("PUBLIC_UNIT_WATCHER_FAILURE",error!!.message)
-            assertEquals("Second watcher is skipped by current forEach",0,laterCalls)
+            assertEquals(2,calls)
             assertFalse(first.isLive());assertFalse(second.isLive())
         }finally { first.close();second.close() }
     }
@@ -110,9 +108,9 @@ class AuthorityAuditTest {
             release.countDown();assertTrue(cancelled.await(2,TimeUnit.SECONDS))
         }finally { release.countDown();a.close() }
     }
-    @Test fun phaseTerminalMethodDoesNotSealTerminalTransitions_REPRODUCED() {
+    @Test fun terminalPhaseCannotBeOverwritten_FIXED() {
         val f=LabFixtures();val a=f.attempt()
-        try { a.terminal(LabPhase.CLEANUP_FAILED);a.terminal(LabPhase.CONTENT_DONE);assertEquals(LabPhase.CONTENT_DONE,a.phase) }finally { a.close() }
+        try { a.terminal(LabPhase.CLEANUP_FAILED);val failure=runCatching { a.terminal(LabPhase.CONTENT_DONE) }.exceptionOrNull();assertEquals("LAB_TERMINAL_ALREADY_SEALED",failure!!.message);assertEquals(LabPhase.CLEANUP_FAILED,a.phase) }finally { a.close() }
     }
     @Test fun revocationIsOneShotAfterFailingStop() {
         val f=LabFixtures();val signed=f.sign();val a=f.authority.redeem(signed,f.owner,f.request);var calls=0
