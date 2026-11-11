@@ -32,7 +32,7 @@ jobs:
           python3 tools/check-recovery-contract.py
           python3 tools/check-preservation-d4e.py
           python3 tools/check-preservation-f3a.py --successor-r02
-          python3 docs/mission-003f-f3b/verify.py
+          python3 tools/check-f3b-successor-r02.py
           python3 tools/recovery-vectors.py
           python3 docs/mission-003f-correction/reference/verify_vectors.py
       - name: Test offline APK hash verifier (not Android hardware)
