@@ -35,6 +35,11 @@ jobs:
           python3 tools/check-f3b-successor-r02.py
           python3 tools/recovery-vectors.py
           python3 docs/mission-003f-correction/reference/verify_vectors.py
+      - name: A02 native sealed FD adversarial tests
+        run: |
+          mkdir -p build/a02
+          g++ -std=c++17 -D_GNU_SOURCE -Wall -Wextra -Werror perf03/tests/a02_sealed_fd_test.cpp -o build/a02/sealed-fd-test
+          build/a02/sealed-fd-test
       - name: A02 sealed snapshot Linux adversarial prototype
         run: python3 tools/test-a02-sealed-snapshot.py
       - name: Test offline APK hash verifier (not Android hardware)
