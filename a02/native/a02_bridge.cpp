@@ -11,8 +11,48 @@
 
 #include "a02_snapshot.h"
 #include <cstdio>
+#include <cstring>
 #include <fstream>
 #include <sstream>
+
+// ---------------------------------------------------------------------------------------------
+// Sealed-descriptor open (linked with -Wl,--wrap=fopen, A02 library only).
+// Android SELinux denies an app re-opening its own memfd through /proc/self/fd/N (emulator
+// API 29, run 43093246716: "Métadonnées GGUF invalides" = gguf open returned null). For the ONE
+// path registered by the current loadSealedFd call on this thread, fopen returns a read-only
+// FILE* over a duplicate of the very same sealed descriptor: no procfs re-open, no other file.
+// Every other path goes to the real fopen unchanged; write/append modes are refused.
+// ---------------------------------------------------------------------------------------------
+extern "C" FILE * __real_fopen(const char * path, const char * mode);
+namespace {
+thread_local int t_sealed_fd = -1;
+thread_local char t_sealed_path[48] = {0};
+thread_local int t_sealed_opens = 0;
+}
+extern "C" FILE * __wrap_fopen(const char * path, const char * mode) {
+    if (t_sealed_fd >= 0 && path && std::strcmp(path, t_sealed_path) == 0) {
+        if (!mode || mode[0] != 'r' || std::strchr(mode, '+') || std::strchr(mode, 'w') || std::strchr(mode, 'a')) {
+            errno = EACCES; return nullptr;
+        }
+        const int dup = fcntl(t_sealed_fd, F_DUPFD_CLOEXEC, 3);
+        if (dup < 0) return nullptr;
+        if (lseek(dup, 0, SEEK_SET) != 0) { close(dup); return nullptr; }
+        FILE * f = fdopen(dup, "rb");
+        if (!f) { close(dup); return nullptr; }
+        ++t_sealed_opens;
+        return f;
+    }
+    return __real_fopen(path, mode);
+}
+namespace {
+struct SealedOpenScope {
+    SealedOpenScope(int fd, const std::string & path) {
+        if (path.size() >= sizeof(t_sealed_path)) throw std::runtime_error("A02_PROC_PATH_TOO_LONG");
+        std::memcpy(t_sealed_path, path.c_str(), path.size() + 1); t_sealed_fd = fd; t_sealed_opens = 0;
+    }
+    ~SealedOpenScope() { t_sealed_fd = -1; t_sealed_path[0] = 0; }
+};
+}
 
 namespace {
 std::string json_escape(const std::string & s) {
@@ -89,7 +129,12 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
         const std::string procPath = jarvis_a02::proc_path_for(owned, trace);
         jbyteArray path = to_bytes(env, procPath);
         if (!path) throw std::runtime_error("A02_JNI_ALLOCATION_REFUSED");
-        jarvis_a02_protected_path_load_not_exported_to_java(env, receiver, h, path, context, threads, small);
+        int sealedOpens = 0;
+        {
+            SealedOpenScope scope(owned, procPath);
+            jarvis_a02_protected_path_load_not_exported_to_java(env, receiver, h, path, context, threads, small);
+            sealedOpens = t_sealed_opens;
+        }
         env->DeleteLocalRef(path);
         if (env->ExceptionCheck()) { close(owned); return nullptr; } // protected loader refused: fail closed
         const auto proof = inspect_maps(trace.inode, static_cast<unsigned long long>(source.st_ino));
@@ -104,6 +149,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
              << ",\"sealedSha256\":\"" << json_escape(trace.sealedSha256) << "\""
              << ",\"seals\":" << trace.seals
              << ",\"loaderPath\":\"/proc/self/fd/<sealed>\""
+             << ",\"loaderOpensServedFromSealedFd\":" << sealedOpens
              << ",\"sealedInodeMapped\":" << (proof.sealedMapped ? "true" : "false")
              << ",\"sourceInodeMapped\":false"
              << ",\"pathLoaderExported\":false}";

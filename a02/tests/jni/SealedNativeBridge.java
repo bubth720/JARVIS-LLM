@@ -107,6 +107,7 @@ public final class SealedNativeBridge {
         }
         System.out.println("TRACE " + trace);
         check(trace.contains("\"sealedInodeMapped\":true"), "llama-mmap-is-the-sealed-memfd");
+        check(!trace.contains("\"loaderOpensServedFromSealedFd\":0"), "loader-opened-only-the-sealed-fd-no-procfs-reopen");
         check(trace.contains("\"sealedSha256\":\"" + sha + "\""), "sealed-digest-equals-trusted");
         long rssLoaded = statusKb("VmRSS"), shmLoaded = statusKb("RssShmem");
         try (java.io.RandomAccessFile w = new java.io.RandomAccessFile(victim, "rw")) { w.setLength(0); w.write(b("ATTACKER")); }
