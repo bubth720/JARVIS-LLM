@@ -110,7 +110,10 @@ private object LabReplayLedger {
 }
 private object LabDeadlines {
     // A control watchdog only: it never loads, prepares, generates or owns a second native worker.
+    // Separate deadline control from potentially blocking resource monitors.
     val executor = ScheduledThreadPoolExecutor(1) { r -> Thread(r,"jarvis-lab-revocation").apply { isDaemon=true } }
+        .apply { removeOnCancelPolicy=true }
+    val monitorExecutor = ScheduledThreadPoolExecutor(1) { r -> Thread(r,"jarvis-lab-monitor").apply { isDaemon=true } }
         .apply { removeOnCancelPolicy=true }
 }
 internal class LabCloudAuthority(private val trust: LabOperatorTrust, private val execution: LabExecution,
@@ -171,7 +174,7 @@ internal class LabAttempt internal constructor(val spec: LabPermitSpec, private 
     fun attachStop(monitor: () -> Unit = { LabHostBudget.requireFits(spec.config) }, action: () -> Unit) {
         synchronized(stopLock) {
             check(stop == null && !closed.get()); stop=action
-            monitorTask=LabDeadlines.executor.scheduleAtFixedRate({
+            monitorTask=LabDeadlines.monitorExecutor.scheduleAtFixedRate({
                 try { monitor() } catch (failure: Throwable) { faultCode=if(failure.message == "LAB_CALLER_CANCELLED") "LAB_CALLER_CANCELLED" else "LAB_HOST_MONITOR_REFUSED";revoke() }
             },100,100,TimeUnit.MILLISECONDS)
             timer=LabDeadlines.executor.schedule({ revoke() },(deadline-clock.monotonicNanos()).coerceAtLeast(0),TimeUnit.NANOSECONDS)
