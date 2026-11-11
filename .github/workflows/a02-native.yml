@@ -82,7 +82,7 @@ jobs:
           ./tools/prepare-native.sh
       - name: Cross-compile A02 library (arm64-v8a, minSdk 29) and test executables
         run: |
-          ndk=.tools/android-sdk/ndk/28.1.13356709
+          ndk="$PWD/.tools/android-sdk/ndk/28.1.13356709"
           for abi in arm64-v8a x86_64; do
             ./tools/cloud-env.sh cmake -G Ninja -S a02/native -B build/a02-android-$abi \
               -DCMAKE_MAKE_PROGRAM="$PWD/.tools/android-sdk/cmake/3.22.1/bin/ninja" \
