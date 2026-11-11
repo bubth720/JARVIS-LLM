@@ -43,6 +43,8 @@ jobs:
         run: ./tools/cloud-env.sh ./tools/test-native.sh
       - name: JVM and simulated Android tests, Lint, ARM64 APK
         run: ./tools/cloud-env.sh ./gradlew -I docs/mission-003f-f3b/candidate.init.gradle :domain:test :app:testDebugUnitTest :app:lintDebug :app:assembleDebug :p2-endpoint:testDebugUnitTest :p2-endpoint:assembleDebug :p2-endpoint:lintDebug :p2-client:assembleDebug :p2-client:lint --no-daemon
+      - name: R02 isolated security review and adversarial JVM tests
+        run: ./tools/cloud-env.sh python3 m51review/run_audit.py --jdk .tools/jdk-21.0.12.1+1 --cache .tools/gradle-home/caches/modules-2/files-2.1
       - name: Check APK permissions, signature and 16 KiB compatibility
         run: ./tools/cloud-env.sh python3 tools/check-apk.py app/build/outputs/apk/debug/app-debug.apk
       - name: Check isolated fixture APKs, signatures, shared engine and contract digest
