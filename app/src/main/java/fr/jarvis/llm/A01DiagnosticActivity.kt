@@ -19,6 +19,12 @@ class A01DiagnosticActivity : Activity() {
                     (service.algorithm.equals("Ed25519", true) || service.algorithm.equals("EdDSA", true))
             }
         }.map { it.name }
+        val runtime = Runtime.getRuntime()
+        val heapUsed = runtime.totalMemory() - runtime.freeMemory()
+        val heapMax = runtime.maxMemory()
+        val memInfo = android.app.ActivityManager.MemoryInfo()
+        (getSystemService(ACTIVITY_SERVICE) as android.app.ActivityManager).getMemoryInfo(memInfo)
+        val mib = 1024L * 1024L
         val report = """
             JARVIS A01 — Diagnostic en lecture seule
 
@@ -28,6 +34,12 @@ class A01DiagnosticActivity : Activity() {
             AndroidKeyStore disponible : ${keystore != null}
             Fournisseurs KeyPairGenerator Ed25519/EdDSA : ${ed.ifEmpty { listOf("aucun annoncé") }.joinToString()}
             Ed25519 annoncé par AndroidKeyStore : ${"AndroidKeyStore" in ed}
+
+            Mémoire (diagnostic, pas pic du moteur GGUF) :
+            Tas JVM utilisé : ${heapUsed / mib} Mio
+            Tas JVM maximum : ${heapMax / mib} Mio
+            Mémoire système disponible : ${memInfo.availMem / mib} Mio
+            Mémoire système basse : ${memInfo.lowMemory}
 
             IMPORTANT
             Ce diagnostic ne prouve PAS que la clé serait non exportable ni protégée matériellement.
