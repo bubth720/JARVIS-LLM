@@ -1,0 +1,130 @@
+name: A02 sealed GGUF native loader
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/a02-native.yml'
+      - 'a02/**'
+      - 'tools/test-a02-native.sh'
+permissions:
+  contents: read
+concurrency:
+  group: a02-native-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  host:
+    name: Linux host — adversarial + real official GGUF (not Android)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Historical preservation guards (unchanged, successor mode)
+        run: |
+          python3 tools/check-preservation-003e.py
+          python3 tools/check-preservation-003f.py
+          python3 tools/check-preservation-f3a.py --successor-r02
+          python3 tools/check-f3b-successor-r02.py
+      - name: A02 synthetic native + JNI suites (no model)
+        run: |
+          mkdir -p build/a02
+          ./tools/test-a02-native.sh 2>&1 | tee build/a02/host-synthetic.log
+      - name: A02 real official Qwen3-0.6B Q4_K_M through sealed memfd (Linux)
+        run: python3 a02/tests/probe_a02_real.py 2>&1 | tee build/a02/host-real.log
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: a02-host-evidence
+          path: |
+            build/a02/*.log
+            build/a02-real-evidence.json
+          if-no-files-found: warn
+          retention-days: 30
+
+  android-ndk:
+    name: Android NDK arm64 library + x86_64 test executable
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - name: Pinned SDK/NDK and llama.cpp
+        run: |
+          ./tools/setup-cloud.sh
+          ./tools/prepare-native.sh
+      - name: Cross-compile A02 library (arm64-v8a, minSdk 29) and test executables
+        run: |
+          ndk=.tools/android-sdk/ndk/28.1.13356709
+          for abi in arm64-v8a x86_64; do
+            ./tools/cloud-env.sh cmake -S a02/native -B build/a02-android-$abi \
+              -DCMAKE_TOOLCHAIN_FILE=$ndk/build/cmake/android.toolchain.cmake \
+              -DANDROID_ABI=$abi -DANDROID_PLATFORM=android-29 \
+              -DLLAMA_SOURCE_DIR="$PWD/.deps/llama.cpp"
+            ./tools/cloud-env.sh cmake --build build/a02-android-$abi --target jarvis_llm_a02 a02_snapshot_test -j4
+          done
+      - name: Verify ELF, 16 KiB alignment and absence of the pathname loader
+        run: |
+          ndk=.tools/android-sdk/ndk/28.1.13356709/toolchains/llvm/prebuilt/linux-x86_64/bin
+          lib=build/a02-android-arm64-v8a/libjarvis_llm_a02.so
+          file "$lib" | tee build/a02-android-elf.txt
+          grep -q 'ARM aarch64' build/a02-android-elf.txt
+          $ndk/llvm-readelf -lW "$lib" | awk '$1=="LOAD"{print $NF}' | tee build/a02-android-align.txt
+          ! grep -v '0x4000' build/a02-android-align.txt
+          $ndk/llvm-nm -D --defined-only "$lib" | awk '{print $3}' | grep '^Java_' | sort | tee build/a02-android-symbols.txt
+          ! grep -x 'Java_fr_jarvis_llm_engine_NativeBridge_load' build/a02-android-symbols.txt
+          grep -x 'Java_fr_jarvis_llm_a02_SealedNativeBridge_loadSealedFd' build/a02-android-symbols.txt
+          sha256sum "$lib" build/a02-android-*/a02_snapshot_test | tee build/a02-android-sha256.txt
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        with:
+          name: a02-android-binaries
+          path: |
+            build/a02-android-arm64-v8a/libjarvis_llm_a02.so
+            build/a02-android-x86_64/a02_snapshot_test
+            build/a02-android-*.txt
+          if-no-files-found: error
+          retention-days: 30
+
+  android-emulator:
+    name: Android emulator API ${{ matrix.api }} — sealed snapshot suite (adb shell, not app context)
+    needs: android-ndk
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        api: [29, 35]
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09 # v5
+      - uses: actions/download-artifact@v4
+        with:
+          name: a02-android-binaries
+          path: a02-bin
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: ${{ matrix.api }}
+          arch: x86_64
+          target: default
+          disable-animations: true
+          emulator-options: -no-window -no-audio -no-boot-anim -gpu swiftshader_indirect
+          script: |
+            adb push a02-bin/a02-android-x86_64/a02_snapshot_test /data/local/tmp/a02_snapshot_test
+            adb shell chmod 755 /data/local/tmp/a02_snapshot_test
+            adb shell getprop ro.build.version.sdk | tee a02-emulator-api.txt
+            adb shell A02_TMPDIR=/data/local/tmp /data/local/tmp/a02_snapshot_test | tee a02-emulator-result.json
+            grep -q '"failed":0' a02-emulator-result.json
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
+        if: always()
+        with:
+          name: a02-emulator-api${{ matrix.api }}
+          path: a02-emulator-*
+          if-no-files-found: warn
+          retention-days: 30

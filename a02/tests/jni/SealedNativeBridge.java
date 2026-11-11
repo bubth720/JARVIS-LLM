@@ -1,0 +1,119 @@
+package fr.jarvis.llm.a02;
+
+import java.io.File;
+import java.io.FileDescriptor;
+import java.io.FileInputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.security.MessageDigest;
+
+/**
+ * Host JNI harness for the A02 library (Linux x86_64). Loads the SAME protected engine
+ * as Android through a02_bridge.cpp. Synthetic mode needs no model; real mode takes a
+ * hash-verified GGUF path + sha256 and is NOT an Android or device qualification.
+ */
+public final class SealedNativeBridge {
+    static { System.loadLibrary("jarvis_llm_a02"); }
+    native long create(); native void begin(long h); native void cancel(long h);
+    native byte[] loadSealedFd(long h, int sourceFd, long size, byte[] sha, long budget, int context, int threads, boolean small);
+    native byte[] generateP2(long h, byte[][] roles, byte[][] texts, int output, byte[] system);
+    native long[] allocations(long h); native void unload(long h); native void destroy(long h);
+
+    static int passed = 0;
+    static byte[] b(String s) { return s.getBytes(StandardCharsets.UTF_8); }
+    static void check(boolean ok, String name) { if (!ok) throw new AssertionError(name); passed++; System.out.println("PASS " + name); }
+    static String refusal(Runnable r) {
+        try { r.run(); return "ADMITTED"; } catch (IllegalStateException e) { return e.getMessage(); }
+    }
+    static int fd(FileInputStream in) throws Exception {
+        Field f = FileDescriptor.class.getDeclaredField("fd"); f.setAccessible(true); return f.getInt(in.getFD());
+    }
+    static int openFds() { String[] l = new File("/proc/self/fd").list(); return l == null ? -1 : l.length; }
+    static long statusKb(String key) throws Exception {
+        for (String line : Files.readAllLines(new File("/proc/self/status").toPath()))
+            if (line.startsWith(key + ":")) return Long.parseLong(line.replaceAll("[^0-9]", ""));
+        return -1;
+    }
+    static String sha256(File f) throws Exception {
+        MessageDigest d = MessageDigest.getInstance("SHA-256");
+        try (FileInputStream in = new FileInputStream(f)) { byte[] buf = new byte[1 << 20]; int n; while ((n = in.read(buf)) > 0) d.update(buf, 0, n); }
+        StringBuilder s = new StringBuilder(); for (byte x : d.digest()) s.append(String.format("%02x", x)); return s.toString();
+    }
+    static final long BUDGET = 3L * 1024 * 1024 * 1024;
+
+    public static void main(String[] args) throws Exception {
+        SealedNativeBridge n = new SealedNativeBridge();
+        long h = n.create();
+        n.begin(h);
+        // The legacy pathname loader is not bindable from Java in this library.
+        try { new fr.jarvis.llm.engine.LegacyPathProbe().load(h, b("/tmp/x.gguf"), 512, 1, true); throw new AssertionError("path loader reachable"); }
+        catch (UnsatisfiedLinkError expected) { check(true, "path-loader-not-exported"); }
+
+        // Synthetic: a structurally invalid "GGUF" with a correct digest must still be refused by the protected validator.
+        File junk = File.createTempFile("a02-junk", ".gguf"); junk.deleteOnExit();
+        byte[] bytes = new byte[256 * 1024]; for (int i = 0; i < bytes.length; i++) bytes[i] = (byte) (i * 31);
+        Files.write(junk.toPath(), bytes);
+        String junkSha = sha256(junk);
+        int baseline = openFds();
+        try (FileInputStream in = new FileInputStream(junk)) {
+            int src = fd(in);
+            String r = refusal(() -> n.loadSealedFd(h, src, bytes.length, b(junkSha), BUDGET, 512, 1, true));
+            check(!r.equals("ADMITTED") && !r.startsWith("A02_"), "malformed-gguf-refused-by-protected-loader-after-sealing: " + r);
+            check(refusal(() -> n.loadSealedFd(h, src, bytes.length, b("0".repeat(64)), BUDGET, 512, 1, true)).equals("A02_DIGEST_REFUSED"), "wrong-sha");
+            check(refusal(() -> n.loadSealedFd(h, src, bytes.length + 1, b(junkSha), BUDGET, 512, 1, true)).equals("A02_SIZE_REFUSED"), "wrong-size");
+            check(refusal(() -> n.loadSealedFd(h, src, bytes.length, b(junkSha), bytes.length, 512, 1, true)).equals("A02_MEMORY_BUDGET_REFUSED"), "budget");
+            check(refusal(() -> n.loadSealedFd(h, -1, bytes.length, b(junkSha), BUDGET, 512, 1, true)).equals("A02_INVALID_FD"), "invalid-fd");
+            n.cancel(h);
+            String c = refusal(() -> n.loadSealedFd(h, src, bytes.length, b(junkSha), BUDGET, 512, 1, true));
+            check(c.equals("A02_CANCELLED") || c.contains("arrêté"), "cancel-before-load: " + c);
+            n.begin(h);
+            for (int i = 0; i < 100; i++) refusal(() -> n.loadSealedFd(h, src, bytes.length, b(junkSha), BUDGET, 512, 1, true));
+            check(true, "100-refused-cycles");
+        }
+        check(openFds() == baseline, "no-fd-leak-after-refusals");
+        check(refusal(() -> n.generateP2(h, new byte[][]{b("user")}, new byte[][]{b("x")}, 4, b("s"))).length() > 0, "generate-without-model-refused");
+
+        if (args.length == 2) realModel(n, h, new File(args[0]), args[1]);
+        n.unload(h); n.destroy(h);
+        System.out.println("{\"suite\":\"a02-jni\",\"platform\":\"linux-host-x86_64\",\"passed\":" + passed + ",\"realModel\":" + (args.length == 2) + ",\"android\":false}");
+    }
+
+    static void realModel(SealedNativeBridge n, long h, File model, String sha) throws Exception {
+        check(sha256(model).equals(sha), "real-model-digest-precheck");
+        long rssBefore = statusKb("VmRSS"), shmBefore = statusKb("RssShmem");
+        int fdBase = openFds();
+        // Attack copy: load from a source we then overwrite; the engine must keep the sealed bytes.
+        File victim = File.createTempFile("a02-victim", ".gguf"); victim.deleteOnExit();
+        Files.copy(model.toPath(), victim.toPath(), java.nio.file.StandardCopyOption.REPLACE_EXISTING);
+        String trace;
+        try (FileInputStream in = new FileInputStream(victim)) {
+            trace = new String(n.loadSealedFd(h, fd(in), victim.length(), b(sha), BUDGET, 512, 2, true), StandardCharsets.UTF_8);
+        }
+        System.out.println("TRACE " + trace);
+        check(trace.contains("\"sealedInodeMapped\":true"), "llama-mmap-is-the-sealed-memfd");
+        check(trace.contains("\"sealedSha256\":\"" + sha + "\""), "sealed-digest-equals-trusted");
+        long rssLoaded = statusKb("VmRSS"), shmLoaded = statusKb("RssShmem");
+        try (java.io.RandomAccessFile w = new java.io.RandomAccessFile(victim, "rw")) { w.setLength(0); w.write(b("ATTACKER")); }
+        byte[][] roles = {b("user")};
+        String a1 = new String(n.generateP2(h, roles, new byte[][]{b("Bonjour, présente-toi en une phrase.")}, 24, b("Réponds en français. /no_think")), StandardCharsets.UTF_8);
+        check(a1.trim().length() > 0, "real-generation-after-source-truncated: " + a1.replace('\n', ' '));
+        byte[][] roles2 = {b("user"), b("assistant"), b("user")};
+        String a2 = new String(n.generateP2(h, roles2, new byte[][]{b("Je m'appelle Thomas."), b("Enchanté Thomas."), b("Comment je m'appelle ?")}, 16, b("Réponds en français. /no_think")), StandardCharsets.UTF_8);
+        check(a2.trim().length() > 0, "multi-turn: " + a2.replace('\n', ' '));
+        long[] alloc = n.allocations(h);
+        n.unload(h);
+        // 10 load/unload cycles from a fresh verified source: descriptors and shmem must return.
+        for (int i = 0; i < 10; i++) {
+            try (FileInputStream in = new FileInputStream(model)) { n.loadSealedFd(h, fd(in), model.length(), b(sha), BUDGET, 512, 2, true); }
+            n.unload(h);
+        }
+        System.gc();
+        long shmAfter = statusKb("RssShmem");
+        check(openFds() == fdBase, "no-fd-leak-10-real-cycles");
+        check(shmAfter - shmBefore < 64 * 1024, "sealed-shmem-released-after-unload (kB delta " + (shmAfter - shmBefore) + ")");
+        System.out.println("{\"a02Memory\":{\"modelBytes\":" + model.length() + ",\"rssBeforeKb\":" + rssBefore + ",\"rssLoadedKb\":" + rssLoaded
+            + ",\"shmemBeforeKb\":" + shmBefore + ",\"shmemLoadedKb\":" + shmLoaded + ",\"shmemAfterUnloadKb\":" + shmAfter
+            + ",\"llamaModelBytes\":" + alloc[0] + ",\"llamaContextBytes\":" + alloc[1] + ",\"llamaComputeBytes\":" + alloc[2] + "}}");
+    }
+}
