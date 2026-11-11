@@ -1,0 +1,38 @@
+name: V1 Android offline chat candidate
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/v1-offline-chat.yml'
+      - 'v1candidate/**'
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: Existing offline safety and preservation gates
+        run: |
+          python3 tools/check-preservation-003e.py
+          python3 tools/check-preservation-003f.py
+          python3 tools/check-preservation-f3a.py --successor-r02
+      - name: Compile existing Android chat with native llama.cpp
+        run: ./gradlew :app:assembleDebug --no-daemon
+      - name: Verify APK, native arm64 loader and offline manifest
+        run: |
+          python3 v1candidate/verify_apk.py app/build/outputs/apk/debug/app-debug.apk
+          sha256sum app/build/outputs/apk/debug/app-debug.apk > v1candidate/apk-sha256.txt
+      - uses: actions/upload-artifact@v4
+        with:
+          name: jarvis-v1-offline-chat-candidate-not-qualified
+          path: |
+            app/build/outputs/apk/debug/app-debug.apk
+            v1candidate/apk-sha256.txt
+          retention-days: 7
+          if-no-files-found: error
