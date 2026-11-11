@@ -23,13 +23,14 @@ for p in paths:
  elif p=='app/src/main/java/fr/jarvis/llm/MainActivity.kt' and current!=b:
   # Exact pre-existing model catalogue navigation; reject any other drift.
   anchor=b'        conversation = TextView(this).apply { textSize = 16f; setTextIsSelectable(true) }'
-  insertion=(b'        root.addView(Button(this).apply {\n'
-   b'            text = "Modèles locaux (catalogue expérimental)"\n'
-   b'            setOnClickListener { lifecycleScope.launch {\n'
-   b'                if (vm.releaseForCatalogue() && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))\n'
-   b'                    startActivity(Intent(this@MainActivity, fr.jarvis.llm.model.ModelSelectionActivity::class.java))\n'
-   b'            } }\n'
-   b'        })\n')
+  insertion='''        root.addView(Button(this).apply {
+            text = "Modèles locaux (catalogue expérimental)"
+            setOnClickListener { lifecycleScope.launch {
+                if (vm.releaseForCatalogue() && lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED))
+                    startActivity(Intent(this@MainActivity, fr.jarvis.llm.model.ModelSelectionActivity::class.java))
+            } }
+        })
+'''.encode('utf-8')
   if b.count(anchor)!=1 or current!=b.replace(anchor,insertion+anchor,1):
    raise SystemExit('Protected baseline drift: '+p)
  elif current!=b:raise SystemExit('Protected baseline drift: '+p)
