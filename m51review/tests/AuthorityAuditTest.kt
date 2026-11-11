@@ -27,6 +27,10 @@ class AuthorityAuditTest {
         val e=runCatching { LabOperatorTrust.fromApprovedKey(key) }.exceptionOrNull()
         assertEquals("LAB_TRUST_ROOT_NOT_CONFIGURED",e!!.message)
     }
+    @Test fun environmentOnlyExecutionCannotAttest_A06() {
+        val failure=runCatching { LabExecution.observe() }.exceptionOrNull()
+        assertEquals("LAB_EXECUTION_ATTESTATION_NOT_CONFIGURED",failure?.message)
+    }
     @Test fun arbitraryExecutionConstructorIsNotHostObservation() {
         // This is not a credential: it demonstrates why approved bootstrap composition is mandatory.
         val claimed=LabExecution("71000001","1","1".repeat(40))
