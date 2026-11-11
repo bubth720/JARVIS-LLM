@@ -97,14 +97,14 @@ class AuthorityAuditTest {
             assertNotNull(e);assertTrue("Raw exception requires redaction before any public report",e!!.message!!.contains("private-fixture-missing"))
         }finally { Files.delete(root.parent) }
     }
-    @Test fun deadlineUsesSameExecutorAsBlockingMonitor_REPRODUCED() {
+    @Test fun deadlineIndependentOfBlockingMonitor_FIXED() {
         val fixture=LabFixtures();val signed=fixture.sign(fixture.spec(expiry=fixture.clock.wall+300));val a=fixture.authority.redeem(signed,fixture.owner,fixture.request)
         val entered=CountDownLatch(1);val release=CountDownLatch(1);val cancelled=CountDownLatch(1)
         try {
             a.attachStop(monitor={entered.countDown();check(release.await(5,TimeUnit.SECONDS))}) { cancelled.countDown() }
             assertTrue(entered.await(2,TimeUnit.SECONDS))
             // The periodic monitor owns the only control thread beyond the real scheduled deadline.
-            assertFalse(cancelled.await(500,TimeUnit.MILLISECONDS))
+            assertTrue("Deadline must not wait for the blocking monitor",cancelled.await(1500,TimeUnit.MILLISECONDS))
             release.countDown();assertTrue(cancelled.await(2,TimeUnit.SECONDS))
         }finally { release.countDown();a.close() }
     }
