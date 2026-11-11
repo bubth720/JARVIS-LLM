@@ -102,7 +102,9 @@ jobs:
           $ndk/llvm-nm -D --defined-only "$lib" | awk '{print $3}' | grep '^Java_' | sort | tee build/a02-android-symbols.txt
           ! grep -x 'Java_fr_jarvis_llm_engine_NativeBridge_load' build/a02-android-symbols.txt
           grep -x 'Java_fr_jarvis_llm_a02_SealedNativeBridge_loadSealedFd' build/a02-android-symbols.txt
-          $ndk/llvm-nm -D --defined-only "$lib" | grep -q ' __wrap_fopen$'   # sealed-descriptor open shim linked
+          # Write the symbol table to a file first: `nm | grep -q` breaks the pipe under pipefail (exit 74, run 43100142174).
+          $ndk/llvm-nm -D --defined-only "$lib" > build/a02-android-all-symbols.txt
+          grep -q ' __wrap_fopen$' build/a02-android-all-symbols.txt   # sealed-descriptor open shim linked
           sha256sum "$lib" build/a02-android-*/a02_snapshot_test | tee build/a02-android-sha256.txt
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         with:

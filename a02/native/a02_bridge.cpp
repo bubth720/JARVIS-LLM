@@ -44,7 +44,51 @@ extern "C" FILE * __wrap_fopen(const char * path, const char * mode) {
     }
     return __real_fopen(path, mode);
 }
+// ---------------------------------------------------------------------------------------------
+// Load diagnostics (A02 library only). The protected bridge installs a no-op llama logger; during
+// a sealed load we capture llama.cpp's own messages (bounded tail, no prompt or user content: only
+// model metadata, sizes and the /proc/self/fd/<n> name), forward WARN/ERROR to logcat on Android,
+// and append the tail to a refused load's exception so the exact failing step is visible.
+// ---------------------------------------------------------------------------------------------
+#ifdef __ANDROID__
+#include <android/log.h>
+#endif
 namespace {
+thread_local bool t_capture_llama = false;
+thread_local std::string t_llama_log;
+void a02_llama_log(ggml_log_level level, const char * text, void *) {
+    if (!text) return;
+#ifdef __ANDROID__
+    if (level == GGML_LOG_LEVEL_ERROR || level == GGML_LOG_LEVEL_WARN)
+        __android_log_print(level == GGML_LOG_LEVEL_ERROR ? ANDROID_LOG_ERROR : ANDROID_LOG_WARN, "JARVIS-A02", "%s", text);
+#endif
+    if (!t_capture_llama || level == GGML_LOG_LEVEL_DEBUG) return;
+    t_llama_log += text;
+    if (t_llama_log.size() > 3000) t_llama_log.erase(0, t_llama_log.size() - 3000);
+}
+struct LlamaLogCapture {
+    LlamaLogCapture() { t_llama_log.clear(); t_capture_llama = true; llama_log_set(a02_llama_log, nullptr); }
+    ~LlamaLogCapture() { t_capture_llama = false; }
+};
+/** Re-throws a pending protected-loader exception with the captured llama.cpp tail appended. */
+void rethrow_with_llama_tail(JNIEnv * env) {
+    jthrowable pending = env->ExceptionOccurred();
+    if (!pending) return;
+    env->ExceptionClear();
+    std::string original = "Chargement refusé";
+    jclass throwable = env->FindClass("java/lang/Throwable");
+    jmethodID getMessage = throwable ? env->GetMethodID(throwable, "getMessage", "()Ljava/lang/String;") : nullptr;
+    if (getMessage) {
+        auto msg = static_cast<jstring>(env->CallObjectMethod(pending, getMessage));
+        if (!env->ExceptionCheck() && msg) { const char * c = env->GetStringUTFChars(msg, nullptr); if (c) { original = c; env->ReleaseStringUTFChars(msg, c); } }
+        env->ExceptionClear();
+    }
+    std::string tail = t_llama_log;
+    for (auto & ch : tail) if (ch == '\n' || ch == '\r') ch = ' ';
+    std::string combined = original + (tail.empty() ? std::string() : " | llama: " + tail);
+    jclass ise = env->FindClass("java/lang/IllegalStateException");
+    if (ise) env->ThrowNew(ise, combined.c_str()); else env->Throw(pending);
+}
 struct SealedOpenScope {
     SealedOpenScope(int fd, const std::string & path) {
         if (path.size() >= sizeof(t_sealed_path)) throw std::runtime_error("A02_PROC_PATH_TOO_LONG");
@@ -132,8 +176,10 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
         int sealedOpens = 0;
         {
             SealedOpenScope scope(owned, procPath);
+            LlamaLogCapture capture;
             jarvis_a02_protected_path_load_not_exported_to_java(env, receiver, h, path, context, threads, small);
             sealedOpens = t_sealed_opens;
+            if (env->ExceptionCheck()) rethrow_with_llama_tail(env);
         }
         env->DeleteLocalRef(path);
         if (env->ExceptionCheck()) { close(owned); return nullptr; } // protected loader refused: fail closed
