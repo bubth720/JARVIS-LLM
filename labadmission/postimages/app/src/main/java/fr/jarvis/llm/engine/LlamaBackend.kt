@@ -11,6 +11,7 @@ internal interface NativeApi {
     fun begin(handle: Long)
     fun cancel(handle: Long)
     fun load(handle: Long, path: ByteArray, context: Int, threads: Int, small: Boolean)
+    fun loadSealedFd(handle: Long, fd: Int, exactSize: Long, context: Int, threads: Int, small: Boolean) = error("A02_NATIVE_FD_NOT_APPROVED")
     fun generate(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int): ByteArray
     fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
     fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray> = error("fixture measure unsupported")
@@ -28,6 +29,7 @@ internal object NativeBridge : NativeApi {
     external override fun begin(handle: Long)
     external override fun cancel(handle: Long)
     external override fun load(handle: Long, path: ByteArray, context: Int, threads: Int, small: Boolean)
+    external override fun loadSealedFd(handle: Long, fd: Int, exactSize: Long, context: Int, threads: Int, small: Boolean)
     external override fun generate(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int): ByteArray
     external override fun generateP2(handle: Long, roles: Array<ByteArray>, texts: Array<ByteArray>, maxTokens: Int, system: ByteArray): ByteArray
     external override fun measureFixtureP2(handle: Long, system: ByteArray, question: ByteArray): Array<ByteArray>
