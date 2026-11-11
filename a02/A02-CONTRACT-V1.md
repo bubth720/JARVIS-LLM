@@ -33,4 +33,5 @@ Le memfd est de la mémoire partagée anonyme (shmem) **non récupérable sous p
 - Contexte applicatif Android (`untrusted_app`, seccomp/SELinux) **NOT_RUN** : la suite émulateur s'exécute en `adb shell`. À prouver par test instrumenté dans l'hôte V1 (CORE-01).
 - POCO X8 Pro : NOT_RUN (DEVICE-01, action humaine).
 - A01 (racine d'autorité opérateur) reste fermée : A02 prouve l'intégrité des octets, pas l'autorisation d'un modèle.
-- La provenance Android du GGUF reste à approuver ; les tests réels utilisent uniquement le dépôt officiel `Qwen/Qwen3-0.6B-GGUF` sur Linux (autorisation cloud-lab existante), sans source de repli.
+- **Modèle réel : BLOCKED.** Le dépôt officiel `Qwen/Qwen3-0.6B-GGUF` ne publie pas de fichier Q4_K_M (constaté par la CI run 43083191718), or le chargeur protégé n'admet que Q4_K_M. Le repli Unsloth utilisé auparavant par R02 n'est pas une source autorisée ici : aucune génération réelle via A02 n'est donc revendiquée. Décision humaine requise : (a) autoriser `unsloth/Qwen3-0.6B-GGUF` à une révision et un SHA-256 exacts, ou (b) quantifier soi-même les poids officiels Qwen en Q4_K_M avec le llama.cpp épinglé (reproductible, empreinte publiée).
+- Correctif de CI : les étapes `| tee` s'exécutaient sans `pipefail` ; un BLOCKED apparaissait vert. Le workflow impose désormais `shell: bash` (pipefail) et isole le modèle réel dans son propre job.
