@@ -44,11 +44,35 @@ class AuthorityAuditTest {
             assertFalse(first.isLive());assertFalse(second.isLive())
         }finally { first.close();second.close() }
     }
-    @Test fun revocationCallbackIsOutsideBrokerButInsideLeaseMonitor_REPRODUCED()=PairFixture().use { f ->
+    @Test fun revocationCallbackIsOutsideBrokerAndLeaseMonitor_FIXED()=PairFixture().use { f ->
         f.observe().use { proof ->
             var brokerHeld=true;var leaseHeld=false
             proof.onRevoked { brokerHeld=Thread.holdsLock(f.broker);leaseHeld=Thread.holdsLock(f.heavy) }
-            f.heavy.close();assertFalse(brokerHeld);assertTrue(leaseHeld)
+            f.heavy.close();assertFalse(brokerHeld);assertFalse(leaseHeld)
+        }
+    }
+    @Test fun concurrentCloseAndReentrantStopDoNotDeadlock_A08()=PairFixture().use { f ->
+        f.observe().use { proof ->
+            val entered=CountDownLatch(1)
+            val finish=CountDownLatch(1)
+            var notifications=0
+            proof.onRevoked {
+                notifications++
+                entered.countDown()
+                // Reenter the same lease from a different thread; the original
+                // close must not hold a monitor that blocks this completion.
+                val worker=Thread { try { f.heavy.close() } finally { finish.countDown() } }
+                worker.isDaemon=true
+                worker.start()
+                assertTrue("Lease monitor held across callback",finish.await(2,TimeUnit.SECONDS))
+            }
+            val closer=Thread { f.heavy.close() }
+            closer.start()
+            assertTrue(entered.await(2,TimeUnit.SECONDS))
+            closer.join(2000)
+            assertFalse("Revocation callback deadlocked",closer.isAlive)
+            assertEquals(1,notifications)
+            assertFalse(proof.isLive())
         }
     }
     @Test fun revokedPinnedSlotsAreNotReissued()=PairFixture().use { f ->
