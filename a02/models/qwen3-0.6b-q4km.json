@@ -1,0 +1,20 @@
+{
+  "schema": "jarvis.model-authorization/1",
+  "id": "qwen3-0.6b-q4_k_m-unsloth",
+  "authorizedBy": "user (owner of bubth720) in the Claude Code session of 2026-11-11: \"j'autorise la source Unsloth Qwen3-0.6B Q4_K_M\"",
+  "authorizedOn": "2026-11-11",
+  "scope": "Cloud CI (Linux host and Android emulators) and the V1-A Android laboratory import flow. Installation on the POCO requires a separate explicit authorization (DEVICE-01).",
+  "source": {
+    "repository": "unsloth/Qwen3-0.6B-GGUF",
+    "revision": "50968a4468ef4233ed78cd7c3de230dd1d61a56b",
+    "filename": "Qwen3-0.6B-Q4_K_M.gguf",
+    "url": "https://huggingface.co/unsloth/Qwen3-0.6B-GGUF/resolve/50968a4468ef4233ed78cd7c3de230dd1d61a56b/Qwen3-0.6B-Q4_K_M.gguf",
+    "bytes": 396705472,
+    "sha256": "ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a",
+    "firstObserved": "JARVIS-LLM CI run 43036018169 (R02 Linux probe, 2026-11-11)"
+  },
+  "upstream": "Qwen/Qwen3-0.6B (derived quantization by Unsloth)",
+  "licenseExpected": "apache-2.0",
+  "notInGit": true,
+  "notBundledInApk": true
+}

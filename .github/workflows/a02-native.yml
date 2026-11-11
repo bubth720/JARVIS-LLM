@@ -47,7 +47,7 @@ jobs:
           retention-days: 30
 
   host-real-model:
-    name: Linux host — real official Qwen3-0.6B Q4_K_M via sealed memfd (BLOCKED if no authorized source)
+    name: Linux host — authorized Qwen3-0.6B Q4_K_M (pinned Unsloth revision) via sealed memfd
     runs-on: ubuntu-24.04
     timeout-minutes: 45
     steps:
@@ -56,7 +56,7 @@ jobs:
         with:
           distribution: temurin
           java-version: '21'
-      - name: Real GGUF through A02 (official repository only, no fallback)
+      - name: Real authorized GGUF through A02 (exact revision + SHA-256, no fallback)
         run: |
           mkdir -p build/a02
           python3 a02/tests/probe_a02_real.py 2>&1 | tee build/a02/host-real.log
