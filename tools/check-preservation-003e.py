@@ -44,6 +44,6 @@ assert formatter(Path('app/src/main/cpp/bridge.cpp').read_text()).startswith(for
 assert formatter(old).endswith('    return result;\n}\n')
 for p in git('ls-files').splitlines():
  if p.endswith(('.keystore','.jks','.gguf','.part')):raise SystemExit('Private key/model artifact tracked: '+p)
-out={'mission':'003E','base':BASE,'sourceCommit':git('rev-parse','HEAD'),'unchanged':unchanged,'reviewedRuntimeChanges':sorted(allowed),'historicalManifestUnchanged':True,'canonicalFormatterUnchanged':True,'safetyThresholdsUnchanged':True,'physicalQualification':False}
+out={'mission':'003E','base':BASE,'sourceCommit':git('rev-parse','HEAD'),'unchanged':unchanged,'reviewedRuntimeChanges':sorted(allowed),'historicalManifestUnchanged':False,'historicalManifestExactAdditiveSelector':True,'canonicalFormatterUnchanged':True,'safetyThresholdsUnchanged':True,'physicalQualification':False}
 Path('build').mkdir(exist_ok=True);Path('build/mission003e-preservation.json').write_text(json.dumps(out,indent=2)+'\n')
-print('PASS 003E: historical manifest, catalogue, policies, profiles and original tests unchanged; same native formatter.')
+print('PASS 003E: historical manifest and UI selector exact additive deltas, remaining baseline unchanged; same native formatter prefix.')
