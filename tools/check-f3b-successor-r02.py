@@ -4,7 +4,7 @@ import hashlib,json,subprocess
 from pathlib import Path
 ROOT=Path('docs/mission-003f-f3b')
 BASE='08fbda527d187f324d94e0adafbca76fa955a343'
-def original(path): return subprocess.check_output(['git','show',BASE+':'+path])
+def original(path, commit=BASE): return subprocess.check_output(['git','show',commit+':'+path])
 # Original F3B verifier and its review-only patch remain immutable.
 for path in ['docs/mission-003f-f3b/verify.py','docs/mission-003f-f3b/build_patch.py',
              'docs/mission-003f-f3b/SENSITIVE.patch','docs/mission-003f-f3b/PATCH.json']:
@@ -18,7 +18,7 @@ for entry in m['files']:
     p=entry['path']
     before=entry['beforeSha256']
     if before is not None:
-        assert hashlib.sha256(original(m['base'],p)).hexdigest()==before,'F3B historical preimage drift: '+p
+        assert hashlib.sha256(original(p,m['base'])).hexdigest()==before,'F3B historical preimage drift: '+p
 # Check every historically protected file at the inherited R02 snapshot.
 paths=subprocess.check_output(['git','ls-tree','-r','--name-only',BASE,'--','app','domain','fixtures'],text=True).splitlines()
 for p in paths:
