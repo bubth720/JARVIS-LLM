@@ -18,13 +18,29 @@ def sealed_snapshot(source: Path, expected_sha: str, expected_size: int):
                 if not data: break
                 count+=len(data)
                 if count>expected_size: raise ValueError("A02_SIZE_REFUSED")
+                offset=0
+                while offset<len(data):
+                    written=os.write(fd,data[offset:])
+                    if written<=0: raise OSError("A02_SHORT_WRITE")
+                    offset+=written
                 digest.update(data)
-                os.write(fd,data)
         if count!=expected_size or digest.hexdigest()!=expected_sha:
             raise ValueError("A02_DIGEST_REFUSED")
+        if os.fstat(fd).st_size!=expected_size:
+            raise ValueError("A02_SNAPSHOT_SIZE_REFUSED")
         fcntl.fcntl(fd,fcntl.F_ADD_SEALS,REQUIRED)
         if fcntl.fcntl(fd,fcntl.F_GET_SEALS)&REQUIRED!=REQUIRED:
             raise ValueError("A02_SEALS_REFUSED")
+        # Rehash the exact sealed bytes the native consumer will see.
+        sealed_digest=hashlib.sha256()
+        pos=0
+        while pos<expected_size:
+            block=os.pread(fd,min(65536,expected_size-pos),pos)
+            if not block: raise ValueError("A02_SEALED_READ_REFUSED")
+            sealed_digest.update(block)
+            pos+=len(block)
+        if sealed_digest.hexdigest()!=expected_sha:
+            raise ValueError("A02_SEALED_DIGEST_REFUSED")
         os.lseek(fd,0,os.SEEK_SET)
         return fd
     except BaseException:
