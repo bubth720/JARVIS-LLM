@@ -109,38 +109,53 @@ public final class SealedNativeBridge {
     /** Candidate subordinate instructions compared on the SAME scenarios (prompt study, real model). */
     static final String[][] VARIANTS = {
         {"A-v1b-initial", "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think"},
-        {"E-combine", "Vouvoie l'utilisateur. Ne te présente qu'une fois. Son prénom est le sien : s'il le demande, réponds « Vous vous appelez <prénom>. » Pour une question de culture générale, donne directement la réponse."},
-        {"F-derniere-question", "Vouvoie l'utilisateur et réponds seulement à sa dernière question. S'il te demande son prénom, rappelle celui qu'il t'a donné. Donne directement les faits connus, comme les capitales."},
         {"G-salue-rappelle", "Réponds seulement au dernier message de l'utilisateur, en une ou deux phrases. Quand il donne son prénom, salue-le avec. Quand il le demande, réponds : vous vous appelez, suivi de son prénom. Donne directement les faits connus."},
-        {"H-pas-le-tien", "L'utilisateur peut te dire son prénom ; ce n'est pas le tien. Ne répète pas tes réponses précédentes. Réponds au dernier message seulement. Faits simples (capitales, définitions) : réponds directement."},
-        {"I-sans-gabarit", "Vouvoie l'utilisateur. Ne te présente qu'une fois. Son prénom est le sien : s'il le demande, dis-lui comment il s'appelle. Pour une question de culture générale, donne directement la réponse."},
         {"J-seulement-si", "Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse."},
+        {"M-minimal", "Vouvoie l'utilisateur. Réponds directement à son dernier message, en une ou deux phrases."},
+        {"N-salue-faits", "Vouvoie l'utilisateur et réponds directement à son dernier message. S'il donne son prénom, salue-le par ce prénom. S'il demande son prénom, rappelle-le-lui."},
     };
     static final int CTX = 768;
     static boolean EXPLORE = false; static String VARIANT = "A-v1b-initial";
+    static boolean MEMORY = false; static final boolean PRODUCTION_MEMORY = false;
+    /** Host session memory (same rule as Android V1bMemory): last first name the user stated about HIMSELF. */
+    static final java.util.regex.Pattern NAME = java.util.regex.Pattern.compile(
+        "(?i:je m'appelle|je m’appelle|mon prénom est|mon prenom est|mon nom est|appelle-moi)\\s+(\\p{L}[\\p{L}-]{1,30})");
+    static String userName(java.util.List<String[]> history, String question) {
+        String found = null;
+        java.util.List<String> said = new java.util.ArrayList<>();
+        for (String[] t : history) said.add(t[0]);
+        said.add(question);
+        for (String u : said) { java.util.regex.Matcher m = NAME.matcher(u); while (m.find()) found = Character.toUpperCase(m.group(1).charAt(0)) + m.group(1).substring(1); }
+        return found;
+    }
+    static String systemFor(java.util.List<String[]> history, String question) {
+        String name = MEMORY ? userName(history, question) : null;
+        return name == null ? V1B_SYSTEM : V1B_SYSTEM + " Fait connu : l'utilisateur s'appelle " + name + " (ce n'est pas ton nom).";
+    }
     static String json(String s) { return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""; }
 
     /** Newest exchanges that fit (<= 3 pairs: protected limit of 8 entries) by EXACT token count. */
     static byte[][][] window(SealedNativeBridge n, long h, java.util.List<String[]> history, String question, int maxTokens) {
+        byte[] sys = b(systemFor(history, question));
         for (int keep = Math.min(3, history.size()); keep >= 0; keep--) {
             java.util.List<String[]> kept = history.subList(history.size() - keep, history.size());
             byte[][] r = new byte[keep * 2 + 1][], t = new byte[keep * 2 + 1][];
             int i = 0;
             for (String[] turn : kept) { r[i] = b("user"); t[i++] = b(turn[0]); r[i] = b("assistant"); t[i++] = b(turn[1]); }
             r[i] = b("user"); t[i] = b(question);
-            if (n.countTurnsTokens(h, b(V1B_SYSTEM), r, t) + maxTokens + 8 <= CTX) return new byte[][][]{r, t};
+            if (n.countTurnsTokens(h, sys, r, t) + maxTokens + 8 <= CTX) return new byte[][][]{r, t, {sys}};
         }
         throw new IllegalStateException("question too long for the context");
     }
     static String dialogue(SealedNativeBridge n, long h, String name, String[] questions, int maxTokens) {
         java.util.List<String[]> history = new java.util.ArrayList<>();
-        StringBuilder out = new StringBuilder("{\"scenario\":" + json(name) + ",\"variant\":" + json(VARIANT) + ",\"systemBytes\":" + b(V1B_SYSTEM).length + ",\"maxTokens\":" + maxTokens + ",\"turns\":[");
+        StringBuilder out = new StringBuilder("{\"scenario\":" + json(name) + ",\"variant\":" + json(VARIANT) + ",\"memory\":" + MEMORY + ",\"systemBytes\":" + b(V1B_SYSTEM).length + ",\"maxTokens\":" + maxTokens + ",\"turns\":[");
         for (int q = 0; q < questions.length; q++) {
             n.begin(h); // clear any previous Stop before counting (same order as the Android host)
             byte[][][] w = window(n, h, history, questions[q], maxTokens);
             Sink sink = new Sink();
             long start = System.nanoTime();
-            int term = n.generateStreamTurns(h, b(V1B_SYSTEM), w[0], w[1], maxTokens, CTX, b("c".repeat(64)), sink);
+            int term = n.generateStreamTurns(h, w[2][0], w[0], w[1], maxTokens, CTX, b("c".repeat(64)), sink);
             long end = System.nanoTime();
             if (term != 2) throw new AssertionError("dialogue " + name + " turn " + q + " terminal " + term);
             String answer = sink.text.toString().trim();
@@ -204,7 +219,10 @@ public final class SealedNativeBridge {
         // Prompt study: every candidate on the same four scenarios (EXPLORE lines), then the production
         // prompt (the one shipped in V1bPolicy.SYSTEM_PROMPT, first entry PRODUCTION) as DIALOGUE lines.
         String production = V1B_SYSTEM;
-        for (String[] v : VARIANTS) { EXPLORE = true; VARIANT = v[0]; V1B_SYSTEM = v[1]; scenarios(n, h); }
+        for (String[] v : VARIANTS) for (boolean memory : new boolean[]{false, true}) {
+            EXPLORE = true; MEMORY = memory; VARIANT = v[0] + (memory ? "+memoire" : ""); V1B_SYSTEM = v[1]; scenarios(n, h);
+        }
+        MEMORY = PRODUCTION_MEMORY;
         EXPLORE = false; VARIANT = "PRODUCTION"; V1B_SYSTEM = production;
         scenarios(n, h);
         String bench = "Explique en détail comment fonctionne la photosynthèse.";
