@@ -105,8 +105,17 @@ public final class SealedNativeBridge {
     // V1-B: bounded output policy, real ChatML multi-turn dialogue, 48/128/256 comparison.
     // The SAME system prompt as the Android V1-B host (V1bConversation.SYSTEM_PROMPT).
     // ----------------------------------------------------------------------------------------
-    static final String V1B_SYSTEM = "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think";
+    static String V1B_SYSTEM = "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think";
+    /** Candidate subordinate instructions compared on the SAME scenarios (prompt study, real model). */
+    static final String[][] VARIANTS = {
+        {"A-v1b-initial", "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think"},
+        {"B-vouvoiement-gabarits", "Tu vouvoies l'utilisateur. S'il donne son prénom, réponds : « Enchanté, <prénom>. » S'il demande son prénom, réponds : « Vous vous appelez <prénom>. » Réponds directement aux questions de culture générale."},
+        {"C-court-direct", "Tu parles à l'utilisateur et tu le vouvoies. Réponds à sa dernière question, sans te présenter de nouveau. Son prénom est le sien, jamais le tien."},
+        {"D-memoire-culture", "Le prénom donné par l'utilisateur est le SIEN : rappelle-le-lui s'il le demande (« Vous vous appelez … »). Tu connais la culture générale (capitales, etc.) : réponds directement."},
+        {"E-combine", "Vouvoie l'utilisateur. Ne te présente qu'une fois. Son prénom est le sien : s'il le demande, réponds « Vous vous appelez <prénom>. » Pour une question de culture générale, donne directement la réponse."},
+    };
     static final int CTX = 768;
+    static boolean EXPLORE = false; static String VARIANT = "A-v1b-initial";
     static String json(String s) { return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""; }
 
     /** Newest exchanges that fit (<= 3 pairs: protected limit of 8 entries) by EXACT token count. */
@@ -123,7 +132,7 @@ public final class SealedNativeBridge {
     }
     static String dialogue(SealedNativeBridge n, long h, String name, String[] questions, int maxTokens) {
         java.util.List<String[]> history = new java.util.ArrayList<>();
-        StringBuilder out = new StringBuilder("{\"scenario\":" + json(name) + ",\"maxTokens\":" + maxTokens + ",\"turns\":[");
+        StringBuilder out = new StringBuilder("{\"scenario\":" + json(name) + ",\"variant\":" + json(VARIANT) + ",\"systemBytes\":" + b(V1B_SYSTEM).length + ",\"maxTokens\":" + maxTokens + ",\"turns\":[");
         for (int q = 0; q < questions.length; q++) {
             n.begin(h); // clear any previous Stop before counting (same order as the Android host)
             byte[][][] w = window(n, h, history, questions[q], maxTokens);
@@ -139,7 +148,7 @@ public final class SealedNativeBridge {
                .append(",\"historyPairsSent\":").append((w[0].length - 1) / 2).append(",\"ms\":").append((end - start) / 1_000_000).append("}");
         }
         String result = out.append("]}").toString();
-        System.out.println("DIALOGUE " + result);
+        System.out.println((EXPLORE ? "EXPLORE " : "DIALOGUE ") + result);
         return result;
     }
     static void bench(SealedNativeBridge n, long h, int maxTokens, String question) {
@@ -154,6 +163,13 @@ public final class SealedNativeBridge {
         System.out.println("BENCH {\"maxTokens\":" + maxTokens + ",\"promptTokens\":" + sink.inputTokens + ",\"generatedTokens\":" + sink.sampled
             + ",\"stoppedNaturally\":" + (sink.sampled < maxTokens) + ",\"firstTokenMs\":" + Math.round(ttft) + ",\"totalMs\":" + (end - start) / 1_000_000
             + ",\"decodeTokensPerSecond\":" + (sink.sampled > 1 ? Math.round((sink.sampled - 1) / decode * 10) / 10.0 : 0) + "}");
+    }
+
+    static void scenarios(SealedNativeBridge n, long h) {
+        dialogue(n, h, "identite-prenom", new String[]{"Bonjour, présente-toi.", "Je m'appelle Thomas.", "Comment je m'appelle ?"}, 128);
+        dialogue(n, h, "correction-prenom", new String[]{"Je m'appelle Thomas.", "En fait non, je m'appelle Julien.", "Comment je m'appelle ?"}, 128);
+        dialogue(n, h, "questions-successives", new String[]{"Quelle est la capitale de la France ?", "Et celle de l'Italie ?", "Et celle de l'Espagne ?"}, 128);
+        dialogue(n, h, "changement-de-sujet", new String[]{"Je m'appelle Thomas.", "Donne-moi une idée de dessert simple.", "Au fait, comment je m'appelle ?"}, 128);
     }
 
     static void v1b(SealedNativeBridge n, long h, String trace) {
@@ -183,10 +199,12 @@ public final class SealedNativeBridge {
         check(ct == 3 && cancel.terminal == 3, "v1b-stream-turns-cancelled (" + cancelMs + " ms after request)");
         System.out.println("CANCEL {\"msFromRequestToTerminal\":" + cancelMs + ",\"chunks\":" + cancel.chunks + "}");
 
-        dialogue(n, h, "identite-prenom", new String[]{"Bonjour, présente-toi.", "Je m'appelle Thomas.", "Comment je m'appelle ?"}, 128);
-        dialogue(n, h, "correction-prenom", new String[]{"Je m'appelle Thomas.", "En fait non, je m'appelle Julien.", "Comment je m'appelle ?"}, 128);
-        dialogue(n, h, "questions-successives", new String[]{"Quelle est la capitale de la France ?", "Et celle de l'Italie ?", "Et celle de l'Espagne ?"}, 128);
-        dialogue(n, h, "changement-de-sujet", new String[]{"Je m'appelle Thomas.", "Donne-moi une idée de dessert simple.", "Au fait, comment je m'appelle ?"}, 128);
+        // Prompt study: every candidate on the same four scenarios (EXPLORE lines), then the production
+        // prompt (the one shipped in V1bPolicy.SYSTEM_PROMPT, first entry PRODUCTION) as DIALOGUE lines.
+        String production = V1B_SYSTEM;
+        for (String[] v : VARIANTS) { EXPLORE = true; VARIANT = v[0]; V1B_SYSTEM = v[1]; scenarios(n, h); }
+        EXPLORE = false; VARIANT = "PRODUCTION"; V1B_SYSTEM = production;
+        scenarios(n, h);
         String bench = "Explique en détail comment fonctionne la photosynthèse.";
         bench(n, h, 48, bench);
         bench(n, h, 128, bench);

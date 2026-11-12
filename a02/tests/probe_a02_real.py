@@ -37,6 +37,7 @@ evidence = {
     "trace": next((json.loads(l[6:]) for l in lines if l.startswith("TRACE ")), None),
     "memory": next((json.loads(l)["a02Memory"] for l in lines if l.startswith('{"a02Memory"')), None),
     "v1bDialogues": [json.loads(l[9:]) for l in lines if l.startswith("DIALOGUE ")],
+    "v1bPromptStudy": [json.loads(l[8:]) for l in lines if l.startswith("EXPLORE ")],
     "v1bBench": [json.loads(l[6:]) for l in lines if l.startswith("BENCH ")],
     "v1bCancel": next((json.loads(l[7:]) for l in lines if l.startswith("CANCEL ")), None),
     "stderrTail": run.stderr[-2000:],
