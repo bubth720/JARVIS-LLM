@@ -13,3 +13,6 @@ jobs:
       - run: |
           python3 tools/resolve_hf_model.py unsloth/Qwen3-1.7B-GGUF Qwen3-1.7B-Q4_K_M.gguf
           python3 tools/resolve_hf_model.py unsloth/Qwen3-0.6B-GGUF Qwen3-0.6B-Q4_K_M.gguf
+          python3 tools/resolve_hf_model.py ggerganov/whisper.cpp ggml-base-q5_1.bin
+          python3 tools/resolve_hf_model.py ggerganov/whisper.cpp ggml-tiny-q5_1.bin
+          python3 tools/resolve_hf_model.py ggerganov/whisper.cpp ggml-small-q5_1.bin
