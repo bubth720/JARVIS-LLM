@@ -26,6 +26,7 @@ jobs:
           - {label: 1.7b-ctx768-2t-experimental, manifest: a02/models/qwen3-1.7b-q4km.json, small: 'false', ctx: 768, threads: 2}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {fetch-depth: 0}  # the preservation guards read history
       - uses: actions/setup-java@v4
         with: {distribution: temurin, java-version: '21'}
       - name: Historical preservation guards (unchanged, successor mode)
