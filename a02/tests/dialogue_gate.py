@@ -11,11 +11,23 @@ def norm(s):
     return unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
 
 SELF_AS_USER = re.compile(r"\b(je suis|je m'appelle|moi,? c'est|mon (pre)?nom est)\s+(thomas|julien)\b")
+# A copied instruction template is not an answer (study 0aa7232: "Enchante, <prenom>", "[prenom]").
+PLACEHOLDER = re.compile(r"<\s*pre?nom\s*>|\[\s*pre?nom\s*\]|votre prenom|\bmarie\b|<x>|\bx\b")
+NAME_TALK = re.compile(r"appelez|enchante|thomas|julien|prenom")
+def answers_name(name):
+    """The name must be given AS the user's name, not merely greeted ("Bonjour Thomas !" is no answer)."""
+    return re.compile(r"(appelez|appelles|vous etes|tu es|nom est|nom,? c'est|c'est)\W+(\w+\W+){0,2}" + name)
 EXPECT = {
-    "identite-prenom": [(2, "thomas")],
-    "correction-prenom": [(2, "julien")],
-    "questions-successives": [(0, "paris"), (1, "rome"), (2, "madrid")],
-    "changement-de-sujet": [(2, "thomas")],
+    "identite-prenom": [(0, re.compile("jarvis")), (2, answers_name("thomas"))],
+    "correction-prenom": [(2, answers_name("julien"))],
+    "questions-successives": [(0, re.compile("paris")), (1, re.compile("rome")), (2, re.compile("madrid"))],
+    "changement-de-sujet": [(1, re.compile("dessert|gateau|cake|fruit|tarte|creme|mousse|yaourt|compote")), (2, answers_name("thomas"))],
+}
+# (turn, regex) that must NOT match: no name talk where nobody gave a name, no stale name after a correction.
+FORBID = {
+    "questions-successives": [(0, NAME_TALK), (1, NAME_TALK), (2, NAME_TALK)],
+    "correction-prenom": [(2, re.compile(r"thomas"))],
+    "changement-de-sujet": [(1, re.compile(r"appelez|enchante"))],
 }
 
 def evaluate(dialogues):
@@ -27,11 +39,15 @@ def evaluate(dialogues):
             results.append({"scenario": name, "status": "NOT_RUN"}); ok = False; continue
         problems = []
         answers = [t["answer"] for t in d["turns"]]
-        for index, word in expectations:
-            if index >= len(answers) or word not in norm(answers[index]):
-                problems.append(f"turn {index + 1} should mention '{word}'")
+        for index, pattern in expectations:
+            if index >= len(answers) or not pattern.search(norm(answers[index])):
+                problems.append(f"turn {index + 1} should match '{pattern.pattern}'")
+        for index, pattern in FORBID.get(name, []):
+            if index < len(answers) and pattern.search(norm(answers[index])):
+                problems.append(f"turn {index + 1} off-topic ({pattern.pattern})")
         for i, a in enumerate(answers):
             if not a.strip(): problems.append(f"turn {i + 1} empty")
+            if PLACEHOLDER.search(norm(a)): problems.append(f"turn {i + 1}: copied template placeholder")
             if SELF_AS_USER.search(norm(a)): problems.append(f"turn {i + 1}: JARVIS takes the user's name")
         status = "PASS" if not problems else "FAIL"
         ok &= status == "PASS"

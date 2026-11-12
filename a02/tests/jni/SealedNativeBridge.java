@@ -109,10 +109,12 @@ public final class SealedNativeBridge {
     /** Candidate subordinate instructions compared on the SAME scenarios (prompt study, real model). */
     static final String[][] VARIANTS = {
         {"A-v1b-initial", "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think"},
-        {"B-vouvoiement-gabarits", "Tu vouvoies l'utilisateur. S'il donne son prénom, réponds : « Enchanté, <prénom>. » S'il demande son prénom, réponds : « Vous vous appelez <prénom>. » Réponds directement aux questions de culture générale."},
-        {"C-court-direct", "Tu parles à l'utilisateur et tu le vouvoies. Réponds à sa dernière question, sans te présenter de nouveau. Son prénom est le sien, jamais le tien."},
-        {"D-memoire-culture", "Le prénom donné par l'utilisateur est le SIEN : rappelle-le-lui s'il le demande (« Vous vous appelez … »). Tu connais la culture générale (capitales, etc.) : réponds directement."},
         {"E-combine", "Vouvoie l'utilisateur. Ne te présente qu'une fois. Son prénom est le sien : s'il le demande, réponds « Vous vous appelez <prénom>. » Pour une question de culture générale, donne directement la réponse."},
+        {"F-derniere-question", "Vouvoie l'utilisateur et réponds seulement à sa dernière question. S'il te demande son prénom, rappelle celui qu'il t'a donné. Donne directement les faits connus, comme les capitales."},
+        {"G-salue-rappelle", "Réponds seulement au dernier message de l'utilisateur, en une ou deux phrases. Quand il donne son prénom, salue-le avec. Quand il le demande, réponds : vous vous appelez, suivi de son prénom. Donne directement les faits connus."},
+        {"H-pas-le-tien", "L'utilisateur peut te dire son prénom ; ce n'est pas le tien. Ne répète pas tes réponses précédentes. Réponds au dernier message seulement. Faits simples (capitales, définitions) : réponds directement."},
+        {"I-sans-gabarit", "Vouvoie l'utilisateur. Ne te présente qu'une fois. Son prénom est le sien : s'il le demande, dis-lui comment il s'appelle. Pour une question de culture générale, donne directement la réponse."},
+        {"J-seulement-si", "Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse."},
     };
     static final int CTX = 768;
     static boolean EXPLORE = false; static String VARIANT = "A-v1b-initial";

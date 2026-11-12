@@ -62,7 +62,9 @@ jobs:
           python3 a02/tests/probe_a02_real.py 2>&1 | tee build/a02/host-real.log
       - name: V1-B dialogue quality gate (real transcripts; fails on a wrong name or a self-identification as the user)
         if: always()
-        run: python3 a02/tests/dialogue_gate.py build/a02-real-evidence.json | tee build/a02/v1b-dialogue-gate.log
+        run: |
+          python3 a02/tests/dialogue_gate.py build/a02-real-evidence.json v1bPromptStudy | tee build/a02/v1b-prompt-study.log
+          python3 a02/tests/dialogue_gate.py build/a02-real-evidence.json | tee build/a02/v1b-dialogue-gate.log
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
@@ -70,6 +72,7 @@ jobs:
           path: |
             build/a02/host-real.log
             build/a02/v1b-dialogue-gate.log
+            build/a02/v1b-prompt-study.log
             build/a02-real-evidence.json
           if-no-files-found: warn
           retention-days: 30
