@@ -38,9 +38,23 @@ def evaluate(dialogues):
         results.append({"scenario": name, "status": status, "problems": problems, "answers": answers})
     return ok, results
 
+def study(entries):
+    """Prompt study: score each candidate instruction on the same scenarios (informative only)."""
+    variants = {}
+    for d in entries: variants.setdefault(d.get("variant", "?"), []).append(d)
+    for name, dialogues in variants.items():
+        ok, results = evaluate(dialogues)
+        passed = sum(r["status"] == "PASS" for r in results)
+        print(f"STUDY {name}: {passed}/{len(results)} scenarios PASS")
+        for r in results:
+            print("  ", r["status"], r["scenario"], "; ".join(r.get("problems", [])))
+            for a in r.get("answers", []): print("     >", a.replace("\n", " ")[:160])
+
 if __name__ == "__main__":
     evidence = json.load(open(sys.argv[1]))
     key = sys.argv[2] if len(sys.argv) > 2 else "v1bDialogues"
+    if key == "v1bPromptStudy":
+        study(evidence.get(key) or []); sys.exit(0)
     ok, results = evaluate(evidence.get(key) or [])
     for r in results:
         print(r["status"], r["scenario"], "; ".join(r.get("problems", [])))
