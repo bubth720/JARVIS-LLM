@@ -10,6 +10,7 @@
 #undef Java_fr_jarvis_llm_engine_NativeBridge_load
 
 #include "a02_snapshot.h"
+#include "a02_output_policy.h"
 #include <cstdio>
 #include <cstring>
 #include <sys/mman.h>
@@ -167,7 +168,16 @@ A02_FWD(jlongArray, allocations, (JNIEnv * env, jobject o, jlong h), (env, o, h)
 // Real token streaming through the protected SynchronousStream (callback: onNativePrepared/onNativeEvent).
 A02_FWD(jint, generateStream, (JNIEnv * env, jobject o, jlong h, jbyteArray s, jbyteArray q, jint m, jint c, jbyteArray b, jobject cb), (env, o, h, s, q, m, c, b, cb))
 A02_FWD(void, unload, (JNIEnv * env, jobject o, jlong h), (env, o, h))
-A02_FWD(void, destroy, (JNIEnv * env, jobject o, jlong h), (env, o, h))
+namespace {
+// Per-handle protected output ceiling recorded at the last successful sealed load (V1-B policy).
+std::mutex g_output_mutex;
+std::unordered_map<jlong, int> g_protected_output;
+void forget_output_policy(jlong h) { std::lock_guard<std::mutex> lock(g_output_mutex); g_protected_output.erase(h); }
+}
+extern "C" JNIEXPORT void JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridge_destroy(JNIEnv * env, jobject o, jlong h) {
+    forget_output_policy(h);
+    Java_fr_jarvis_llm_engine_NativeBridge_destroy(env, o, h);
+}
 
 /**
  * Snapshot -> seal -> re-hash -> identity check -> protected loader on /proc/self/fd/N.
@@ -185,6 +195,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
         struct stat source {};
         if (sourceFd < 0 || fstat(sourceFd, &source) != 0) throw std::runtime_error("A02_INVALID_FD");
         jarvis_a02::SnapshotTrace trace;
+        forget_output_policy(h); // any new load restarts from the protected ceiling
         {
             EngineCallPin pin(h);
             require_not_streaming(h);
@@ -212,6 +223,13 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
             try { EngineCallPin pin(h); engine(h).unload(); } catch (...) {}
             throw std::runtime_error("A02_SOURCE_MAPPED_REFUSED");
         }
+        int protectedOutput = 0;
+        {
+            EngineCallPin pin(h);
+            protectedOutput = engine(h).max_output; // value set by the protected loader for this load
+            std::lock_guard<std::mutex> lock(g_output_mutex);
+            g_protected_output[h] = protectedOutput;
+        }
         std::ostringstream json;
         json << "{\"a02\":\"v1\",\"size\":" << trace.size
              << ",\"copiedSha256\":\"" << json_escape(trace.copiedSha256) << "\""
@@ -222,11 +240,102 @@ extern "C" JNIEXPORT jbyteArray JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridg
              << ",\"readOnlyPrivateMapsOfSealedFd\":" << privateMaps
              << ",\"sealedInodeMapped\":" << (proof.sealedMapped ? "true" : "false")
              << ",\"sourceInodeMapped\":false"
-             << ",\"pathLoaderExported\":false}";
+             << ",\"pathLoaderExported\":false"
+             << ",\"protectedOutputCeiling\":" << protectedOutput << "}";
         return to_bytes(env, json.str());
     } catch (const std::exception & ex) {
         if (owned >= 0) close(owned);
         error(env, ex);
         return nullptr;
     }
+}
+
+// ---------------------------------------------------------------------------------------------
+// V1-B additions (A02 library only; the protected bridge.cpp and native_configuration.h are
+// unchanged and still enforce every check below them).
+// ---------------------------------------------------------------------------------------------
+namespace {
+/** Reads a ChatML history exactly as the protected P2 path validates it (user/assistant alternation,
+ *  1..8 entries, no role delimiter, canonical UTF-8, last entry = user). */
+void read_turns(JNIEnv * env, jobjectArray roleArray, jobjectArray textArray, std::vector<std::string> & roles, std::vector<std::string> & texts) {
+    if (!roleArray || !textArray) throw std::runtime_error("Historique absent");
+    const int size = env->GetArrayLength(roleArray);
+    if (size < 1 || size > 8 || size != env->GetArrayLength(textArray)) throw std::runtime_error("Historique invalide");
+    for (int i = 0; i < size; ++i) {
+        auto role = static_cast<jbyteArray>(env->GetObjectArrayElement(roleArray, i));
+        auto text = static_cast<jbyteArray>(env->GetObjectArrayElement(textArray, i));
+        roles.push_back(bytes(env, role)); texts.push_back(bytes(env, text));
+        env->DeleteLocalRef(role); env->DeleteLocalRef(text);
+        validate_p2(texts.back());
+        if (texts.back().find('\0') != std::string::npos) throw std::runtime_error("Délimiteur P2 interdit");
+        if (roles.back() != (i % 2 == 0 ? "user" : "assistant")) throw std::runtime_error("Alternance P2 invalide");
+    }
+    if (roles.back() != "user") throw std::runtime_error("Question utilisateur requise");
+}
+}
+
+/** Bounded output ceiling for the loaded model (a02_output_policy.h). Returns the ceiling now in force. */
+extern "C" JNIEXPORT jint JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridge_setOutputCeiling(JNIEnv * env, jobject, jlong h, jint requested) {
+    try {
+        EngineCallPin pin(h);
+        require_not_streaming(h);
+        auto & e = engine(h); check(e);
+        if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+        int protectedOutput = 0;
+        {
+            std::lock_guard<std::mutex> lock(g_output_mutex);
+            auto found = g_protected_output.find(h);
+            if (found == g_protected_output.end()) throw std::runtime_error("A02_OUTPUT_POLICY_REFUSED");
+            protectedOutput = found->second;
+        }
+        if (!jarvis_a02::output_ceiling_admitted(e.context, protectedOutput, requested)) throw std::runtime_error("A02_OUTPUT_POLICY_REFUSED");
+        e.max_output = requested;
+        return requested;
+    } catch (const std::exception & ex) { error(env, ex); return -1; }
+}
+
+/** Exact prompt token count of a ChatML history, with the SAME formatter and tokenizer as generation. */
+extern "C" JNIEXPORT jint JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridge_countTurnsTokens(
+    JNIEnv * env, jobject, jlong h, jbyteArray system, jobjectArray roleArray, jobjectArray textArray) {
+    try {
+        EngineCallPin pin(h);
+        require_not_streaming(h);
+        auto & e = engine(h); check(e);
+        if (!e.ctx) throw std::runtime_error("Moteur non prêt");
+        const auto custom = bytes(env, system);
+        validate_p2(custom, true);
+        if (custom.size() > 8192) throw std::runtime_error("Système hors limites");
+        std::vector<std::string> roles, texts;
+        read_turns(env, roleArray, textArray, roles, texts);
+        const auto prompt = format(e, roles, texts, 0, &custom);
+        const int n = llama_tokenize(llama_model_get_vocab(e.model), prompt.data(), prompt.size(), nullptr, 0, true, true);
+        return n < 0 ? -n : n;
+    } catch (const std::exception & ex) { error(env, ex); return -1; }
+}
+
+/**
+ * Multi-turn token stream: the real ChatML roles (system / user / assistant) go to the protected
+ * generate() + SynchronousStream, instead of a history flattened into one user message. The
+ * protected path keeps every check: P2 validation of each text, alternation, <= 8 entries,
+ * maxTokens <= ceiling, prompt + maxTokens + 8 <= context (P2_CONTEXT_EXCEEDED, no silent cut),
+ * cancellation, EOG stop. Returns the terminal kind (2 completed, 3 cancelled, 4 error).
+ */
+extern "C" JNIEXPORT jint JNICALL Java_fr_jarvis_llm_a02_SealedNativeBridge_generateStreamTurns(
+    JNIEnv * env, jobject, jlong h, jbyteArray system, jobjectArray roles, jobjectArray texts, jint maxTokens,
+    jint contextLimit, jbyteArray binding, jobject callback) {
+    try {
+        EngineCallPin pin(h, true);
+        auto & e = engine(h);
+        SynchronousStream stream(env, callback, binding, e);
+        try {
+            if (contextLimit < 512 || contextLimit > e.context || contextLimit % 256 != 0)
+                throw std::runtime_error("Contexte P2 invalide");
+            const auto custom = bytes(env, system);
+            if (env->ExceptionCheck()) throw JavaCallbackPending();
+            validate_p2(custom, true);
+            if (custom.size() > 8192) throw std::runtime_error("Système hors limites");
+            generate(env, h, roles, texts, maxTokens, &custom, contextLimit, &stream);
+        } catch (const std::exception &) { stream.failed(); }
+        return stream.terminal();
+    } catch (const std::exception & ex) { error(env, ex); return 4; }
 }

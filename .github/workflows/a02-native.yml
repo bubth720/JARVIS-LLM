@@ -60,12 +60,16 @@ jobs:
         run: |
           mkdir -p build/a02
           python3 a02/tests/probe_a02_real.py 2>&1 | tee build/a02/host-real.log
+      - name: V1-B dialogue quality gate (real transcripts; fails on a wrong name or a self-identification as the user)
+        if: always()
+        run: python3 a02/tests/dialogue_gate.py build/a02-real-evidence.json | tee build/a02/v1b-dialogue-gate.log
       - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6
         if: always()
         with:
           name: a02-real-model-evidence
           path: |
             build/a02/host-real.log
+            build/a02/v1b-dialogue-gate.log
             build/a02-real-evidence.json
           if-no-files-found: warn
           retention-days: 30
@@ -102,6 +106,7 @@ jobs:
           $ndk/llvm-nm -D --defined-only "$lib" | awk '{print $3}' | grep '^Java_' | sort | tee build/a02-android-symbols.txt
           ! grep -x 'Java_fr_jarvis_llm_engine_NativeBridge_load' build/a02-android-symbols.txt
           grep -x 'Java_fr_jarvis_llm_a02_SealedNativeBridge_loadSealedFd' build/a02-android-symbols.txt
+          for v1b in setOutputCeiling countTurnsTokens generateStreamTurns; do grep -x "Java_fr_jarvis_llm_a02_SealedNativeBridge_$v1b" build/a02-android-symbols.txt; done
           # Write the symbol table to a file first: `nm | grep -q` breaks the pipe under pipefail (exit 74, run 43100142174).
           $ndk/llvm-nm -D --defined-only "$lib" > build/a02-android-all-symbols.txt
           grep -q ' __wrap_fopen$' build/a02-android-all-symbols.txt   # sealed-descriptor open shim linked
