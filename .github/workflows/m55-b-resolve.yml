@@ -1,0 +1,15 @@
+name: M55-B model metadata resolution (read-only, no weights)
+on:
+  push:
+    branches: [codex/m55-b-local-intelligence]
+    paths: ['.github/workflows/m55-b-resolve.yml', 'tools/resolve_hf_model.py']
+permissions:
+  contents: read
+jobs:
+  resolve:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - run: |
+          python3 tools/resolve_hf_model.py unsloth/Qwen3-1.7B-GGUF Qwen3-1.7B-Q4_K_M.gguf
+          python3 tools/resolve_hf_model.py unsloth/Qwen3-0.6B-GGUF Qwen3-0.6B-Q4_K_M.gguf
