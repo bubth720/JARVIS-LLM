@@ -125,9 +125,9 @@ public final class SealedNativeBridge {
         java.util.List<String[]> history = new java.util.ArrayList<>();
         StringBuilder out = new StringBuilder("{\"scenario\":" + json(name) + ",\"maxTokens\":" + maxTokens + ",\"turns\":[");
         for (int q = 0; q < questions.length; q++) {
+            n.begin(h); // clear any previous Stop before counting (same order as the Android host)
             byte[][][] w = window(n, h, history, questions[q], maxTokens);
             Sink sink = new Sink();
-            n.begin(h);
             long start = System.nanoTime();
             int term = n.generateStreamTurns(h, b(V1B_SYSTEM), w[0], w[1], maxTokens, CTX, b("c".repeat(64)), sink);
             long end = System.nanoTime();
