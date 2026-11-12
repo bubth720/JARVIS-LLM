@@ -105,15 +105,16 @@ public final class SealedNativeBridge {
     // V1-B: bounded output policy, real ChatML multi-turn dialogue, 48/128/256 comparison.
     // The SAME system prompt as the Android V1-B host (V1bConversation.SYSTEM_PROMPT).
     // ----------------------------------------------------------------------------------------
-    static String V1B_SYSTEM = "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think";
+    /** PRODUCTION: routed instruction, identical to Android V1bPolicy (GENERAL_PROMPT | NAME_PROMPT). */
+    static String V1B_SYSTEM = "ROUTE:Vouvoie l'utilisateur et réponds seulement à sa dernière question. S'il te demande son prénom, rappelle celui qu'il t'a donné. Donne directement les faits connus, comme les capitales.|Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse.";
     /** Candidate subordinate instructions compared on the SAME scenarios (prompt study, real model). */
+    /** "Before" reference kept in every run: the initial V1-B instruction (study rounds 1-4: 0/4 strict). */
     static final String[][] VARIANTS = {
-        {"R1-route-F-J", "ROUTE:Vouvoie l'utilisateur et réponds seulement à sa dernière question. S'il te demande son prénom, rappelle celui qu'il t'a donné. Donne directement les faits connus, comme les capitales.|Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse."},
-        {"R2-route-F2-J", "ROUTE:Vouvoie l'utilisateur et réponds seulement à sa dernière question, en une ou deux phrases. Donne directement les faits connus, comme les capitales.|Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse."},
+        {"A-v1b-initial", "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think"},
     };
     static final int CTX = 768;
     static boolean EXPLORE = false; static String VARIANT = "A-v1b-initial";
-    static boolean MEMORY = false; static final boolean PRODUCTION_MEMORY = false;
+    static boolean MEMORY = false; static final boolean PRODUCTION_MEMORY = true;
     /** Host session memory (same rule as Android V1bMemory): last first name the user stated about HIMSELF. */
     static final java.util.regex.Pattern NAME = java.util.regex.Pattern.compile(
         "(?i:je m'appelle|je m’appelle|mon prénom est|mon prenom est|mon nom est|appelle-moi)\\s+(\\p{L}[\\p{L}-]{1,30})");
@@ -223,7 +224,7 @@ public final class SealedNativeBridge {
         // Prompt study: every candidate on the same four scenarios (EXPLORE lines), then the production
         // prompt (the one shipped in V1bPolicy.SYSTEM_PROMPT, first entry PRODUCTION) as DIALOGUE lines.
         String production = V1B_SYSTEM;
-        for (String[] v : VARIANTS) for (boolean memory : new boolean[]{false, true}) {
+        for (String[] v : VARIANTS) for (boolean memory : new boolean[]{false}) {
             EXPLORE = true; MEMORY = memory; VARIANT = v[0] + (memory ? "+memoire" : ""); V1B_SYSTEM = v[1]; scenarios(n, h);
         }
         MEMORY = PRODUCTION_MEMORY;

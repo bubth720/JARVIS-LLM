@@ -42,3 +42,15 @@ Le memfd est de la mémoire partagée anonyme (shmem) **non récupérable sous p
 - A01 (racine d'autorité opérateur) reste fermée : A02 prouve l'intégrité des octets, pas l'autorisation d'un modèle.
 - **Modèle réel autorisé le 2026-11-11 par l'utilisateur** : `unsloth/Qwen3-0.6B-GGUF`, révision `50968a4468ef4233ed78cd7c3de230dd1d61a56b`, `Qwen3-0.6B-Q4_K_M.gguf`, 396 705 472 octets, SHA-256 `ac2d97712095a558e31573f62f466a3f9d93990898b0ec79d7c974c1780d524a` (manifeste `a02/models/qwen3-0.6b-q4km.json`). Le dépôt officiel `Qwen/Qwen3-0.6B-GGUF` ne publie pas de Q4_K_M. Toute autre révision, taille, empreinte ou licence déclarée ≠ apache-2.0 est refusée ; aucune source de repli. Périmètre : CI cloud et laboratoire V1-A ; installation sur le POCO = autorisation distincte.
 - Correctif de CI : les étapes `| tee` s'exécutaient sans `pipefail` ; un BLOCKED apparaissait vert. Le workflow impose désormais `shell: bash` (pipefail) et isole le modèle réel dans son propre job.
+
+## V1-B (mission du 2026-11-12) — ajouts A02, moteur protégé inchangé
+
+| Ajout | Rôle | Garanties |
+|---|---|---|
+| `generateStreamTurns(h, system, roles[], texts[], maxTokens, contextLimit, binding, callback)` | dialogue multi-tour avec de **vrais rôles ChatML** (`system` / `user` / `assistant`) vers le `generate()` protégé et son `SynchronousStream` | validation P2 de chaque texte, alternance user/assistant, ≤ 8 entrées, `maxTokens ≤ plafond`, `prompt + maxTokens + 8 ≤ contexte` (sinon refus, pas de coupe silencieuse), annulation, arrêt EOG |
+| `countTurnsTokens(h, system, roles[], texts[])` | comptage **exact** des jetons du prompt (même formateur, même tokenizer) pour choisir la fenêtre d'historique côté hôte | mêmes validations que la génération |
+| `setOutputCeiling(h, n)` + `a02_output_policy.h` | plafond de sortie V1-B : 128 par défaut, 256 expérimental | `1 ≤ n ≤ 256`, contexte 768 uniquement, `n + 256 + 8 ≤ 768` ; **réinitialisé à 96 par chaque chargement protégé** ; le contexte, le thread unique, les lots et le cache KV ne changent pas |
+
+`bridge.cpp` et `native_configuration.h` ne sont pas modifiés (gardes de préservation vertes). La trace de chargement ajoute `protectedOutputCeiling`.
+
+Étude de consigne (banc Linux, modèle réel, `a02/tests/dialogue_gate.py`, critère strict) : la consigne subordonnée seule plafonne à 2/4 scénarios avec Qwen3-0.6B ; le routage par intention (consigne « prénom » / consigne générale) + mémoire de session du prénom atteint 3/4 (tous les scénarios de prénom). L'échec restant est une erreur de connaissance du modèle (« capitale de l'Italie : Lucca »).
