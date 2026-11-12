@@ -1,0 +1,20 @@
+{
+  "schema": "jarvis.model-authorization/1",
+  "id": "qwen3-1.7b-q4_k_m-unsloth",
+  "authorizedBy": "user (owner of bubth720) in the Claude Code session of 2026-11-12: \"Tu as toutes les autorisations\", answering the M55-A request to open the separate Qwen3-1.7B study",
+  "authorizedOn": "2026-11-12",
+  "scope": "SEPARATE COMPARATIVE STUDY ONLY (M55-B): cloud CI Linux host and Android emulators. Not a production model, not a silent substitution: the V1 candidate stays Qwen3-0.6B until a decision is taken on measured results. No installation on a personal device.",
+  "source": {
+    "repository": "unsloth/Qwen3-1.7B-GGUF",
+    "revision": "d7f544eead698dbd1f15126ef60b45a1e1933222",
+    "filename": "Qwen3-1.7B-Q4_K_M.gguf",
+    "url": "https://huggingface.co/unsloth/Qwen3-1.7B-GGUF/resolve/d7f544eead698dbd1f15126ef60b45a1e1933222/Qwen3-1.7B-Q4_K_M.gguf",
+    "bytes": 1107409472,
+    "sha256": "b139949c5bd74937ad8ed8c8cf3d9ffb1e99c866c823204dc42c0d91fa181897",
+    "firstObserved": "JARVIS-LLM CI run 43247259980 (read-only metadata resolution, 2026-11-12)"
+  },
+  "upstream": "Qwen/Qwen3-1.7B (derived quantization by Unsloth)",
+  "licenseExpected": "apache-2.0",
+  "notInGit": true,
+  "notBundledInApk": true
+}

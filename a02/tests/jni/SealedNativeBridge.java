@@ -96,7 +96,8 @@ public final class SealedNativeBridge {
         check(!refusal(() -> n.setOutputCeiling(h, 128)).equals("ADMITTED"), "v1b-output-ceiling-without-model-refused");
         check(!refusal(() -> n.countTurnsTokens(h, b("s"), new byte[][]{b("user")}, new byte[][]{b("x")})).equals("ADMITTED"), "v1b-count-turns-without-model-refused");
 
-        if (args.length == 2) realModel(n, h, new File(args[0]), args[1]);
+        if (args.length == 2 && System.getenv("A02_STUDY") != null) study(n, h, new File(args[0]), args[1]);
+        else if (args.length == 2) realModel(n, h, new File(args[0]), args[1]);
         n.unload(h); n.destroy(h);
         System.out.println("{\"suite\":\"a02-jni\",\"platform\":\"linux-host-x86_64\",\"passed\":" + passed + ",\"realModel\":" + (args.length == 2) + ",\"android\":false}");
     }
@@ -112,7 +113,7 @@ public final class SealedNativeBridge {
     static final String[][] VARIANTS = {
         {"A-v1b-initial", "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think"},
     };
-    static final int CTX = 768;
+    static int CTX = 768;
     static boolean EXPLORE = false; static String VARIANT = "A-v1b-initial";
     static boolean MEMORY = false; static final boolean PRODUCTION_MEMORY = true;
     /** Host session memory (same rule as Android V1bMemory): last first name the user stated about HIMSELF. */
@@ -237,6 +238,80 @@ public final class SealedNativeBridge {
         bench(n, h, 256, bench);
         bench(n, h, 128, "Dis bonjour.");  // simple answer: must stop naturally, far below the ceiling
         check(n.setOutputCeiling(h, 128) == 128, "v1b-ceiling-back-to-128");
+    }
+
+    // ----------------------------------------------------------------------------------------
+    // M55-B study mode: one model configuration (env A02_SMALL / A02_CTX / A02_THREADS), production
+    // instruction (routed + session memory), French 30-request bench, then 20 load/generate/unload
+    // sessions. Linux host evidence only; Android evidence comes from the INTERFACE lab.
+    // ----------------------------------------------------------------------------------------
+    static void study(SealedNativeBridge n, long h, File model, String sha) throws Exception {
+        boolean small = !"false".equals(System.getenv("A02_SMALL"));
+        CTX = Integer.parseInt(System.getenv().getOrDefault("A02_CTX", "768"));
+        int threads = Integer.parseInt(System.getenv().getOrDefault("A02_THREADS", "1"));
+        int ceiling = Integer.parseInt(System.getenv().getOrDefault("A02_CEILING", "128"));
+        MEMORY = true; // production: routed instruction + session memory
+        check(sha256(model).equals(sha), "study-model-digest-precheck");
+        long rssBefore = statusKb("VmRSS"), shmBefore = statusKb("RssShmem");
+        int fdBase = openFds();
+        long t0 = System.nanoTime();
+        String trace;
+        try (FileInputStream in = new FileInputStream(model)) {
+            trace = new String(n.loadSealedFd(h, fd(in), model.length(), b(sha), BUDGET, CTX, threads, small), StandardCharsets.UTF_8);
+        }
+        long loadMs = (System.nanoTime() - t0) / 1_000_000;
+        System.out.println("TRACE " + trace);
+        check(trace.contains("\"sealedInodeMapped\":true") && trace.contains("\"sealedSha256\":\"" + sha + "\""), "study-sealed-load");
+        check(n.setOutputCeiling(h, ceiling) == ceiling, "study-ceiling-" + ceiling);
+        long rssLoaded = statusKb("VmRSS");
+        java.util.List<String> lines = Files.readAllLines(new File(System.getenv("A02_BENCH")).toPath(), StandardCharsets.UTF_8);
+        for (String line : lines) {
+            if (line.isBlank()) continue;
+            String[] parts = line.split("\t", 2);
+            String[] questions = parts[1].split("\u001f");
+            java.util.List<String[]> history = new java.util.ArrayList<>();
+            StringBuilder out = new StringBuilder("{\"id\":" + json(parts[0]) + ",\"turns\":[");
+            for (int q = 0; q < questions.length; q++) {
+                n.begin(h);
+                long start = System.nanoTime();
+                byte[][][] w = window(n, h, history, questions[q], ceiling);
+                Sink sink = new Sink();
+                int term = n.generateStreamTurns(h, w[2][0], w[0], w[1], ceiling, CTX, b("e".repeat(64)), sink);
+                long end = System.nanoTime();
+                String answer = term == 2 ? sink.text.toString().trim() : "";
+                history.add(new String[]{questions[q], answer});
+                double ttft = sink.firstNanos > 0 ? (sink.firstNanos - start) / 1e6 : -1, decode = sink.firstNanos > 0 ? (end - sink.firstNanos) / 1e9 : 0;
+                out.append(q == 0 ? "" : ",").append("{\"question\":").append(json(questions[q])).append(",\"answer\":").append(json(answer))
+                   .append(",\"terminal\":").append(term).append(",\"promptTokens\":").append(sink.inputTokens).append(",\"generatedTokens\":").append(sink.sampled)
+                   .append(",\"firstTokenMs\":").append(Math.round(ttft)).append(",\"totalMs\":").append((end - start) / 1_000_000)
+                   .append(",\"decodeTokensPerSecond\":").append(sink.sampled > 1 && decode > 0 ? Math.round((sink.sampled - 1) / decode * 10) / 10.0 : 0).append("}");
+            }
+            System.out.println("BENCH30 " + out.append("]}"));
+        }
+        long hwm = statusKb("VmHWM");
+        n.unload(h);
+        long shmUnloaded = statusKb("RssShmem");
+        // 20 sessions: load -> one short real answer -> unload; descriptors and sealed shmem must return.
+        long cycleMax = 0, cycleSum = 0;
+        for (int i = 0; i < 20; i++) {
+            long c0 = System.nanoTime();
+            try (FileInputStream in = new FileInputStream(model)) { n.loadSealedFd(h, fd(in), model.length(), b(sha), BUDGET, CTX, threads, small); }
+            n.setOutputCeiling(h, ceiling);
+            n.begin(h);
+            Sink s1 = new Sink();
+            byte[][][] w = window(n, h, new java.util.ArrayList<>(), "Dis oui.", 16);
+            check(n.generateStreamTurns(h, w[2][0], w[0], w[1], 16, CTX, b("f".repeat(64)), s1) == 2 && s1.text.length() > 0, "study-session-" + (i + 1) + "-real-answer");
+            n.unload(h);
+            long ms = (System.nanoTime() - c0) / 1_000_000; cycleMax = Math.max(cycleMax, ms); cycleSum += ms;
+        }
+        System.gc();
+        long shmAfter = statusKb("RssShmem");
+        check(openFds() == fdBase, "study-no-fd-leak-20-sessions");
+        check(shmAfter - shmBefore < 64 * 1024, "study-shmem-released-20-sessions (kB delta " + (shmAfter - shmBefore) + ")");
+        System.out.println("STUDY_MEM {\"modelBytes\":" + model.length() + ",\"small\":" + small + ",\"context\":" + CTX + ",\"threads\":" + threads
+            + ",\"ceiling\":" + ceiling + ",\"loadMs\":" + loadMs + ",\"rssBeforeKb\":" + rssBefore + ",\"rssLoadedKb\":" + rssLoaded + ",\"vmHwmKb\":" + hwm
+            + ",\"shmemBeforeKb\":" + shmBefore + ",\"shmemAfterUnloadKb\":" + shmUnloaded + ",\"shmemAfter20SessionsKb\":" + shmAfter
+            + ",\"sessionMsMean\":" + cycleSum / 20 + ",\"sessionMsMax\":" + cycleMax + "}");
     }
 
     static void realModel(SealedNativeBridge n, long h, File model, String sha) throws Exception {

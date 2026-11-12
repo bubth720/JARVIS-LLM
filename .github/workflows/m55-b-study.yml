@@ -1,0 +1,49 @@
+name: M55-B local intelligence study (Linux host, authorized models, French bench)
+on:
+  push:
+    branches: [codex/m55-b-local-intelligence]
+    paths: ['.github/workflows/m55-b-study.yml', 'a02/**', 'tools/test-a02-native.sh']
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: m55-b-study-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  study:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {label: 0.6b-ctx768-1t-reference, manifest: a02/models/qwen3-0.6b-q4km.json, small: 'true', ctx: 768, threads: 1}
+          - {label: 1.7b-ctx768-1t-same-config, manifest: a02/models/qwen3-1.7b-q4km.json, small: 'false', ctx: 768, threads: 1}
+          - {label: 1.7b-ctx768-2t-experimental, manifest: a02/models/qwen3-1.7b-q4km.json, small: 'false', ctx: 768, threads: 2}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - name: Historical preservation guards (unchanged, successor mode)
+        run: |
+          python3 tools/check-preservation-003e.py
+          python3 tools/check-preservation-003f.py
+          python3 tools/check-preservation-f3a.py --successor-r02
+          python3 tools/check-f3b-successor-r02.py
+      - name: Study run (sealed A02 load, production instruction, 30 French requests, 20 sessions)
+        run: |
+          mkdir -p build
+          python3 a02/tests/study_m55b.py --manifest ${{ matrix.manifest }} --label ${{ matrix.label }} --small ${{ matrix.small }} --ctx ${{ matrix.ctx }} --threads ${{ matrix.threads }} 2>&1 | tee build/m55b-${{ matrix.label }}.log
+      - name: Score (published keyword checks, p50/p95)
+        if: always()
+        run: python3 a02/tests/bench_score.py build/m55b-${{ matrix.label }}.json | tee build/m55b-${{ matrix.label }}-score.md
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: m55b-${{ matrix.label }}
+          path: build/m55b-*
+          retention-days: 30
