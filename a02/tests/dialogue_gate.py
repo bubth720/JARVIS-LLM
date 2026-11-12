@@ -15,8 +15,9 @@ SELF_AS_USER = re.compile(r"\b(je suis|je m'appelle|moi,? c'est|mon (pre)?nom es
 PLACEHOLDER = re.compile(r"<\s*pre?nom\s*>|\[\s*pre?nom\s*\]|votre prenom|\bmarie\b|<x>|\bx\b")
 NAME_TALK = re.compile(r"appelez|enchante|thomas|julien|prenom")
 def answers_name(name):
+    # "tu m'appelles Thomas" (you call ME Thomas) is a misreading; "tu t'appelles" or "vous vous appelez" is right.
     """The name must be given AS the user's name, not merely greeted ("Bonjour Thomas !" is no answer)."""
-    return re.compile(r"(appelez|appelles|vous etes|tu es|nom est|nom,? c'est|c'est)\W+(\w+\W+){0,2}" + name)
+    return re.compile(r"(vous appelez|t'appelles|vous etes|tu es|nom est|nom,? c'est|c'est)\W+(\w+\W+){0,2}" + name)
 EXPECT = {
     "identite-prenom": [(0, re.compile("jarvis")), (2, answers_name("thomas"))],
     "correction-prenom": [(2, answers_name("julien"))],

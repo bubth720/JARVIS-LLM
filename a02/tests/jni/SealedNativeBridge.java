@@ -108,11 +108,8 @@ public final class SealedNativeBridge {
     static String V1B_SYSTEM = "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think";
     /** Candidate subordinate instructions compared on the SAME scenarios (prompt study, real model). */
     static final String[][] VARIANTS = {
-        {"A-v1b-initial", "Tu converses avec l'utilisateur. Retiens ce qu'il dit de lui (prénom, goûts) et réutilise-le quand il le demande. Toi, tu es JARVIS : ne prends jamais son prénom. /no_think"},
-        {"G-salue-rappelle", "Réponds seulement au dernier message de l'utilisateur, en une ou deux phrases. Quand il donne son prénom, salue-le avec. Quand il le demande, réponds : vous vous appelez, suivi de son prénom. Donne directement les faits connus."},
-        {"J-seulement-si", "Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse."},
-        {"M-minimal", "Vouvoie l'utilisateur. Réponds directement à son dernier message, en une ou deux phrases."},
-        {"N-salue-faits", "Vouvoie l'utilisateur et réponds directement à son dernier message. S'il donne son prénom, salue-le par ce prénom. S'il demande son prénom, rappelle-le-lui."},
+        {"R1-route-F-J", "ROUTE:Vouvoie l'utilisateur et réponds seulement à sa dernière question. S'il te demande son prénom, rappelle celui qu'il t'a donné. Donne directement les faits connus, comme les capitales.|Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse."},
+        {"R2-route-F2-J", "ROUTE:Vouvoie l'utilisateur et réponds seulement à sa dernière question, en une ou deux phrases. Donne directement les faits connus, comme les capitales.|Vouvoie l'utilisateur. Ne te présente qu'une fois. S'il demande son prénom, et seulement dans ce cas, réponds « Vous vous appelez » suivi du prénom qu'il t'a donné. Pour une question de culture générale, donne directement la réponse."},
     };
     static final int CTX = 768;
     static boolean EXPLORE = false; static String VARIANT = "A-v1b-initial";
@@ -128,9 +125,16 @@ public final class SealedNativeBridge {
         for (String u : said) { java.util.regex.Matcher m = NAME.matcher(u); while (m.find()) found = Character.toUpperCase(m.group(1).charAt(0)) + m.group(1).substring(1); }
         return found;
     }
+    /** Messages about the user's own name (statement or question): same rule as Android V1bPolicy. */
+    static final java.util.regex.Pattern NAME_INTENT = java.util.regex.Pattern.compile("(?i)(m'appelle|m’appelle|appelle-moi|pr[ée]nom|mon nom)");
     static String systemFor(java.util.List<String[]> history, String question) {
+        String base = V1B_SYSTEM;
+        if (base.startsWith("ROUTE:")) {
+            String[] parts = base.substring(6).split("\\|", 2);
+            base = NAME_INTENT.matcher(question).find() ? parts[1] : parts[0];
+        }
         String name = MEMORY ? userName(history, question) : null;
-        return name == null ? V1B_SYSTEM : V1B_SYSTEM + " Fait connu : l'utilisateur s'appelle " + name + " (ce n'est pas ton nom).";
+        return name == null ? base : base + " Fait connu : l'utilisateur s'appelle " + name + " (ce n'est pas ton nom).";
     }
     static String json(String s) { return "\"" + s.replace("\\", "\\\\").replace("\"", "\\\"").replace("\n", "\\n") + "\""; }
 
