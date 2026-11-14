@@ -1,0 +1,53 @@
+name: CONVERSATION-01 model study (Linux host CI only; 0.6B vs owner-authorized 1.7B; production vs Athena instruction)
+on:
+  push:
+    branches: [ccr-5cf17ed2-phgk00]
+    paths: ['.github/workflows/conv-01-study.yml', 'a02/tests/**']
+  workflow_dispatch:
+permissions:
+  contents: read
+defaults:
+  run:
+    shell: bash
+concurrency:
+  group: conv-01-study-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  study:
+    name: ${{ matrix.label }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {label: 0.6b-ctx768-1t-PRODUCTION, manifest: a02/models/qwen3-0.6b-q4km.json, small: 'true', ctx: 768, threads: 1, instruction: PRODUCTION}
+          - {label: 0.6b-ctx768-1t-ATHENA, manifest: a02/models/qwen3-0.6b-q4km.json, small: 'true', ctx: 768, threads: 1, instruction: ATHENA}
+          - {label: 1.7b-ctx768-1t-ATHENA, manifest: a02/models/qwen3-1.7b-q4km.json, small: 'false', ctx: 768, threads: 1, instruction: ATHENA}
+          - {label: 1.7b-ctx1536-2t-ATHENA, manifest: a02/models/qwen3-1.7b-q4km.json, small: 'false', ctx: 1536, threads: 2, instruction: ATHENA}
+    steps:
+      - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
+        with: {fetch-depth: 0}  # the preservation guards read history
+      - uses: actions/setup-java@v4
+        with: {distribution: temurin, java-version: '21'}
+      - name: Historical preservation guards (unchanged, successor mode)
+        run: |
+          python3 tools/check-preservation-003e.py
+          python3 tools/check-preservation-003f.py
+          python3 tools/check-preservation-f3a.py --successor-r02
+          python3 tools/check-f3b-successor-r02.py
+      - name: Study run (weights verified against the authorization manifest + LFS metadata; sealed A02 load; 44 scenarios; 20 sessions)
+        run: |
+          mkdir -p build
+          python3 a02/tests/study_m55b.py --manifest ${{ matrix.manifest }} --label ${{ matrix.label }} --small ${{ matrix.small }} \
+            --ctx ${{ matrix.ctx }} --threads ${{ matrix.threads }} --instruction ${{ matrix.instruction }} \
+            --benches a02/tests/bench/fr-bench-30.json,a02/tests/bench/fr-conv-01.json 2>&1 | tee build/m55b-${{ matrix.label }}.log
+      - name: Score (published keyword checks, p50/p95, memory)
+        if: always()
+        run: python3 a02/tests/bench_score.py build/m55b-${{ matrix.label }}.json | tee build/m55b-${{ matrix.label }}-score.md
+      - uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f
+        if: always()
+        with:
+          name: conv01-${{ matrix.label }}
+          path: build/m55b-*
+          retention-days: 30

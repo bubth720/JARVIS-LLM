@@ -3,7 +3,7 @@
 per-category PASS counts and p50/p95 latencies. Prints a markdown table; never edits answers."""
 import json, pathlib, re, statistics, sys, unicodedata
 root = pathlib.Path(__file__).resolve().parents[2]
-spec = {i["id"]: i for i in json.loads((root / "a02/tests/bench/fr-bench-30.json").read_text())["items"]}
+spec = {i["id"]: i for f in ("fr-bench-30.json", "fr-conv-01.json") for i in json.loads((root / "a02/tests/bench" / f).read_text())["items"]}
 norm = lambda s: unicodedata.normalize("NFKD", s).encode("ascii", "ignore").decode().lower()
 def pct(values, q):
     v = sorted(values); return v[min(len(v) - 1, max(0, round(q * (len(v) - 1))))] if v else None
@@ -12,7 +12,8 @@ for f in sys.argv[1:]:
     ev = json.load(open(f)); res = {}; cats = {}
     for item in ev["bench"]:
         s = spec[item["id"]]; last = norm(item["turns"][-1]["answer"])
-        ok = bool(re.search(s["expect"], last)) and not (s.get("forbid") and re.search(s["forbid"], last))
+        ok = (bool(re.search(s["expect"], last)) and not (s.get("forbid") and re.search(s["forbid"], last))
+              and len(item["turns"][-1]["answer"].strip()) <= s.get("maxChars", 10**9))
         res[item["id"]] = ok; c = cats.setdefault(s["category"], [0, 0]); c[0] += ok; c[1] += 1
     turns = [t for i in ev["bench"] for t in i["turns"] if t["firstTokenMs"] >= 0]
     ttft = [t["firstTokenMs"] for t in turns]; tot = [t["totalMs"] for t in turns]; tps = [t["decodeTokensPerSecond"] for t in turns if t["decodeTokensPerSecond"] > 0]

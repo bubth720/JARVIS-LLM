@@ -9,7 +9,11 @@ p.add_argument("--manifest", required=True); p.add_argument("--label", required=
 p.add_argument("--small", choices=["true", "false"], required=True)
 p.add_argument("--ctx", type=int, default=768); p.add_argument("--threads", type=int, default=1)
 p.add_argument("--ceiling", type=int, default=128)
+p.add_argument("--instruction", default="PRODUCTION", help="key of a02/tests/personas/conv01-instructions.json (CONVERSATION-01)")
+p.add_argument("--benches", default="a02/tests/bench/fr-bench-30.json", help="comma-separated bench files (same item format)")
 a = p.parse_args()
+instructions = json.loads((root / "a02/tests/personas/conv01-instructions.json").read_text())["instructions"]
+instruction = instructions[a.instruction]
 auth = json.loads((root / a.manifest).read_text()); src = auth["source"]
 api = "https://huggingface.co/api/models/%s/revision/%s?blobs=true" % (src["repository"], src["revision"])
 with urllib.request.urlopen(api, timeout=60) as r: info = json.load(r)
@@ -26,15 +30,16 @@ if not (path.is_file() and path.stat().st_size == src["bytes"]):
             total += len(chunk); assert total <= src["bytes"], "Oversized download"
             digest.update(chunk); dest.write(chunk)
     assert total == src["bytes"] and digest.hexdigest() == src["sha256"], "GGUF SHA256 mismatch"
-bench = json.loads((root / "a02/tests/bench/fr-bench-30.json").read_text())
-tsv = root / "build/bench30.tsv"
-tsv.write_text("".join(i["id"] + "\t" + "\x1f".join(i["turns"]) + "\n" for i in bench["items"]), encoding="utf-8")
+items = [i for f in a.benches.split(",") for i in json.loads((root / f).read_text())["items"]]
+tsv = root / ("build/bench-%s.tsv" % a.label)
+tsv.write_text("".join(i["id"] + "\t" + "\x1f".join(i["turns"]) + "\n" for i in items), encoding="utf-8")
 env = dict(os.environ, A02_STUDY="1", A02_SMALL=a.small, A02_CTX=str(a.ctx), A02_THREADS=str(a.threads),
-           A02_CEILING=str(a.ceiling), A02_BENCH=str(tsv))
+           A02_CEILING=str(a.ceiling), A02_BENCH=str(tsv), A02_SYSTEM=instruction)
 run = subprocess.run([str(root / "tools/test-a02-native.sh"), str(path), src["sha256"]], cwd=root, env=env, capture_output=True, text=True, timeout=5400)
 lines = run.stdout.splitlines()
 evidence = {"platform": "Linux x86_64 host (NOT Android, NOT device)", "label": a.label, "authorization": auth["id"], "model": src,
-            "licenseDeclared": license_, "config": {"small": a.small == "true", "context": a.ctx, "threads": a.threads, "ceiling": a.ceiling},
+            "licenseDeclared": license_, "config": {"small": a.small == "true", "context": a.ctx, "threads": a.threads, "ceiling": a.ceiling,
+                                                    "instruction": a.instruction, "instructionSha256": hashlib.sha256(instruction.encode()).hexdigest(), "benches": a.benches},
             "exit": run.returncode, "passed": [l[5:] for l in lines if l.startswith("PASS ")],
             "trace": next((json.loads(l[6:]) for l in lines if l.startswith("TRACE ")), None),
             "bench": [json.loads(l[8:]) for l in lines if l.startswith("BENCH30 ")],

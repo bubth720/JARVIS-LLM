@@ -1,0 +1,131 @@
+{
+ "schema": "jarvis.bench/1",
+ "note": "CONVERSATION-01 multi-turn French scenarios (public, synthetic, no personal data). Same rules as fr-bench-30: normalized lowercase ASCII; 'expect' must match the LAST answer, 'forbid' must not, 'maxChars' bounds its length. A PASS is published keyword evidence, not a full quality judgment.",
+ "items": [
+  {
+   "id": "C01",
+   "category": "reference-implicite",
+   "turns": [
+    "Je prépare un voyage à Lyon le week-end prochain.",
+    "Qu'est-ce que je pourrais visiter là-bas ?"
+   ],
+   "expect": "lyon|fourviere|vieux|confluence|tete d'or|basilique|traboule|presqu'ile|bellecour|musee"
+  },
+  {
+   "id": "C02",
+   "category": "reference-implicite",
+   "turns": [
+    "Mon frère s'appelle Paul et il a douze ans.",
+    "Quel âge a-t-il ?"
+   ],
+   "expect": "\\b12\\b|douze"
+  },
+  {
+   "id": "C03",
+   "category": "correction",
+   "turns": [
+    "Je m'appelle Marc.",
+    "Pardon, je me suis trompé : je m'appelle Léo.",
+    "Comment je m'appelle ?"
+   ],
+   "expect": "leo",
+   "forbid": "marc"
+  },
+  {
+   "id": "C04",
+   "category": "correction",
+   "turns": [
+    "Mon rendez-vous est mardi à 10 heures.",
+    "Non, je me suis trompé, c'est mercredi.",
+    "Quel jour est mon rendez-vous ?"
+   ],
+   "expect": "mercredi",
+   "forbid": "\\bmardi\\b"
+  },
+  {
+   "id": "C05",
+   "category": "changement-sujet",
+   "turns": [
+    "Comment faire une pâte à crêpes ?",
+    "Au fait, quelle est la capitale de l'Italie ?",
+    "Revenons aux crêpes : il faut des œufs ?"
+   ],
+   "expect": "oeuf|\\boui\\b"
+  },
+  {
+   "id": "C06",
+   "category": "changement-sujet",
+   "turns": [
+    "Combien font 12 fois 12 ?",
+    "Et si on divise ce résultat par 4 ?"
+   ],
+   "expect": "\\b36\\b|trente-six"
+  },
+  {
+   "id": "C07",
+   "category": "information-manquante",
+   "turns": [
+    "Rappelle-moi de faire quelque chose."
+   ],
+   "expect": "\\?|quoi|quand|quelle|preciser|precise"
+  },
+  {
+   "id": "C08",
+   "category": "incertitude",
+   "turns": [
+    "Quel est le numéro de téléphone de mon voisin ?"
+   ],
+   "expect": "ne (sais|connais|dispose|peux)|pas acces|aucune (information|idee)|impossible|n'ai pas"
+  },
+  {
+   "id": "C09",
+   "category": "longueur",
+   "turns": [
+    "Réponds en un seul mot : de quelle couleur est le ciel par beau temps ?"
+   ],
+   "expect": "bleu",
+   "maxChars": 40
+  },
+  {
+   "id": "C10",
+   "category": "initiative",
+   "turns": [
+    "Je dois préparer un exposé sur Napoléon pour demain."
+   ],
+   "expect": "plan|introduction|partie|etape|je (peux|te propose|vous propose)|veux-tu|voulez-vous|souhaites|souhaitez|proposer|commencer"
+  },
+  {
+   "id": "C11",
+   "category": "chaleur",
+   "turns": [
+    "Je suis un peu fatigué aujourd'hui."
+   ],
+   "expect": "repos|pause|desole|courage|prends soin|dormir|detendre|fatigu|comprends"
+  },
+  {
+   "id": "C12",
+   "category": "humour",
+   "turns": [
+    "Raconte-moi une blague courte."
+   ],
+   "expect": "pourquoi|parce que|c'est|qu'est-ce|blague|\\?|!"
+  },
+  {
+   "id": "C13",
+   "category": "identite",
+   "turns": [
+    "Comment t'appelles-tu ?"
+   ],
+   "expect": "jarvis"
+  },
+  {
+   "id": "C14",
+   "category": "documents-absents",
+   "turns": [
+    "Que dit le contrat que je t'ai montré ce matin ?"
+   ],
+   "expect": "pas de (document|contrat|fichier)|aucun (document|contrat|fichier)|n'ai pas|pas acces|ne vois pas|ne dispose pas|ne peux pas",
+   "forbid": "le contrat (prevoit|stipule|indique|dit que)"
+  }
+ ]
+}

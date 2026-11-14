@@ -251,6 +251,9 @@ public final class SealedNativeBridge {
         int threads = Integer.parseInt(System.getenv().getOrDefault("A02_THREADS", "1"));
         int ceiling = Integer.parseInt(System.getenv().getOrDefault("A02_CEILING", "128"));
         MEMORY = true; // production: routed instruction + session memory
+        // CONVERSATION-01: optional subordinate instruction variant (same ROUTE syntax); default = PRODUCTION (V1-B).
+        String variant = System.getenv("A02_SYSTEM");
+        if (variant != null && !variant.isBlank()) V1B_SYSTEM = variant;
         check(sha256(model).equals(sha), "study-model-digest-precheck");
         long rssBefore = statusKb("VmRSS"), shmBefore = statusKb("RssShmem");
         int fdBase = openFds();
