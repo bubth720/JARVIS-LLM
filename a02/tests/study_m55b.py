@@ -47,4 +47,6 @@ evidence = {"platform": "Linux x86_64 host (NOT Android, NOT device)", "label": 
             "stderrTail": run.stderr[-1500:], "androidQualified": False, "deviceQualified": False}
 out = root / ("build/m55b-%s.json" % a.label); out.write_text(json.dumps(evidence, indent=1, ensure_ascii=False) + "\n")
 print(json.dumps({k: evidence[k] for k in ("label", "config", "exit", "memory")}, ensure_ascii=False))
+if run.returncode != 0:
+    print("--- engine stdout (tail)"); print("\n".join(l for l in lines[-30:] if not l.startswith(("BENCH30 ", "TRACE "))))
 assert run.returncode == 0, "study run failed: " + run.stderr[-800:]
