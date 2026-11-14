@@ -24,6 +24,7 @@ jobs:
           - {label: 0.6b-ctx768-1t-PRODUCTION, manifest: a02/models/qwen3-0.6b-q4km.json, small: 'true', ctx: 768, threads: 1, instruction: PRODUCTION}
           - {label: 0.6b-ctx768-1t-ATHENA, manifest: a02/models/qwen3-0.6b-q4km.json, small: 'true', ctx: 768, threads: 1, instruction: ATHENA}
           - {label: 1.7b-ctx768-1t-ATHENA, manifest: a02/models/qwen3-1.7b-q4km.json, small: 'false', ctx: 768, threads: 1, instruction: ATHENA}
+          - {label: 0.6b-ctx768-1t-ATHENA_COMPACT, manifest: a02/models/qwen3-0.6b-q4km.json, small: 'true', ctx: 768, threads: 1, instruction: ATHENA_COMPACT}
           - {label: 1.7b-ctx1536-2t-ATHENA, manifest: a02/models/qwen3-1.7b-q4km.json, small: 'false', ctx: 1536, threads: 2, instruction: ATHENA}
     steps:
       - uses: actions/checkout@fbc6f3992d24b796d5a048ff273f7fcc4a7b6c09
