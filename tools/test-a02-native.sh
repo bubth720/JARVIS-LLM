@@ -12,5 +12,5 @@ if nm -D --defined-only "$root/build/a02-native/libjarvis_llm_a02.so" | grep -q 
 fi
 mkdir -p "$root/build/a02-jni"
 javac -d "$root/build/a02-jni" "$root/a02/tests/jni/SealedNativeBridge.java" "$root/a02/tests/jni/legacy/LegacyPathProbe.java"
-timeout 600 java --add-opens java.base/java.io=ALL-UNNAMED -Djava.library.path="$root/build/a02-native" \
+timeout "${A02_JNI_TIMEOUT:-600}" java --add-opens java.base/java.io=ALL-UNNAMED -Djava.library.path="$root/build/a02-native" \
     -cp "$root/build/a02-jni" fr.jarvis.llm.a02.SealedNativeBridge "$@"

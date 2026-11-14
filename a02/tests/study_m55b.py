@@ -34,7 +34,7 @@ items = [i for f in a.benches.split(",") for i in json.loads((root / f).read_tex
 tsv = root / ("build/bench-%s.tsv" % a.label)
 tsv.write_text("".join(i["id"] + "\t" + "\x1f".join(i["turns"]) + "\n" for i in items), encoding="utf-8")
 env = dict(os.environ, A02_STUDY="1", A02_SMALL=a.small, A02_CTX=str(a.ctx), A02_THREADS=str(a.threads),
-           A02_CEILING=str(a.ceiling), A02_BENCH=str(tsv), A02_SYSTEM=instruction)
+           A02_CEILING=str(a.ceiling), A02_BENCH=str(tsv), A02_SYSTEM=instruction, A02_JNI_TIMEOUT="2400")
 run = subprocess.run([str(root / "tools/test-a02-native.sh"), str(path), src["sha256"]], cwd=root, env=env, capture_output=True, text=True, timeout=5400)
 lines = run.stdout.splitlines()
 evidence = {"platform": "Linux x86_64 host (NOT Android, NOT device)", "label": a.label, "authorization": auth["id"], "model": src,
